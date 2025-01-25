@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import BlogCard from "./../components/BlogCard";
-import apiClient from "./../api/axios"; // Axios instance for backend requests
+import apiClient from "./../api/axios";
 
 const Homepage = () => {
   const [blogs, setBlogs] = useState([]);
@@ -9,7 +9,7 @@ const Homepage = () => {
     const fetchBlogs = async () => {
       try {
         const response = await apiClient.get("/blogs");
-        setBlogs(response.data); // Assuming response.data contains the blogs array
+        setBlogs(response.data);
       } catch (error) {
         console.error("Error fetching blogs:", error);
       }

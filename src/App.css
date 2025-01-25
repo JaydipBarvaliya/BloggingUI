@@ -28,6 +28,36 @@
   color: #61dafb;
 }
 
+
+
+
+
+
+.category-item {
+  display: inline-block;
+  margin: 0 15px; /* Space between categories */
+  color: #e0e0e0; /* Default text color */
+  font-size: 1.2rem; /* Text size */
+  font-weight: 500; /* Medium font weight */
+  text-decoration: none; /* Remove underline */
+  transition: color 0.3s ease; /* Smooth color transition */
+}
+
+.category-item:hover {
+  color: #00ffcc; /* Highlight color on hover */
+}
+
+.category-item.selected {
+  color: #00ffcc; /* Highlight color for selected category */
+  font-weight: 600; /* Slightly bolder for emphasis */
+}
+
+
+
+
+
+
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

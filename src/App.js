@@ -4,6 +4,8 @@ import Homepage from "./pages/Homepage";
 import BlogDetails from "./pages/BlogDetails";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import CategoriesPage from "./CategoriesPage";
+import CategoryBlogsPage from "./CategoryBlogsPage";
 
 const App = () => {
   // Retrieve initial mode from local storage or default to false
@@ -36,6 +38,9 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Homepage />} />
             <Route path="/blogs/:id" element={<BlogDetails />} />
+            <Route path="/categories" element={<CategoriesPage />} />
+            <Route path="/categories/:category" element={<CategoryBlogsPage />} />
+
           </Routes>
         </main>
         <Footer />

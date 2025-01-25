@@ -7,7 +7,7 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
       <div className="container mx-auto flex justify-between items-center px-4">
       <Link to="/">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-          Blogging Platform
+          Data Engineering
         </h1>
         </Link>
         <div className="space-x-4">

@@ -9,6 +9,7 @@ const FavoritesPage = () => {
   const [showDialog, setShowDialog] = useState(false); // To show/hide the dialog
   const [selectedBlog, setSelectedBlog] = useState(null); // Currently selected blog for removal
 
+  // Centralized function to fetch favorites
   const fetchFavorites = async () => {
     try {
       const userId = localStorage.getItem("userId");
@@ -21,6 +22,11 @@ const FavoritesPage = () => {
         headers: { userId },
       });
       setFavorites(response.data);
+
+      // Update `favoriteBlogIds` in localStorage for sync across all tabs
+      const favoriteIds = response.data.map((blog) => blog.id);
+      localStorage.setItem("favoriteBlogIds", JSON.stringify(favoriteIds));
+      localStorage.setItem("favoritesSync", Date.now()); // Trigger sync
     } catch (error) {
       console.error("Error fetching favorites:", error);
     }
@@ -31,7 +37,7 @@ const FavoritesPage = () => {
 
     // Sync favorites across tabs
     const syncFavorites = (event) => {
-      if (event.key === "favoritesSync") {
+      if (event.key === "favoritesSync" || event.key === "favoriteBlogIds") {
         fetchFavorites();
       }
     };
@@ -67,7 +73,11 @@ const FavoritesPage = () => {
       setFavorites((prev) => prev.filter((blog) => blog.id !== selectedBlog.id));
 
       // Trigger synchronization across tabs
-      localStorage.setItem("favoritesSync", Date.now());
+      const updatedFavoriteIds = favorites
+        .filter((blog) => blog.id !== selectedBlog.id)
+        .map((blog) => blog.id);
+      localStorage.setItem("favoriteBlogIds", JSON.stringify(updatedFavoriteIds));
+      localStorage.setItem("favoritesSync", Date.now()); // Trigger sync
 
       setShowDialog(false); // Close the dialog
       setSelectedBlog(null); // Clear the selected blog

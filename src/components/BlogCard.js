@@ -1,33 +1,17 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { AiFillHeart, AiOutlineHeart } from "react-icons/ai"; // Icons for heart
-import apiClient from "../api/axios"; // Assuming you use Axios for API requests
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeart as solidHeart } from "@fortawesome/free-solid-svg-icons";
+import { faHeart as regularHeart } from "@fortawesome/free-regular-svg-icons";
 
 const BlogCard = ({ blog, isFavorite, onToggleFavorite }) => {
   const defaultImage = "https://picsum.photos/600/400";
   const [favorite, setFavorite] = useState(isFavorite);
 
-  const handleFavoriteToggle = async () => {
-    try {
-      if (favorite) {
-        // Remove from favorites
-        await apiClient.delete(`/favorites/${blog.id}`, {
-          headers: { userId: localStorage.getItem("userId") },
-        });
-      } else {
-        // Add to favorites
-        await apiClient.post(`/favorites/${blog.id}`, {}, {
-          headers: { userId: localStorage.getItem("userId") },
-        });
-      }
-
-      // Update local state and notify parent component
-      setFavorite(!favorite);
-      if (onToggleFavorite) {
-        onToggleFavorite(blog.id, !favorite);
-      }
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
+  const handleFavoriteClick = () => {
+    setFavorite(!favorite);
+    if (onToggleFavorite) {
+      onToggleFavorite(blog.id, !favorite);
     }
   };
 
@@ -54,16 +38,12 @@ const BlogCard = ({ blog, isFavorite, onToggleFavorite }) => {
               Read More
             </button>
           </Link>
-          <button
-            onClick={handleFavoriteToggle}
-            className="focus:outline-none transition duration-200"
-          >
-            {favorite ? (
-              <AiFillHeart className="text-red-500 text-2xl" /> // Filled red heart
-            ) : (
-              <AiOutlineHeart className="text-gray-500 text-2xl" /> // Outlined heart
-            )}
-          </button>
+          {/* Favorite Icon */}
+          <FontAwesomeIcon
+            icon={favorite ? solidHeart : regularHeart}
+            className={`cursor-pointer ${favorite ? "text-red-500" : "text-gray-400"}`}
+            onClick={handleFavoriteClick}
+          />
         </div>
       </div>
     </div>

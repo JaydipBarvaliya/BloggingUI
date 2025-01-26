@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext"; // Importing the AuthContext
 import apiClient from "../api/axios"; // Axios instance for API requests
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeart } from "@fortawesome/free-solid-svg-icons";
 
 const Header = ({ toggleDarkMode, isDarkMode }) => {
   const { isLoggedIn, logout } = useAuth(); // Accessing isLoggedIn and logout from AuthContext
@@ -28,7 +30,7 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
   }, []);
 
   return (
-    <header className="bg-gray-100 dark:bg-gray-900 py-4 shadow-md">
+    <header className="sticky top-0 bg-gray-100 dark:bg-gray-900 py-4 shadow-md z-50">
       <div className="container mx-auto flex justify-between items-center px-4">
         {/* Logo */}
         <Link to="/">
@@ -50,8 +52,18 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
           ))}
         </nav>
 
-        {/* Actions (Dark Mode and Logout) */}
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 items-center">
+          {/* Favorite Icon */}
+          {isLoggedIn && (
+            <button
+              onClick={() => navigate("/favorites")}
+              className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700 transition"
+            >
+              <FontAwesomeIcon icon={faHeart} className="mr-2" />
+              Favorites
+            </button>
+          )}
+
           {/* Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}

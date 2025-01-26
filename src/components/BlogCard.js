@@ -6,14 +6,6 @@ import { faHeart as regularHeart } from "@fortawesome/free-regular-svg-icons";
 
 const BlogCard = ({ blog, isFavorite, onToggleFavorite }) => {
   const defaultImage = "https://picsum.photos/600/400";
-  const [favorite, setFavorite] = useState(isFavorite);
-
-  const handleFavoriteClick = () => {
-    setFavorite(!favorite);
-    if (onToggleFavorite) {
-      onToggleFavorite(blog.id, !favorite);
-    }
-  };
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-200 rounded-lg overflow-hidden">
@@ -40,9 +32,9 @@ const BlogCard = ({ blog, isFavorite, onToggleFavorite }) => {
           </Link>
           {/* Favorite Icon */}
           <FontAwesomeIcon
-            icon={favorite ? solidHeart : regularHeart}
-            className={`cursor-pointer ${favorite ? "text-red-500" : "text-gray-400"}`}
-            onClick={handleFavoriteClick}
+            icon={isFavorite ? solidHeart : regularHeart}
+            className={`cursor-pointer ${isFavorite ? "text-red-500" : "text-gray-400"}`}
+            onClick={() => onToggleFavorite(blog.id, isFavorite)}
           />
         </div>
       </div>

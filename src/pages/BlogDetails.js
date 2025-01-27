@@ -5,16 +5,15 @@ import { useAuth } from "../context/AuthContext";
 
 const BlogDetails = () => {
   const { blogId } = useParams();
-  const { isLoggedIn, userId } = useAuth(); // Get user info from context
+  const { isLoggedIn, userId } = useAuth();
   const [blog, setBlog] = useState({});
   const [comments, setComments] = useState([]);
   const [likesCount, setLikesCount] = useState(0);
-  const [isLikedByUser, setIsLikedByUser] = useState(false); // Tracks if the user has liked the blog
+  const [isLikedByUser, setIsLikedByUser] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [editingComment, setEditingComment] = useState(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
 
-  // Fetch blog details, comments, likes, and user's like status
   useEffect(() => {
     const fetchBlogDetails = async () => {
       try {
@@ -27,8 +26,8 @@ const BlogDetails = () => {
 
         setBlog(blogRes.data);
         setComments(commentsRes.data);
-        setLikesCount(likesRes.data|| 0);
-        setIsLikedByUser(isLikedRes.data); // True if user has liked the blog
+        setLikesCount(likesRes.data || 0);
+        setIsLikedByUser(isLikedRes.data);
       } catch (error) {
         console.error("Error fetching blog details:", error);
       }
@@ -37,59 +36,55 @@ const BlogDetails = () => {
     if (isLoggedIn && userId) fetchBlogDetails();
   }, [blogId, isLoggedIn, userId]);
 
-  // Toggle like status
   const toggleLike = async () => {
     try {
       if (isLikedByUser) {
-        // Remove like
         await apiClient.delete("/likes", { params: { blogId, userId } });
-        setLikesCount((prev) => Math.max(prev - 1, 0)); // Decrement like count
+        setLikesCount((prev) => Math.max(prev - 1, 0));
       } else {
-        // Add like
         await apiClient.post("/likes", null, { params: { blogId, userId } });
-        setLikesCount((prev) => prev + 1); // Increment like count
+        setLikesCount((prev) => prev + 1);
       }
-      setIsLikedByUser(!isLikedByUser); // Toggle like status
+      setIsLikedByUser(!isLikedByUser);
     } catch (error) {
-      console.error("Error toggling like:", error.response?.data || error.message);
+      console.error(
+        "Error toggling like:",
+        error.response?.data || error.message
+      );
     }
   };
 
-  // Post a new comment
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
     try {
-      await apiClient.post("/comments", {
-        blogId,
-        content: newComment,
-      });
+      await apiClient.post("/comments", { blogId, content: newComment });
       setNewComment("");
       const res = await apiClient.get(`/comments/${blogId}`);
-      setComments(res.data); // Refresh comments
+      setComments(res.data);
     } catch (error) {
       console.error("Error posting comment:", error);
     }
   };
 
-  // Delete a comment
   const handleDeleteComment = async (commentId) => {
     try {
       await apiClient.delete(`/comments/${commentId}`);
       const res = await apiClient.get(`/comments/${blogId}`);
-      setComments(res.data); // Refresh comments
+      setComments(res.data);
     } catch (error) {
       console.error("Error deleting comment:", error);
     }
   };
 
-  // Edit a comment
   const handleEditComment = async (commentId) => {
     try {
-      await apiClient.put(`/comments/${commentId}`, { content: editedCommentContent });
+      await apiClient.put(`/comments/${commentId}`, {
+        content: editedCommentContent,
+      });
       setEditingComment(null);
       setEditedCommentContent("");
       const res = await apiClient.get(`/comments/${blogId}`);
-      setComments(res.data); // Refresh comments
+      setComments(res.data);
     } catch (error) {
       console.error("Error editing comment:", error);
     }
@@ -98,8 +93,23 @@ const BlogDetails = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Blog Content */}
-      <h1 className="text-3xl font-bold mb-4">{blog.title}</h1>
-      <p className="text-gray-700 mb-8">{blog.content}</p>
+      {/* <h1 className="text-3xl font-bold mb-4 text-gray-800 dark:text-gray-200">
+        {blog.title}
+      </h1> */}
+      {blog.image && (
+        <div className="relative mb-6 flex justify-center">
+          <img
+            src={blog.image}
+            alt={blog.title}
+            className="w-full max-w-7xl h-auto rounded-2xl shadow-2xl border-4 border-gray-300 dark:border-gray-700"
+          />
+          <div className="absolute bottom-4 bg-white/70 dark:bg-gray-800/70 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg shadow-lg">
+            {blog.title}
+          </div>
+        </div>
+      )}
+
+      <p className="text-gray-700 dark:text-gray-300 mb-8">{blog.content}</p>
 
       {/* Like Button */}
       <div className="mb-8 flex items-center">
@@ -112,12 +122,16 @@ const BlogDetails = () => {
             {isLikedByUser ? "❤️" : "🤍"} {/* Filled or outlined heart */}
           </span>
         </button>
-        <span className="ml-2 text-gray-700">{likesCount} {likesCount === 1 ? "Like" : "Likes"}</span>
+        <span className="ml-2 text-gray-800 dark:text-gray-200">
+          {likesCount} {likesCount === 1 ? "Like" : "Likes"}
+        </span>
       </div>
 
       {/* Comments Section */}
       <div className="comments-section">
-        <h2 className="text-2xl font-bold mb-4">Comments</h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
+          Comments
+        </h2>
 
         {/* Comment Form */}
         {isLoggedIn && (
@@ -126,7 +140,7 @@ const BlogDetails = () => {
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Write a comment..."
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800"
             />
             <button
               onClick={handlePostComment}
@@ -148,7 +162,7 @@ const BlogDetails = () => {
                 <textarea
                   value={editedCommentContent}
                   onChange={(e) => setEditedCommentContent(e.target.value)}
-                  className="w-full p-2 border rounded"
+                  className="w-full p-2 border rounded text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800"
                 />
                 <button
                   onClick={() => handleEditComment(comment.id)}
@@ -165,8 +179,12 @@ const BlogDetails = () => {
               </div>
             ) : (
               <div>
-                <p>{comment.content}</p>
-                <small>By: {comment.name}</small>
+                <p className="text-gray-800 dark:text-gray-200">
+                  {comment.content}
+                </p>
+                <small className="text-gray-600 dark:text-gray-400">
+                  By: {comment.name}
+                </small>
                 {comment.userId === userId && (
                   <div className="mt-2">
                     <button

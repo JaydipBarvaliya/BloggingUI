@@ -17,6 +17,8 @@ import FavoritesPage from "./pages/FavoritesPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { AuthProvider } from "./context/AuthContext";
+import { ToastContainer } from "react-toastify"; // Import ToastContainer
+
 
 import "./App.css";
 
@@ -53,6 +55,9 @@ const App = () => {
         >
           <Header toggleDarkMode={toggleDarkMode} isDarkMode={isDarkMode} />
           <main className="flex-grow bg-gray-100 dark:bg-gray-900">
+
+          <ToastContainer position="top-center" autoClose={3000} /> {/* Add this */}
+
             <Routes>
 
               {/* Public route for Login */}

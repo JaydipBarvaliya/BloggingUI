@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 
 const BlogDetails = () => {
   const { blogId } = useParams();
-  const { isLoggedIn, userId } = useAuth();
+  const { firstName, lastName, userId, isLoggedIn } = useAuth(); // Get user details
   const [blog, setBlog] = useState({});
   const [comments, setComments] = useState([]);
   const [likesCount, setLikesCount] = useState(0);
@@ -56,30 +56,33 @@ const BlogDetails = () => {
 
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
+  
     try {
-      await apiClient.post("/comments", { blogId, content: newComment });
+      const timestamp = new Date().toISOString(); // Get the current timestamp
+
+      const commentData = {
+        blogId,
+        content: newComment,
+        userId, // Ensure userId is coming from context
+        name: `${firstName} ${lastName}`, // Replace with dynamic name if available
+        timestamp, // Add the current timestamp
+      };
+  
+      await apiClient.post("/comments", commentData); // Send all the data
       setNewComment("");
-      const res = await apiClient.get(`/comments/${blogId}`);
+      const res = await apiClient.get(`/comments/${blogId}`); // Refresh comments
       setComments(res.data);
     } catch (error) {
       console.error("Error posting comment:", error);
     }
   };
-
-  const handleDeleteComment = async (commentId) => {
-    try {
-      await apiClient.delete(`/comments/${commentId}`);
-      const res = await apiClient.get(`/comments/${blogId}`);
-      setComments(res.data);
-    } catch (error) {
-      console.error("Error deleting comment:", error);
-    }
-  };
+  
 
   const handleEditComment = async (commentId) => {
     try {
       await apiClient.put(`/comments/${commentId}`, {
         content: editedCommentContent,
+        userId
       });
       setEditingComment(null);
       setEditedCommentContent("");
@@ -89,6 +92,21 @@ const BlogDetails = () => {
       console.error("Error editing comment:", error);
     }
   };
+
+  const handleDeleteComment = async (commentId) => {
+    try {
+      await apiClient.delete(`/comments/${commentId}`, {
+        params: { userId }
+      });
+      
+      const res = await apiClient.get(`/comments/${blogId}`);
+      setComments(res.data);
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+    }
+  };
+
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -185,7 +203,7 @@ const BlogDetails = () => {
                 <small className="text-gray-600 dark:text-gray-400">
                   By: {comment.name}
                 </small>
-                {comment.userId === userId && (
+                {String(comment.userId) === String(userId) && (
                   <div className="mt-2">
                     <button
                       onClick={() => {

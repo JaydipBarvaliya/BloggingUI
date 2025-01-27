@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import apiClient from "../api/axios";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css"; // Import CSS for toast notifications
+
+
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -21,14 +25,16 @@ const Login = () => {
 
     try {
       const response = await apiClient.post("/auth/login", { email, password });
-      const { token, userId } = response.data;
+      const { token, userId, firstName, lastName } = response.data;
 
       // Store token and userId in localStorage
       localStorage.setItem("authToken", token);
       localStorage.setItem("userId", userId);
 
       // Update global login state
-      login(token, userId);
+      login(token, userId, firstName, lastName);
+
+      toast.success(`Welcome back, ${firstName}!`);
 
       // Redirect to the requested URL or homepage
       const redirectTo = location.state?.from?.pathname || "/";

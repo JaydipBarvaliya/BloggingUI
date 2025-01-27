@@ -24,13 +24,20 @@ const RegistrationPage = () => {
     try {
       await apiClient.post("/auth/register", formData);
       toast.success("Registration successful! Please log in.");
-      setTimeout(() => navigate("/login"), 1000); // Redirect after 3 seconds
+      setTimeout(() => navigate("/login"), 1000); // Redirect after 1 second
     } catch (error) {
-      const backendMessage = error.response?.data || "Registration failed.";
+      // Handle backend validation errors
+      const backendMessage =
+        error.response?.data?.message || // Custom message from backend
+        (error.response?.data?.errors?.length > 0
+          ? error.response.data.errors.map((err) => err.defaultMessage).join(", ")
+          : "Registration failed."); // Handle validation messages or fallback
+  
       setError(backendMessage);
-      toast.error(backendMessage);
+      toast.error(backendMessage); // Show error in toast
     }
   };
+  
 
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100 dark:bg-gray-900">

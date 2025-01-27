@@ -1,18 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import apiClient from "../api/axios"; // Axios instance for backend requests
-import BlogCard from "../components/BlogCard"; // Reuse BlogCard component
-import { Dialog } from "@headlessui/react"; // For modal dialogs
-import { ExclamationIcon } from "@heroicons/react/outline"; // Optional icon for styling
+import apiClient from "../api/axios";
+import BlogCard from "../components/BlogCard";
+import { Dialog } from "@headlessui/react";
+import { ExclamationIcon } from "@heroicons/react/outline";
 
 const CategoryBlogsPage = () => {
   const { category } = useParams();
   const [blogs, setBlogs] = useState([]);
   const [favoriteBlogIds, setFavoriteBlogIds] = useState([]);
-  const [showDialog, setShowDialog] = useState(false); // For showing confirmation dialog
-  const [selectedBlog, setSelectedBlog] = useState(null); // Blog to remove from favorites
+  const [showDialog, setShowDialog] = useState(false);
+  const [selectedBlog, setSelectedBlog] = useState(null);
 
-  const fetchBlogsAndFavorites = async () => {
+  const fetchBlogsAndFavorites = useCallback(async () => {
     try {
       const userId = localStorage.getItem("userId");
       if (!userId) {
@@ -35,7 +35,7 @@ const CategoryBlogsPage = () => {
     } catch (error) {
       console.error("Error fetching blogs or favorites:", error);
     }
-  };
+  }, [category]);
 
   useEffect(() => {
     fetchBlogsAndFavorites();
@@ -52,14 +52,13 @@ const CategoryBlogsPage = () => {
     return () => {
       window.removeEventListener("storage", syncFavorites);
     };
-  }, [category]);
+  }, [fetchBlogsAndFavorites]);
 
   const handleToggleFavorite = (blog) => {
     if (favoriteBlogIds.includes(blog.id)) {
       setSelectedBlog(blog); // Set the selected blog for removal
       setShowDialog(true); // Open the confirmation dialog
     } else {
-      // Add blog to favorites
       addToFavorites(blog.id);
     }
   };

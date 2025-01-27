@@ -93,7 +93,7 @@ const FavoritesPage = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">My Favorite Blogs</h1>
+      <h1 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">My Favorite Blogs</h1>
       {favorites.length === 0 ? (
         <p className="text-gray-500">You have no favorite blogs yet.</p>
       ) : (

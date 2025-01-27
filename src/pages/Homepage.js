@@ -117,7 +117,7 @@ const Homepage = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">All Blogs</h1>
+      <h1 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">All Blogs</h1>
       {blogs.length === 0 ? (
         <p className="text-gray-500">No blogs available.</p>
       ) : (

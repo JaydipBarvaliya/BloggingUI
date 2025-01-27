@@ -1,22 +1,27 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext"; // Importing the AuthContext
-import apiClient from "../api/axios"; // Axios instance for API requests
+import { useAuth } from "../context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faUserCircle, faHeart } from "@fortawesome/free-solid-svg-icons";
+import apiClient from "../api/axios";
 
 const Header = ({ toggleDarkMode, isDarkMode }) => {
-  const { isLoggedIn, logout } = useAuth(); // Accessing isLoggedIn and logout from AuthContext
+  const { isLoggedIn, logout } = useAuth();
   const navigate = useNavigate();
-  const [categories, setCategories] = useState([]); // Local state for categories
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [firstName, setFirstName] = useState("Profile"); // Default to "Profile"
+  const dropdownRef = useRef(null);
 
   const handleLogout = () => {
-    logout(); // Log out the user and update the global state
-    navigate("/login"); // Redirect to login page
+    logout(); // Clear user session
+    localStorage.removeItem("authToken"); // Clear any stored authentication token
+    localStorage.removeItem("userId"); // Clear the stored user ID
+    navigate("/login"); // Redirect the user to the login page
   };
 
   useEffect(() => {
-    // Fetch categories from API
+    // Fetch categories from backend
     const fetchCategories = async () => {
       try {
         const response = await apiClient.get("/categories");
@@ -26,11 +31,48 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
       }
     };
 
-    fetchCategories();
-  }, []);
+    if (isLoggedIn) {
+      fetchCategories();
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    // Fetch user details to get the first name
+    const fetchUserDetails = async () => {
+      try {
+        const userId = localStorage.getItem("userId");
+        if (!userId) return;
+
+        const response = await apiClient.get(`/users/${userId}`);
+        setFirstName(response.data.firstName || "Profile");
+      } catch (error) {
+        console.error("Error fetching user details:", error);
+      }
+    };
+
+    if (isLoggedIn) {
+      fetchUserDetails();
+    }
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+
+    if (profileMenuOpen) {
+      window.addEventListener("click", handleClickOutside);
+    }
+
+    return () => {
+      window.removeEventListener("click", handleClickOutside);
+    };
+  }, [profileMenuOpen]);
 
   return (
-    <header className="sticky top-0 bg-gray-100 dark:bg-gray-900 py-4 shadow-md z-50">
+    <header className="bg-gray-100 dark:bg-gray-900 py-4 shadow-md sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center px-4">
         {/* Logo */}
         <Link to="/">
@@ -40,26 +82,29 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
         </Link>
 
         {/* Categories */}
-        <nav className="flex space-x-4">
-          {categories.map((category, index) => (
-            <Link
-              key={index}
-              to={`/categories/${category}`}
-              className="text-gray-800 dark:text-gray-200 hover:text-blue-500"
-            >
-              {category}
-            </Link>
-          ))}
-        </nav>
+        {isLoggedIn && (
+          <nav className="flex space-x-4">
+            {categories.map((category) => (
+              <Link
+                key={category}
+                to={`/categories/${category}`}
+                className="text-gray-800 dark:text-gray-200 hover:text-blue-500"
+              >
+                {category}
+              </Link>
+            ))}
+          </nav>
+        )}
 
-        <div className="flex space-x-4 items-center">
-          {/* Favorite Icon */}
+        {/* Right Section */}
+        <div className="flex items-center space-x-4">
+          {/* Favorites */}
           {isLoggedIn && (
             <button
               onClick={() => navigate("/favorites")}
-              className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded hover:bg-gray-300 dark:hover:bg-gray-700 transition"
+              className="flex items-center bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700"
             >
-              <FontAwesomeIcon icon={faHeart} className="mr-2" />
+              <FontAwesomeIcon icon={faHeart} className="mr-2 text-red-500" />
               Favorites
             </button>
           )}
@@ -72,14 +117,34 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
             {isDarkMode ? "Light Mode" : "Dark Mode"}
           </button>
 
-          {/* Logout Button */}
+          {/* Profile Dropdown */}
           {isLoggedIn && (
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 text-white px-4 py-2 rounded"
-            >
-              Logout
-            </button>
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setProfileMenuOpen((prev) => !prev)}
+                className="flex items-center space-x-2 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg"
+              >
+                <FontAwesomeIcon icon={faUserCircle} size="lg" />
+                <span>{firstName}</span>
+              </button>
+
+              {profileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 shadow-md rounded-lg">
+                  <button
+                    onClick={() => navigate("/profile")}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+                  >
+                    Profile
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 text-red-500"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

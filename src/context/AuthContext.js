@@ -4,15 +4,12 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("authToken")); // Check if token exists
-  const [userId, setUserId] = useState(() => localStorage.getItem("userId")); // Retrieve userId from localStorage
-  const [userDetails, setUserDetails] = useState({
-    firstName: localStorage.getItem("firstName"),
-    lastName: localStorage.getItem("lastName"),
-  }); // Retrieve firstName and lastName as a single object
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [userDetails, setUserDetails] = useState({ firstName: "", lastName: "" });
 
+  // Sync state with localStorage on mount
   useEffect(() => {
-    // Ensure state is in sync with localStorage on mount
     const storedToken = localStorage.getItem("authToken");
     const storedUserId = localStorage.getItem("userId");
     const storedFirstName = localStorage.getItem("firstName");
@@ -21,30 +18,34 @@ export const AuthProvider = ({ children }) => {
     if (storedToken && storedUserId) {
       setIsLoggedIn(true);
       setUserId(storedUserId);
-      setUserDetails({ firstName: storedFirstName, lastName: storedLastName });
+      setUserDetails({ firstName: storedFirstName || "", lastName: storedLastName || "" });
     }
-  }, []); // Run only on mount
+  }, []); // Dependency array ensures this runs only once on mount
 
   const login = (token, userId, firstName, lastName) => {
-    localStorage.setItem("authToken", token); // Store the token
-    localStorage.setItem("userId", userId); // Store the userId
-    localStorage.setItem("firstName", firstName); // Store the firstName
-    localStorage.setItem("lastName", lastName); // Store the lastName
+    // Update localStorage
+    localStorage.setItem("authToken", token);
+    localStorage.setItem("userId", userId);
+    localStorage.setItem("firstName", firstName);
+    localStorage.setItem("lastName", lastName);
 
+    // Update state
     setIsLoggedIn(true);
     setUserId(userId);
     setUserDetails({ firstName, lastName });
   };
 
   const logout = () => {
-    localStorage.removeItem("authToken"); // Remove token
-    localStorage.removeItem("userId"); // Remove userId
-    localStorage.removeItem("firstName"); // Remove firstName
-    localStorage.removeItem("lastName"); // Remove lastName
+    // Clear localStorage
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("firstName");
+    localStorage.removeItem("lastName");
 
+    // Reset state
     setIsLoggedIn(false);
     setUserId(null);
-    setUserDetails({ firstName: "", lastName: "" }); // Clear state
+    setUserDetails({ firstName: "", lastName: "" });
   };
 
   return (
@@ -57,4 +58,10 @@ export const AuthProvider = ({ children }) => {
 };
 
 // Custom hook for using auth context
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};

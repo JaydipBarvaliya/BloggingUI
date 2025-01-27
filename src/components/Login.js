@@ -28,7 +28,7 @@ const Login = () => {
       localStorage.setItem("userId", userId);
 
       // Update global login state
-      login(token);
+      login(token, userId);
 
       // Redirect to the requested URL or homepage
       const redirectTo = location.state?.from?.pathname || "/";

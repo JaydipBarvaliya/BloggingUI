@@ -27,7 +27,7 @@ const BlogDetails = () => {
 
         setBlog(blogRes.data);
         setComments(commentsRes.data);
-        setLikesCount(likesRes.data?.count || 0);
+        setLikesCount(likesRes.data|| 0);
         setIsLikedByUser(isLikedRes.data); // True if user has liked the blog
       } catch (error) {
         console.error("Error fetching blog details:", error);
@@ -39,11 +39,6 @@ const BlogDetails = () => {
 
   // Toggle like status
   const toggleLike = async () => {
-    if (!isLoggedIn || !userId) {
-      console.error("User must be logged in to like a blog.");
-      return;
-    }
-
     try {
       if (isLikedByUser) {
         // Remove like

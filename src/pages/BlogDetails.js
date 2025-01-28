@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import apiClient from "../api/axios"; // Ensure axios is configured properly
+import apiClient from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
 const BlogDetails = () => {
   const { blogId } = useParams();
-  const { firstName, lastName, userId, isLoggedIn } = useAuth(); // Get user details
+  const { firstName, lastName, userId, isLoggedIn } = useAuth();
   const [blog, setBlog] = useState({});
   const [comments, setComments] = useState([]);
   const [likesCount, setLikesCount] = useState(0);
   const [isLikedByUser, setIsLikedByUser] = useState(false);
   const [newComment, setNewComment] = useState("");
-  const [editingComment, setEditingComment] = useState(null);
+  const [editingCommentId, setEditingCommentId] = useState(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
 
   useEffect(() => {
@@ -25,7 +25,7 @@ const BlogDetails = () => {
         ]);
 
         setBlog(blogRes.data);
-        setComments(commentsRes.data);
+        setComments(commentsRes.data || []);
         setLikesCount(likesRes.data || 0);
         setIsLikedByUser(isLikedRes.data);
       } catch (error) {
@@ -33,8 +33,19 @@ const BlogDetails = () => {
       }
     };
 
-    if (isLoggedIn && userId) fetchBlogDetails();
+    if (isLoggedIn && userId) {
+      fetchBlogDetails();
+    }
   }, [blogId, isLoggedIn, userId]);
+
+  const fetchComments = async () => {
+    try {
+      const res = await apiClient.get(`/comments/${blogId}`);
+      setComments(res.data);
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    }
+  };
 
   const toggleLike = async () => {
     try {
@@ -47,73 +58,66 @@ const BlogDetails = () => {
       }
       setIsLikedByUser(!isLikedByUser);
     } catch (error) {
-      console.error(
-        "Error toggling like:",
-        error.response?.data || error.message
-      );
+      console.error("Error toggling like:", error.response?.data || error.message);
     }
   };
 
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
-  
-    try {
-      const timestamp = new Date().toISOString(); // Get the current timestamp
 
-      const commentData = {
+    try {
+      await apiClient.post("/comments", {
         blogId,
         content: newComment,
-        userId, // Ensure userId is coming from context
-        name: `${firstName} ${lastName}`, // Replace with dynamic name if available
-        timestamp, // Add the current timestamp
-      };
-  
-      await apiClient.post("/comments", commentData); // Send all the data
+        userId,
+        name: `${firstName} ${lastName}`,
+        timestamp: new Date().toISOString(),
+      });
+
       setNewComment("");
-      const res = await apiClient.get(`/comments/${blogId}`); // Refresh comments
-      setComments(res.data);
+      fetchComments();
     } catch (error) {
       console.error("Error posting comment:", error);
     }
   };
-  
+
+  const handleEditClick = (commentId, currentContent) => {
+    setEditingCommentId(commentId);
+    setEditedCommentContent(currentContent);
+  };
 
   const handleEditComment = async (commentId) => {
     try {
       await apiClient.put(`/comments/${commentId}`, {
         content: editedCommentContent,
-        userId
+        userId,
       });
-      setEditingComment(null);
+
+      setEditingCommentId(null);
       setEditedCommentContent("");
-      const res = await apiClient.get(`/comments/${blogId}`);
-      setComments(res.data);
+      fetchComments();
     } catch (error) {
       console.error("Error editing comment:", error);
     }
   };
 
+  const handleCancelEdit = () => {
+    setEditingCommentId(null);
+    setEditedCommentContent("");
+  };
+
   const handleDeleteComment = async (commentId) => {
     try {
-      await apiClient.delete(`/comments/${commentId}`, {
-        params: { userId }
-      });
-      
-      const res = await apiClient.get(`/comments/${blogId}`);
-      setComments(res.data);
+      await apiClient.delete(`/comments/${commentId}`, { params: { userId } });
+      fetchComments();
     } catch (error) {
       console.error("Error deleting comment:", error);
     }
   };
 
-
-
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Blog Content */}
-      {/* <h1 className="text-3xl font-bold mb-4 text-gray-800 dark:text-gray-200">
-        {blog.title}
-      </h1> */}
       {blog.image && (
         <div className="relative mb-6 flex justify-center">
           <img
@@ -131,14 +135,8 @@ const BlogDetails = () => {
 
       {/* Like Button */}
       <div className="mb-8 flex items-center">
-        <button
-          onClick={toggleLike}
-          className="focus:outline-none"
-          title={isLikedByUser ? "Unlike this blog" : "Like this blog"}
-        >
-          <span className="text-2xl">
-            {isLikedByUser ? "❤️" : "🤍"} {/* Filled or outlined heart */}
-          </span>
+        <button onClick={toggleLike} className="focus:outline-none" title={isLikedByUser ? "Unlike this blog" : "Like this blog"}>
+          <span className="text-2xl">{isLikedByUser ? "❤️" : "🤍"}</span>
         </button>
         <span className="ml-2 text-gray-800 dark:text-gray-200">
           {likesCount} {likesCount === 1 ? "Like" : "Likes"}
@@ -147,9 +145,7 @@ const BlogDetails = () => {
 
       {/* Comments Section */}
       <div className="comments-section">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
-          Comments
-        </h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Comments</h2>
 
         {/* Comment Form */}
         {isLoggedIn && (
@@ -160,64 +156,38 @@ const BlogDetails = () => {
               placeholder="Write a comment..."
               className="w-full p-2 border rounded text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800"
             />
-            <button
-              onClick={handlePostComment}
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
-            >
+            <button onClick={handlePostComment} className="mt-2 bg-blue-500 text-white px-4 py-2 rounded">
               Post Comment
             </button>
           </div>
         )}
 
-        {/* Comments List */}
         {comments.map((comment) => (
-          <div
-            key={comment.id}
-            className="comment bg-gray-100 dark:bg-gray-800 p-4 rounded mb-4"
-          >
-            {editingComment === comment.id ? (
+          <div key={comment.id} className="comment bg-gray-100 dark:bg-gray-800 p-4 rounded mb-4">
+            {editingCommentId === comment.id ? (
               <div>
                 <textarea
                   value={editedCommentContent}
                   onChange={(e) => setEditedCommentContent(e.target.value)}
                   className="w-full p-2 border rounded text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800"
                 />
-                <button
-                  onClick={() => handleEditComment(comment.id)}
-                  className="mt-2 bg-green-500 text-white px-4 py-2 rounded"
-                >
+                <button onClick={() => handleEditComment(comment.id)} className="mt-2 bg-green-500 text-white px-4 py-2 rounded">
                   Save
                 </button>
-                <button
-                  onClick={() => setEditingComment(null)}
-                  className="mt-2 ml-2 bg-gray-500 text-white px-4 py-2 rounded"
-                >
+                <button onClick={handleCancelEdit} className="mt-2 ml-2 bg-gray-500 text-white px-4 py-2 rounded">
                   Cancel
                 </button>
               </div>
             ) : (
               <div>
-                <p className="text-gray-800 dark:text-gray-200">
-                  {comment.content}
-                </p>
-                <small className="text-gray-600 dark:text-gray-400">
-                  By: {comment.name}
-                </small>
+                <p className="text-gray-800 dark:text-gray-200">{comment.content}</p>
+                <small className="text-gray-600 dark:text-gray-400">By: {comment.name}</small>
                 {String(comment.userId) === String(userId) && (
                   <div className="mt-2">
-                    <button
-                      onClick={() => {
-                        setEditingComment(comment.id);
-                        setEditedCommentContent(comment.content);
-                      }}
-                      className="text-blue-500"
-                    >
+                    <button onClick={() => handleEditClick(comment?.id, comment?.content)} className="text-blue-500">
                       Edit
                     </button>
-                    <button
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="text-red-500 ml-4"
-                    >
+                    <button onClick={() => handleDeleteComment(comment.id)} className="text-red-500 ml-4">
                       Delete
                     </button>
                   </div>

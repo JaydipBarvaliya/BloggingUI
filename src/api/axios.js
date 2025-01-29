@@ -153,7 +153,7 @@ export const getClapsCount = async (blogId) => {
 export const hasUserClapped = async (blogId, userId) => {
   try {
     const response = await apiClient.get(`/blogs/${blogId}/clapped/${userId}`);
-    return response.data.clapped;
+    return response.data;
   } catch (error) {
     console.error("Error checking if user clapped:", error);
     return false;

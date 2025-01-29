@@ -1,36 +1,52 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import apiClient from "../api/axios";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext";  // Import useAuth
+import Lottie from "lottie-react";
+import clapAnimation from "../animations/clap.json"; // Ensure this file exists
+import {
+  getBlogById,
+  getComments,
+  getClapsCount,
+  hasUserClapped,
+  sendClap,
+  postComment,
+  editComment,
+  deleteComment,
+} from "../api/axios";
 
 const BlogDetails = () => {
   const { blogId } = useParams();
-  const { firstName, lastName, userId, isLoggedIn } = useAuth();
+  const { userId, isLoggedIn, userDetails } = useAuth();  // Destructure userDetails
 
   const [blog, setBlog] = useState({});
   const [comments, setComments] = useState([]);
-  const [likesCount, setLikesCount] = useState(0);
-  const [isLikedByUser, setIsLikedByUser] = useState(false);
+  const [clapsCount, setClapsCount] = useState(0);
+  const [isClapped, setIsClapped] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
 
+  const fetchComments = async () => {
+    const data = await getComments(blogId);
+    setComments(data);
+  };
+
   useEffect(() => {
     const fetchBlogDetails = async () => {
       try {
-        const [blogRes, commentsRes, likeRes] = await Promise.all([
-          apiClient.get(`/blogs/${blogId}`),
-          apiClient.get(`/comments/${blogId}`),
-          apiClient.get(`/blogs/${blogId}/likes-count`)
+        const [blogData, commentsData, clapsData] = await Promise.all([
+          getBlogById(blogId),
+          getComments(blogId),
+          getClapsCount(blogId),
         ]);
 
-        setBlog(blogRes.data);
-        setComments(commentsRes.data || []);
-        setLikesCount(likeRes.data.count || 0); // ✅ Ensure likes count is set correctly
+        setBlog(blogData);
+        setComments(commentsData);
+        setClapsCount(clapsData);
 
         if (isLoggedIn && userId) {
-          const userLikeRes = await apiClient.get(`/blogs/${blogId}/liked/${userId}`);
-          setIsLikedByUser(userLikeRes.data.liked); // ✅ Check if user has liked the blog
+          const userHasClapped = await hasUserClapped(blogId, userId);
+          setIsClapped(userHasClapped);
         }
       } catch (error) {
         console.error("Error fetching blog details:", error);
@@ -40,77 +56,65 @@ const BlogDetails = () => {
     fetchBlogDetails();
   }, [blogId, isLoggedIn, userId]);
 
-  const fetchComments = async () => {
-    try {
-      const res = await apiClient.get(`/comments/${blogId}`);
-      setComments(res.data);
-    } catch (error) {
-      console.error("Error fetching comments:", error);
+  useEffect(() => {
+    const storedEditingCommentId = localStorage.getItem("editingCommentId");
+    if (storedEditingCommentId) {
+      setEditingCommentId(storedEditingCommentId);
     }
-  };
+  }, []);
 
-  const toggleLike = async () => {
-    try {
-      await apiClient.post(`/blogs/${blogId}/like/${userId}`);
-
-      setIsLikedByUser((prev) => !prev);
-      setLikesCount((prev) => (isLikedByUser ? prev - 1 : prev + 1)); // ✅ Ensure likes update correctly
-    } catch (error) {
-      console.error("Error toggling like:", error);
+  const handleClap = async () => {
+    const success = await sendClap(blogId, userId);
+    if (success) {
+      setClapsCount((prev) => prev + 1);
+      setIsClapped(true);
+      setTimeout(() => setIsClapped(false), 500);
     }
   };
 
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
 
-    try {
-      const res = await apiClient.post("/comments", {
-        blogId,
-        content: newComment,
-        userId,
-        name: `${firstName} ${lastName}`, // ✅ Ensure correct name is used
-        timestamp: new Date().toISOString(),
-      });
+    // Accessing the firstName and lastName from userDetails
+    const name = `${userDetails.firstName || "Unknown"} ${userDetails.lastName || "Unknown"}`;
 
+    const success = await postComment(
+      blogId,
+      newComment,
+      userId,
+      name
+    );
+    if (success) {
       setNewComment("");
       fetchComments();
-    } catch (error) {
-      console.error("Error posting comment:", error);
     }
   };
 
   const handleEditComment = async (commentId) => {
-    try {
-      await apiClient.put(`/comments/${commentId}`, {
-        content: editedCommentContent,
-        userId,
-      });
-
+    const success = await editComment(commentId, editedCommentContent, userId);
+    if (success) {
       setEditingCommentId(null);
       setEditedCommentContent("");
       fetchComments();
-    } catch (error) {
-      console.error("Error editing comment:", error);
+      localStorage.removeItem("editingCommentId"); // Clear localStorage after editing
     }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingCommentId(null);
-    setEditedCommentContent("");
   };
 
   const handleDeleteComment = async (commentId) => {
-    try {
-      await apiClient.delete(`/comments/${commentId}`, { params: { userId } });
+    const success = await deleteComment(commentId, userId);
+    if (success) {
       fetchComments();
-    } catch (error) {
-      console.error("Error deleting comment:", error);
     }
+  };
+
+  const handleEditButtonClick = (commentId, commentContent) => {
+    setEditingCommentId(commentId);
+    setEditedCommentContent(commentContent); // Load comment content into the textarea
+    localStorage.setItem("editingCommentId", commentId); // Store editing state in localStorage
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Blog Content */}
       {blog.image && (
         <div className="relative mb-6 flex justify-center">
           <img
@@ -126,19 +130,25 @@ const BlogDetails = () => {
 
       <p className="text-gray-700 dark:text-gray-300 mb-8">{blog.content}</p>
 
-      {/* Like Button */}
+      {/* Clap Button */}
       <div className="mb-8 flex items-center space-x-4">
-        <button onClick={toggleLike} className="focus:outline-none">
-          <span className="text-2xl">{isLikedByUser ? "👍" : "👎"}</span>
+        <button onClick={handleClap} className="focus:outline-none relative">
+          <Lottie
+            animationData={clapAnimation}
+            loop={false}
+            className={`w-16 h-16 ${isClapped ? "opacity-100" : "opacity-50"}`}
+          />
         </button>
         <span className="text-gray-800 dark:text-gray-200">
-          {likesCount} {likesCount === 1 ? "Like" : "Likes"}
+          {clapsCount} {clapsCount === 1 ? "Clap" : "Claps"}
         </span>
       </div>
 
       {/* Comments Section */}
       <div className="comments-section">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Comments</h2>
+        <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
+          Comments
+        </h2>
 
         {/* Comment Form */}
         {isLoggedIn && (
@@ -149,29 +159,81 @@ const BlogDetails = () => {
               placeholder="Write a comment..."
               className="w-full p-2 border rounded text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800"
             />
-            <button onClick={handlePostComment} className="mt-2 bg-blue-500 text-white px-4 py-2 rounded">
+            <button
+              onClick={handlePostComment}
+              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+            >
               Post Comment
             </button>
           </div>
         )}
 
-        {comments.map((comment) => (
-          <div key={comment.id} className="comment bg-gray-100 dark:bg-gray-800 p-4 rounded mb-4">
-            <p className="text-gray-800 dark:text-gray-200">{comment.content}</p>
-            <small className="text-gray-600 dark:text-gray-400">By: {comment.name || "Unknown"}</small>
+        {/* Render Comments */}
+        {comments.length > 0 ? (
+          comments.map((comment) => {
+            // Normalize the data types before comparison
+            const normalizedCommentUserId = Number(comment.userId); // Convert to number
+            const normalizedUserId = Number(userId); // Convert to number
 
-            {isLoggedIn && comment.userId === userId && (
-              <div className="mt-2">
-                <button onClick={() => handleEditComment(comment.id)} className="bg-yellow-500 text-white px-3 py-1 rounded">
-                  Edit
-                </button>
-                <button onClick={() => handleDeleteComment(comment.id)} className="ml-2 bg-red-500 text-white px-3 py-1 rounded">
-                  Delete
-                </button>
+            return (
+              <div
+                key={comment.id}
+                className="comment bg-gray-100 dark:bg-gray-800 p-4 rounded mb-4"
+              >
+                <p className="text-gray-800 dark:text-gray-200">{comment.content}</p>
+                <small className="text-gray-600 dark:text-gray-400">
+                  By: {comment.name ? comment.name : `${userDetails.firstName} ${userDetails.lastName}`}
+                </small>
+
+                {/* Check if the logged-in user is the same as the commenter */}
+                {isLoggedIn && normalizedCommentUserId === normalizedUserId && (
+                  <div className="mt-2">
+                    {editingCommentId === comment.id ? (
+                      <div>
+                        <textarea
+                          value={editedCommentContent}
+                          onChange={(e) => setEditedCommentContent(e.target.value)}
+                          className="w-full p-2 border rounded text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800"
+                        />
+                        <button
+                          onClick={() => handleEditComment(comment.id)}
+                          className="mt-2 bg-yellow-500 text-white px-4 py-2 rounded"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingCommentId(null)}
+                          className="ml-2 mt-2 bg-gray-500 text-white px-4 py-2 rounded"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <button
+                          onClick={() => handleEditButtonClick(comment.id, comment.content)}
+                          className="bg-yellow-500 text-white px-3 py-1 rounded"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteComment(comment.id)}
+                          className="ml-2 bg-red-500 text-white px-3 py-1 rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))}
+            );
+          })
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400">
+            No comments yet. Be the first to comment!
+          </p>
+        )}
       </div>
     </div>
   );

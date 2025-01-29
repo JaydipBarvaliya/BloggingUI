@@ -115,4 +115,98 @@ export const registerUser = async (userData) => {
   }
 };
 
+
+// ✅ Fetch a single blog by ID
+export const getBlogById = async (blogId) => {
+  try {
+    const response = await apiClient.get(`/blogs/${blogId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching blog:", error);
+    return null;
+  }
+};
+
+// ✅ Fetch comments for a blog
+export const getComments = async (blogId) => {
+  try {
+    const response = await apiClient.get(`/comments/${blogId}`);
+    return response.data || [];
+  } catch (error) {
+    console.error("Error fetching comments:", error);
+    return [];
+  }
+};
+
+// ✅ Fetch claps count
+export const getClapsCount = async (blogId) => {
+  try {
+    const response = await apiClient.get(`/blogs/${blogId}/claps-count`);
+    return response.data.count || 0;
+  } catch (error) {
+    console.error("Error fetching claps count:", error);
+    return 0;
+  }
+};
+
+// ✅ Check if the user has clapped
+export const hasUserClapped = async (blogId, userId) => {
+  try {
+    const response = await apiClient.get(`/blogs/${blogId}/clapped/${userId}`);
+    return response.data.clapped;
+  } catch (error) {
+    console.error("Error checking if user clapped:", error);
+    return false;
+  }
+};
+
+// ✅ Send a clap
+export const sendClap = async (blogId, userId) => {
+  try {
+    await apiClient.post(`/blogs/${blogId}/clap/${userId}`);
+    return true;
+  } catch (error) {
+    console.error("Error sending clap:", error);
+    return false;
+  }
+};
+
+// ✅ Post a new comment
+export const postComment = async (blogId, content, userId, name) => {
+  try {
+    await apiClient.post("/comments", {
+      blogId,
+      content,
+      userId,
+      name,
+      timestamp: new Date().toISOString(),
+    });
+    return true;
+  } catch (error) {
+    console.error("Error posting comment:", error);
+    return false;
+  }
+};
+
+// ✅ Edit an existing comment
+export const editComment = async (commentId, content, userId) => {
+  try {
+    await apiClient.put(`/comments/${commentId}`, { content, userId });
+    return true;
+  } catch (error) {
+    console.error("Error editing comment:", error);
+    return false;
+  }
+};
+
+// ✅ Delete a comment
+export const deleteComment = async (commentId, userId) => {
+  try {
+    await apiClient.delete(`/comments/${commentId}`, { params: { userId } });
+    return true;
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    return false;
+  }
+};
 export default apiClient;

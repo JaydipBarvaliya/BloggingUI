@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import apiClient from "../api/axios";
+import { getUserProfile, updateUserProfile, updateUserPassword } from "../api/axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -9,45 +9,37 @@ const ProfilePage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  // Fetch user details on component mount
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const userId = localStorage.getItem("userId");
-        if (!userId) {
-          console.error("User ID is not available. Please log in.");
-          return;
-        }
+  const userId = localStorage.getItem("userId");
 
-        const response = await apiClient.get(`/users/${userId}`);
-        setProfile(response.data);
-      } catch (error) {
-        console.error("Error fetching user profile:", error);
-      }
+  // ✅ Fetch user details on component mount
+  useEffect(() => {
+    if (!userId) {
+      console.warn("User ID is not available. Please log in.");
+      return;
+    }
+
+    const fetchUserProfile = async () => {
+      const userData = await getUserProfile(userId);
+      if (userData) setProfile(userData);
     };
 
     fetchUserProfile();
-  }, []);
+  }, [userId]);
 
-  // Handle profile update
+  // ✅ Handle profile update
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
-    try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        console.error("User ID is not available. Please log in.");
-        return;
-      }
+    if (!userId) return;
 
-      await apiClient.put(`/users/${userId}`, profile);
+    const success = await updateUserProfile(userId, profile);
+    if (success) {
       toast.success("Profile updated successfully!");
-    } catch (error) {
+    } else {
       toast.error("Failed to update profile. Please try again.");
-      console.error("Error updating profile:", error);
     }
   };
 
-  // Handle password update
+  // ✅ Handle password update
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -55,21 +47,16 @@ const ProfilePage = () => {
       return;
     }
 
-    try {
-      const userId = localStorage.getItem("userId");
-      if (!userId) {
-        console.error("User ID is not available. Please log in.");
-        return;
-      }
+    if (!userId) return;
 
-      await apiClient.put(`/users/${userId}/password`, { password });
+    const success = await updateUserPassword(userId, password);
+    if (success) {
       setPassword("");
       setConfirmPassword("");
       setPasswordError("");
       toast.success("Password updated successfully!");
-    } catch (error) {
+    } else {
       toast.error("Failed to update password. Please try again.");
-      console.error("Error updating password:", error);
     }
   };
 
@@ -84,50 +71,38 @@ const ProfilePage = () => {
           </h2>
           <form onSubmit={handleProfileUpdate}>
             <div className="mb-4">
-              <label
-                htmlFor="firstName"
-                className="block text-gray-800 dark:text-gray-200 mb-1"
-              >
+              <label className="block text-gray-800 dark:text-gray-200 mb-1">
                 First Name
               </label>
               <input
                 type="text"
-                id="firstName"
                 value={profile.firstName}
                 onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
-                className="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                className="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-gray-200"
                 required
               />
             </div>
             <div className="mb-4">
-              <label
-                htmlFor="lastName"
-                className="block text-gray-800 dark:text-gray-200 mb-1"
-              >
+              <label className="block text-gray-800 dark:text-gray-200 mb-1">
                 Last Name
               </label>
               <input
                 type="text"
-                id="lastName"
                 value={profile.lastName}
                 onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
-                className="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                className="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-gray-200"
                 required
               />
             </div>
             <div className="mb-4">
-              <label
-                htmlFor="email"
-                className="block text-gray-800 dark:text-gray-200 mb-1"
-              >
+              <label className="block text-gray-800 dark:text-gray-200 mb-1">
                 Email
               </label>
               <input
                 type="email"
-                id="email"
                 value={profile.email}
                 onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                className="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                className="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-gray-200"
                 required
               />
             </div>
@@ -147,49 +122,36 @@ const ProfilePage = () => {
           </h2>
           <form onSubmit={handlePasswordUpdate}>
             <div className="mb-4">
-              <label
-                htmlFor="password"
-                className="block text-gray-800 dark:text-gray-200 mb-1"
-              >
+              <label className="block text-gray-800 dark:text-gray-200 mb-1">
                 New Password
               </label>
               <input
                 type="password"
-                id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
+                className="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-gray-200"
                 required
               />
             </div>
             <div className="mb-4">
-              <label
-                htmlFor="confirmPassword"
-                className="block text-gray-800 dark:text-gray-200 mb-1"
-              >
+              <label className="block text-gray-800 dark:text-gray-200 mb-1">
                 Confirm Password
               </label>
               <input
                 type="password"
-                id="confirmPassword"
                 value={confirmPassword}
                 onChange={(e) => {
                   setConfirmPassword(e.target.value);
                   setPasswordError(e.target.value !== password ? "Passwords do not match." : "");
                 }}
-                className={`w-full px-4 py-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 ${
+                className={`w-full px-4 py-2 border rounded dark:bg-gray-700 ${
                   passwordError ? "border-red-500" : ""
                 }`}
                 required
               />
-              {passwordError && (
-                <p className="text-red-500 text-sm mt-1">{passwordError}</p>
-              )}
+              {passwordError && <p className="text-red-500 text-sm mt-1">{passwordError}</p>}
             </div>
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
+            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
               Update Password
             </button>
           </form>

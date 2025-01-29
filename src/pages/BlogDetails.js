@@ -11,7 +11,6 @@ const BlogDetails = () => {
   const [comments, setComments] = useState([]);
   const [likesCount, setLikesCount] = useState(0);
   const [isLikedByUser, setIsLikedByUser] = useState(false);
-  const [isFavoritedByUser, setIsFavoritedByUser] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
@@ -19,25 +18,26 @@ const BlogDetails = () => {
   useEffect(() => {
     const fetchBlogDetails = async () => {
       try {
-        const [blogRes, commentsRes, likeRes, favoriteRes] = await Promise.all([
+        const [blogRes, commentsRes, likeRes] = await Promise.all([
           apiClient.get(`/blogs/${blogId}`),
           apiClient.get(`/comments/${blogId}`),
-          apiClient.get(`/blogs/${blogId}/liked/${userId}`),
-          apiClient.get(`/blogs/${blogId}/favorited/${userId}`)
+          apiClient.get(`/blogs/${blogId}/likes-count`)
         ]);
 
         setBlog(blogRes.data);
         setComments(commentsRes.data || []);
-        setIsLikedByUser(likeRes.data);
-        setIsFavoritedByUser(favoriteRes.data);
+        setLikesCount(likeRes.data.count || 0); // ✅ Ensure likes count is set correctly
+
+        if (isLoggedIn && userId) {
+          const userLikeRes = await apiClient.get(`/blogs/${blogId}/liked/${userId}`);
+          setIsLikedByUser(userLikeRes.data.liked); // ✅ Check if user has liked the blog
+        }
       } catch (error) {
         console.error("Error fetching blog details:", error);
       }
     };
 
-    if (isLoggedIn && userId) {
-      fetchBlogDetails();
-    }
+    fetchBlogDetails();
   }, [blogId, isLoggedIn, userId]);
 
   const fetchComments = async () => {
@@ -52,19 +52,11 @@ const BlogDetails = () => {
   const toggleLike = async () => {
     try {
       await apiClient.post(`/blogs/${blogId}/like/${userId}`);
+
       setIsLikedByUser((prev) => !prev);
-      setLikesCount((prev) => (isLikedByUser ? prev - 1 : prev + 1));
+      setLikesCount((prev) => (isLikedByUser ? prev - 1 : prev + 1)); // ✅ Ensure likes update correctly
     } catch (error) {
       console.error("Error toggling like:", error);
-    }
-  };
-
-  const toggleFavorite = async () => {
-    try {
-      await apiClient.post(`/blogs/${blogId}/favorite/${userId}`);
-      setIsFavoritedByUser((prev) => !prev);
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
     }
   };
 
@@ -72,11 +64,11 @@ const BlogDetails = () => {
     if (!newComment.trim()) return;
 
     try {
-      await apiClient.post("/comments", {
+      const res = await apiClient.post("/comments", {
         blogId,
         content: newComment,
         userId,
-        name: `${firstName} ${lastName}`,
+        name: `${firstName} ${lastName}`, // ✅ Ensure correct name is used
         timestamp: new Date().toISOString(),
       });
 
@@ -85,11 +77,6 @@ const BlogDetails = () => {
     } catch (error) {
       console.error("Error posting comment:", error);
     }
-  };
-
-  const handleEditClick = (commentId, currentContent) => {
-    setEditingCommentId(commentId);
-    setEditedCommentContent(currentContent);
   };
 
   const handleEditComment = async (commentId) => {
@@ -139,18 +126,14 @@ const BlogDetails = () => {
 
       <p className="text-gray-700 dark:text-gray-300 mb-8">{blog.content}</p>
 
-      {/* Like & Favorite Buttons */}
+      {/* Like Button */}
       <div className="mb-8 flex items-center space-x-4">
         <button onClick={toggleLike} className="focus:outline-none">
-          <span className="text-2xl">{isLikedByUser ? "❤️" : "🤍"}</span>
+          <span className="text-2xl">{isLikedByUser ? "👍" : "👎"}</span>
         </button>
         <span className="text-gray-800 dark:text-gray-200">
           {likesCount} {likesCount === 1 ? "Like" : "Likes"}
         </span>
-
-        <button onClick={toggleFavorite} className="focus:outline-none">
-          <span className="text-2xl">{isFavoritedByUser ? "⭐" : "☆"}</span>
-        </button>
       </div>
 
       {/* Comments Section */}
@@ -174,24 +157,17 @@ const BlogDetails = () => {
 
         {comments.map((comment) => (
           <div key={comment.id} className="comment bg-gray-100 dark:bg-gray-800 p-4 rounded mb-4">
-            {editingCommentId === comment.id ? (
-              <div>
-                <textarea
-                  value={editedCommentContent}
-                  onChange={(e) => setEditedCommentContent(e.target.value)}
-                  className="w-full p-2 border rounded text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800"
-                />
-                <button onClick={() => handleEditComment(comment.id)} className="mt-2 bg-green-500 text-white px-4 py-2 rounded">
-                  Save
+            <p className="text-gray-800 dark:text-gray-200">{comment.content}</p>
+            <small className="text-gray-600 dark:text-gray-400">By: {comment.name || "Unknown"}</small>
+
+            {isLoggedIn && comment.userId === userId && (
+              <div className="mt-2">
+                <button onClick={() => handleEditComment(comment.id)} className="bg-yellow-500 text-white px-3 py-1 rounded">
+                  Edit
                 </button>
-                <button onClick={handleCancelEdit} className="mt-2 ml-2 bg-gray-500 text-white px-4 py-2 rounded">
-                  Cancel
+                <button onClick={() => handleDeleteComment(comment.id)} className="ml-2 bg-red-500 text-white px-3 py-1 rounded">
+                  Delete
                 </button>
-              </div>
-            ) : (
-              <div>
-                <p className="text-gray-800 dark:text-gray-200">{comment.content}</p>
-                <small className="text-gray-600 dark:text-gray-400">By: {comment.name}</small>
               </div>
             )}
           </div>

@@ -40,7 +40,7 @@ const BlogCard = ({ blog, isFavorite, onToggleFavorite }) => {
 
           {/* Favorite Icon */}
           <button
-            onClick={() => onToggleFavorite(blog)} // ✅ Pass entire `blog` object for better handling
+            onClick={() => onToggleFavorite(blog)}
             className="focus:outline-none"
             aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
           >

@@ -120,11 +120,11 @@ const BlogDetails = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       {blog.image && (
-        <div className="relative mb-6 flex justify-center">
+        <div className="relative mb-6 flex justify-center w-full">
           <img
             src={blog.image}
             alt={blog.title}
-            className="w-full h-auto max-w-7xl rounded-2xl shadow-2xl border-4 border-gray-300 dark:border-gray-700"
+            className="w-full h-auto rounded-2xl shadow-2xl border-4 border-gray-300 dark:border-gray-700"
           />
           <div className="absolute bottom-4 bg-white/70 dark:bg-gray-800/70 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg shadow-lg">
             {blog.title}

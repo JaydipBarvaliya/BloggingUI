@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import apiClient from "../api/axios";
 import BlogCard from "../components/BlogCard";
 import { Dialog } from "@headlessui/react"; // For modal dialogs
@@ -7,14 +7,15 @@ import { ExclamationIcon } from "@heroicons/react/outline"; // Optional icon for
 const Homepage = () => {
   const [blogs, setBlogs] = useState([]);
   const [favoriteBlogIds, setFavoriteBlogIds] = useState([]);
-  const [showDialog, setShowDialog] = useState(false); // To show/hide the dialog
-  const [selectedBlog, setSelectedBlog] = useState(null); // Blog to remove from favorites
+  const [showDialog, setShowDialog] = useState(false);
+  const [selectedBlog, setSelectedBlog] = useState(null);
 
-  const fetchBlogsAndFavorites = async () => {
+  // Fetch blogs and user favorites
+  const fetchBlogsAndFavorites = useCallback(async () => {
     try {
       const userId = localStorage.getItem("userId");
       if (!userId) {
-        console.error("User ID is not available. Please log in.");
+        console.warn("User ID is not available. Please log in.");
         return;
       }
 
@@ -23,17 +24,14 @@ const Homepage = () => {
       setBlogs(blogsResponse.data);
 
       // Fetch favorite blogs for the logged-in user
-      const favoritesResponse = await apiClient.get("/favorites", {
-        headers: { userId },
-      });
+      const favoritesResponse = await apiClient.get(`/blogs/favorited/${userId}`);
 
       // Extract favorite blog IDs
-      const favoriteIds = favoritesResponse.data.map((fav) => fav.id);
-      setFavoriteBlogIds(favoriteIds);
+      setFavoriteBlogIds(favoritesResponse.data.map((fav) => fav.id));
     } catch (error) {
       console.error("Error fetching blogs or favorites:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchBlogsAndFavorites();
@@ -50,69 +48,49 @@ const Homepage = () => {
     return () => {
       window.removeEventListener("storage", syncFavorites);
     };
-  }, []);
+  }, [fetchBlogsAndFavorites]);
 
+  // Handle favorite toggle action
   const handleToggleFavorite = (blog) => {
     if (favoriteBlogIds.includes(blog.id)) {
-      setSelectedBlog(blog); // Set the selected blog for removal
-      setShowDialog(true); // Open the confirmation dialog
+      setSelectedBlog(blog);
+      setShowDialog(true);
     } else {
-      addToFavorites(blog.id);
+      toggleFavorite(blog.id);
     }
   };
 
-  const addToFavorites = async (blogId) => {
+  // Function to add/remove favorites
+  const toggleFavorite = async (blogId) => {
     try {
       const userId = localStorage.getItem("userId");
-      await apiClient.post(
-        `/favorites/${blogId}`,
-        {},
-        {
-          headers: { userId },
-        }
-      );
 
-      // Update local state and sync across tabs
-      setFavoriteBlogIds((prev) => [...prev, blogId]);
-      localStorage.setItem(
-        "favoriteBlogIds",
-        JSON.stringify([...favoriteBlogIds, blogId])
-      );
-      localStorage.setItem("favoritesSync", Date.now());
-    } catch (error) {
-      console.error("Error adding to favorites:", error);
-    }
-  };
-
-  const removeFromFavorites = async () => {
-    if (!selectedBlog) return;
-
-    try {
-      const userId = localStorage.getItem("userId");
-      await apiClient.delete(`/favorites/${selectedBlog.id}`, {
-        headers: { userId },
-      });
+      const isFavorite = favoriteBlogIds.includes(blogId);
+      await apiClient.post(`/blogs/${blogId}/favorite/${userId}`);
 
       // Update local state and sync across tabs
       setFavoriteBlogIds((prev) =>
-        prev.filter((id) => id !== selectedBlog.id)
+        isFavorite ? prev.filter((id) => id !== blogId) : [...prev, blogId]
       );
+
       localStorage.setItem(
         "favoriteBlogIds",
-        JSON.stringify(favoriteBlogIds.filter((id) => id !== selectedBlog.id))
+        JSON.stringify(
+          isFavorite ? favoriteBlogIds.filter((id) => id !== blogId) : [...favoriteBlogIds, blogId]
+        )
       );
       localStorage.setItem("favoritesSync", Date.now());
 
-      setShowDialog(false); // Close the dialog
-      setSelectedBlog(null); // Clear the selected blog
+      setShowDialog(false);
+      setSelectedBlog(null);
     } catch (error) {
-      console.error("Error removing from favorites:", error);
+      console.error("Error toggling favorite:", error);
     }
   };
 
   const closeDialog = () => {
     setShowDialog(false);
-    setSelectedBlog(null); // Clear the selected blog
+    setSelectedBlog(null);
   };
 
   return (
@@ -134,7 +112,7 @@ const Homepage = () => {
       )}
 
       {/* Confirmation Dialog */}
-      {showDialog && (
+      {showDialog && selectedBlog && (
         <Dialog
           open={showDialog}
           onClose={closeDialog}
@@ -160,7 +138,7 @@ const Homepage = () => {
                 Cancel
               </button>
               <button
-                onClick={removeFromFavorites}
+                onClick={() => toggleFavorite(selectedBlog.id)}
                 className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
               >
                 Remove

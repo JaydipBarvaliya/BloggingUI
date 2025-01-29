@@ -18,9 +18,7 @@ const FavoritesPage = () => {
         return;
       }
 
-      const response = await apiClient.get("/favorites", {
-        headers: { userId },
-      });
+      const response = await apiClient.get(`/blogs/favorited/${userId}`);
       setFavorites(response.data);
 
       // Update `favoriteBlogIds` in localStorage for sync across all tabs
@@ -65,9 +63,7 @@ const FavoritesPage = () => {
       }
 
       // Remove from favorites
-      await apiClient.delete(`/favorites/${selectedBlog.id}`, {
-        headers: { userId },
-      });
+      await apiClient.post(`/blogs/${selectedBlog.id}/favorite/${userId}`);
 
       // Update state to reflect the removed blog
       setFavorites((prev) => prev.filter((blog) => blog.id !== selectedBlog.id));

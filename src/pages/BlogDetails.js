@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";  // Import useAuth
-import Lottie from "lottie-react";
-import clapAnimation from "../animations/clap.json"; // Ensure this file exists
+import React, { useEffect, useState } from "react"; // Ensure useState and useEffect are imported
+import { useParams } from "react-router-dom"; // Ensure useParams is imported for URL parameters
+import { useAuth } from "../context/AuthContext"; // Import useAuth for authentication context
+import Lottie from "lottie-react"; // Ensure Lottie is imported for animation
+import clapAnimation from "../animations/clap.json"; // Import the clap animation file
 import {
   getBlogById,
   getComments,
@@ -12,11 +12,11 @@ import {
   postComment,
   editComment,
   deleteComment,
-} from "../api/axios";
+} from "../api/axios"; // Import necessary API functions
 
 const BlogDetails = () => {
   const { blogId } = useParams();
-  const { userId, isLoggedIn, userDetails } = useAuth();  // Destructure userDetails
+  const { userId, isLoggedIn, userDetails } = useAuth(); // Destructure userDetails
 
   const [blog, setBlog] = useState({});
   const [comments, setComments] = useState([]);
@@ -44,9 +44,10 @@ const BlogDetails = () => {
         setComments(commentsData);
         setClapsCount(clapsData);
 
+        // After fetching the blog, check if the user has already clapped
         if (isLoggedIn && userId) {
           const userHasClapped = await hasUserClapped(blogId, userId);
-          setIsClapped(userHasClapped);
+          setIsClapped(userHasClapped); // Set isClapped based on user data
         }
       } catch (error) {
         console.error("Error fetching blog details:", error);
@@ -64,26 +65,22 @@ const BlogDetails = () => {
   }, []);
 
   const handleClap = async () => {
-    const success = await sendClap(blogId, userId);
+    const action = isClapped ? "remove" : "add"; // Determine action based on current state
+
+    const success = await sendClap(blogId, userId, action);
+    
     if (success) {
-      setClapsCount((prev) => prev + 1);
-      setIsClapped(true);
-      setTimeout(() => setIsClapped(false), 500);
+      setClapsCount((prev) => (isClapped ? prev - 1 : prev + 1)); // Update the clap count
+      setIsClapped(!isClapped); // Toggle the clapped state
     }
   };
 
   const handlePostComment = async () => {
     if (!newComment.trim()) return;
 
-    // Accessing the firstName and lastName from userDetails
     const name = `${userDetails.firstName || "Unknown"} ${userDetails.lastName || "Unknown"}`;
 
-    const success = await postComment(
-      blogId,
-      newComment,
-      userId,
-      name
-    );
+    const success = await postComment(blogId, newComment, userId, name);
     if (success) {
       setNewComment("");
       fetchComments();
@@ -96,7 +93,7 @@ const BlogDetails = () => {
       setEditingCommentId(null);
       setEditedCommentContent("");
       fetchComments();
-      localStorage.removeItem("editingCommentId"); // Clear localStorage after editing
+      localStorage.removeItem("editingCommentId");
     }
   };
 
@@ -109,8 +106,8 @@ const BlogDetails = () => {
 
   const handleEditButtonClick = (commentId, commentContent) => {
     setEditingCommentId(commentId);
-    setEditedCommentContent(commentContent); // Load comment content into the textarea
-    localStorage.setItem("editingCommentId", commentId); // Store editing state in localStorage
+    setEditedCommentContent(commentContent);
+    localStorage.setItem("editingCommentId", commentId);
   };
 
   return (
@@ -139,6 +136,7 @@ const BlogDetails = () => {
             className={`w-16 h-16 ${isClapped ? "opacity-100" : "opacity-50"}`}
           />
         </button>
+
         <span className="text-gray-800 dark:text-gray-200">
           {clapsCount} {clapsCount === 1 ? "Clap" : "Claps"}
         </span>
@@ -171,21 +169,16 @@ const BlogDetails = () => {
         {/* Render Comments */}
         {comments.length > 0 ? (
           comments.map((comment) => {
-            // Normalize the data types before comparison
-            const normalizedCommentUserId = Number(comment.userId); // Convert to number
-            const normalizedUserId = Number(userId); // Convert to number
+            const normalizedCommentUserId = Number(comment.userId);
+            const normalizedUserId = Number(userId);
 
             return (
-              <div
-                key={comment.id}
-                className="comment bg-gray-100 dark:bg-gray-800 p-4 rounded mb-4"
-              >
+              <div key={comment.id} className="comment bg-gray-100 dark:bg-gray-800 p-4 rounded mb-4">
                 <p className="text-gray-800 dark:text-gray-200">{comment.content}</p>
                 <small className="text-gray-600 dark:text-gray-400">
                   By: {comment.name ? comment.name : `${userDetails.firstName} ${userDetails.lastName}`}
                 </small>
 
-                {/* Check if the logged-in user is the same as the commenter */}
                 {isLoggedIn && normalizedCommentUserId === normalizedUserId && (
                   <div className="mt-2">
                     {editingCommentId === comment.id ? (

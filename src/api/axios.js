@@ -160,7 +160,7 @@ export const hasUserClapped = async (blogId, userId) => {
   }
 };
 
-// ✅ Send a clap
+//✅ Send a clap
 export const sendClap = async (blogId, userId) => {
   try {
     await apiClient.post(`/blogs/${blogId}/clap/${userId}`);
@@ -170,6 +170,7 @@ export const sendClap = async (blogId, userId) => {
     return false;
   }
 };
+
 
 // ✅ Post a new comment
 export const postComment = async (blogId, content, userId, name) => {

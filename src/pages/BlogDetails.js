@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react"; // Ensure useState and useEffect are imported
-import { useParams } from "react-router-dom"; // Ensure useParams is imported for URL parameters
-import { useAuth } from "../context/AuthContext"; // Import useAuth for authentication context
-import Lottie from "lottie-react"; // Ensure Lottie is imported for animation
-import clapAnimation from "../animations/clap.json"; // Import the clap animation file
+import React, { useEffect, useState } from "react"; 
+import { useParams } from "react-router-dom"; 
+import { useAuth } from "../context/AuthContext"; 
+import Lottie from "lottie-react"; 
+import clapAnimation from "../animations/clap.json"; 
 import {
   getBlogById,
   getComments,
@@ -12,16 +12,16 @@ import {
   postComment,
   editComment,
   deleteComment,
-} from "../api/axios"; // Import necessary API functions
+} from "../api/axios"; 
 
 const BlogDetails = () => {
   const { blogId } = useParams();
-  const { userId, isLoggedIn, userDetails } = useAuth(); // Destructure userDetails
+  const { userId, isLoggedIn, userDetails } = useAuth();
 
   const [blog, setBlog] = useState({});
   const [comments, setComments] = useState([]);
   const [clapsCount, setClapsCount] = useState(0);
-  const [isClapped, setIsClapped] = useState(false);
+  const [isClapped, setIsClapped] = useState(null); 
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
@@ -44,13 +44,15 @@ const BlogDetails = () => {
         setComments(commentsData);
         setClapsCount(clapsData);
 
-        // After fetching the blog, check if the user has already clapped
         if (isLoggedIn && userId) {
           const userHasClapped = await hasUserClapped(blogId, userId);
-          setIsClapped(userHasClapped); // Set isClapped based on user data
+          setIsClapped(userHasClapped); // Set the clapped state
+        } else {
+          setIsClapped(false); // Default to false if user is not logged in
         }
       } catch (error) {
         console.error("Error fetching blog details:", error);
+        setIsClapped(false); // Default to false in case of error
       }
     };
 
@@ -65,7 +67,7 @@ const BlogDetails = () => {
   }, []);
 
   const handleClap = async () => {
-    const action = isClapped ? "remove" : "add"; // Determine action based on current state
+    const action = isClapped ? "remove" : "add"; 
 
     const success = await sendClap(blogId, userId, action);
     
@@ -110,6 +112,11 @@ const BlogDetails = () => {
     localStorage.setItem("editingCommentId", commentId);
   };
 
+  // Return early if `isClapped` is still null (loading state)
+  if (isClapped === null) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       {blog.image && (
@@ -117,7 +124,7 @@ const BlogDetails = () => {
           <img
             src={blog.image}
             alt={blog.title}
-            className="w-full max-w-7xl h-auto rounded-2xl shadow-2xl border-4 border-gray-300 dark:border-gray-700"
+            className="w-full h-auto max-w-7xl rounded-2xl shadow-2xl border-4 border-gray-300 dark:border-gray-700"
           />
           <div className="absolute bottom-4 bg-white/70 dark:bg-gray-800/70 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg shadow-lg">
             {blog.title}
@@ -133,7 +140,8 @@ const BlogDetails = () => {
           <Lottie
             animationData={clapAnimation}
             loop={false}
-            className={`w-16 h-16 ${isClapped ? "opacity-100" : "opacity-50"}`}
+            className={`w-16 h-16 ${isClapped ? "opacity-100" : "opacity-50"} 
+              hover:opacity-100 hover:scale-125 hover:rotate-12 hover:translate-y-1 transform transition-all duration-500 ease-in-out`}
           />
         </button>
 

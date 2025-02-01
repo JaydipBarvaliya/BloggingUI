@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserCircle, faHeart } from "@fortawesome/free-solid-svg-icons";
+import { faUserCircle, faHeart, faPen } from "@fortawesome/free-solid-svg-icons"; // Importing the pen icon
 import apiClient from "../api/axios";
 
 const Header = ({ toggleDarkMode, isDarkMode }) => {
@@ -98,6 +98,17 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
 
         {/* Right Section */}
         <div className="flex items-center space-x-4">
+          {/* Editor Button with Pen Icon */}
+          {isLoggedIn && (
+            <button
+              onClick={() => navigate("/admin/create-blog")}
+              className="flex items-center bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700"
+            >
+              <FontAwesomeIcon icon={faPen} className="mr-2" /> {/* Pen Icon */}
+              Editor
+            </button>
+          )}
+
           {/* Favorites */}
           {isLoggedIn && (
             <button

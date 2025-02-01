@@ -55,21 +55,32 @@ const App = () => {
         >
           <Header toggleDarkMode={toggleDarkMode} isDarkMode={isDarkMode} />
           <main className="flex-grow bg-gray-100 dark:bg-gray-900">
-
-          <ToastContainer position="top-center" autoClose={3000} /> {/* Add this */}
+            <ToastContainer position="top-center" autoClose={3000} />
 
             <Routes>
-
               {/* Public route for Login */}
-              <Route path="/login" element={isLoggedIn ? <Navigate to="/" /> : <Login />} />
+              <Route
+                path="/login"
+                element={isLoggedIn ? <Navigate to="/" /> : <Login />}
+              />
               <Route path="/register" element={<RegistrationPage />} />
 
               {/* Private routes */}
-              <Route path="/" element={ <PrivateRoute> <Homepage /> </PrivateRoute>} />
+              <Route path="/" element={<PrivateRoute><Homepage /></PrivateRoute>} />
               <Route path="/blogs/:blogId" element={<BlogDetails />} />
-              <Route path="/categories/:category" element={ <PrivateRoute> <CategoryBlogsPage /> </PrivateRoute> } />
-              <Route path="/favorites" element={ <PrivateRoute> <FavoritesPage /> </PrivateRoute> } />
-              <Route path="/profile" element={ <PrivateRoute> <ProfilePage /> </PrivateRoute> }/>
+              <Route
+                path="/categories/:category"
+                element={<PrivateRoute><CategoryBlogsPage /></PrivateRoute>}
+              />
+              <Route
+                path="/favorites"
+                element={<PrivateRoute><FavoritesPage /></PrivateRoute>}
+              />
+              <Route
+                path="/profile"
+                element={<PrivateRoute><ProfilePage /></PrivateRoute>}
+              />
+
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>

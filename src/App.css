@@ -28,11 +28,6 @@
   color: #61dafb;
 }
 
-
-
-
-
-
 .category-item {
   display: inline-block;
   margin: 0 15px; /* Space between categories */
@@ -52,12 +47,6 @@
   font-weight: 600; /* Slightly bolder for emphasis */
 }
 
-
-
-
-
-
-
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
@@ -65,4 +54,44 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Card container */
+.card {
+  background-color: #1e293b;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  margin: 15px;
+  /* Ensure overflow is not clipped by a parent container */
+  overflow: visible; 
+}
+
+/* Hover effect with zoom and increased shadow */
+.card:hover {
+  transform: scale(1.05); /* Slightly smaller zoom effect for a smoother feel */
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3); /* Higher shadow intensity */
+}
+
+/* Title styling */
+.card .title {
+  font-size: 1.4rem;
+  color: white;
+  font-weight: bold;
+  margin-bottom: 10px; /* Adds spacing below the title */
+}
+
+/* Content styling */
+.card .content {
+  font-size: 1rem;
+  color: #e0e0e0;
+  margin-top: 10px;
+}
+
+/* Optional: Card Image Styling */
+.card img {
+  border-radius: 8px;
+  width: 100%;
+  height: auto;
 }

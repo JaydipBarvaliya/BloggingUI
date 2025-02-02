@@ -3,8 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import apiClient from "../api/axios";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // Import CSS for toast notifications
-
+import "react-toastify/dist/ReactToastify.css";
 
 
 const Login = () => {

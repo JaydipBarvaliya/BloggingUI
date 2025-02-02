@@ -11,7 +11,7 @@ const BlogCard = ({ blog, isFavorite, onToggleFavorite }) => {
     <div className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 rounded-lg overflow-hidden">
       {/* Blog Image */}
       <img
-        src={blog.image || defaultImage}
+        src={`data:image/jpeg;base64,${blog.image}` || defaultImage}
         alt={blog.title || "Blog Image"}
         className="w-full h-48 object-cover rounded-t-lg transition-transform duration-300 transform hover:scale-105"
         loading="lazy"

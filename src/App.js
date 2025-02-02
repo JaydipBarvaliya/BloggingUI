@@ -17,8 +17,8 @@ import FavoritesPage from "./pages/FavoritesPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { AuthProvider } from "./context/AuthContext";
-import { ToastContainer } from "react-toastify"; // Import ToastContainer
-
+import { ToastContainer } from "react-toastify";
+import BlogEditor from "./components/BlogEditor"; // Import the new BlogEditor component
 
 import "./App.css";
 
@@ -81,6 +81,13 @@ const App = () => {
                 element={<PrivateRoute><ProfilePage /></PrivateRoute>}
               />
 
+              {/* Admin route for blog creation */}
+              <Route
+                path="/admin/create-blog"
+                element={isLoggedIn ? <BlogEditor /> : <Navigate to="/login" />}
+              />
+
+              {/* Not found route */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>

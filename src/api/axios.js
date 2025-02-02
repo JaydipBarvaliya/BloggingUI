@@ -210,4 +210,32 @@ export const deleteComment = async (commentId, userId) => {
     return false;
   }
 };
+
+// API call for deleting a blog and its associated data
+export const deleteBlog = async (blogId) => {
+  try {
+    const response = await apiClient.delete(`/blogs/${blogId}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+
+
+// Function to create a new blog
+export const createBlog = async (formData) => {
+  try {
+    const response = await apiClient.post(`/blogs`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data', // Set content type to multipart
+      },
+    });
+    return response.data; // Return the blog data (for redirecting or other purposes)
+  } catch (error) {
+    console.error('Error creating blog:', error);
+    throw error; // Rethrow to be handled in the component
+  }
+};
+
 export default apiClient;

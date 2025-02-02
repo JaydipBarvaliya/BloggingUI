@@ -1,0 +1,202 @@
+/* Editor container */
+/* Editor container (forms only) */
+.editor-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 20px auto;  /* Ensuring the form is centered and has margin from top */
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); /* Soft shadow for depth */
+}
+
+
+/* Quill Editor Section */
+.editor-section {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.ql-container {
+  font-size: 1.2rem;
+  height: 300px; /* Set a fixed height for the editor */
+}
+
+/* Textarea / Input fields styling */
+input,
+textarea {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background-color: #f8f8f8;
+  margin-bottom: 16px; /* Space between form elements */
+  transition: all 0.3s ease;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+
+/* Scoped button styles for BlogEditor */
+.editor-container button {
+  width: 100%;
+  padding: 14px;
+  background-color: #007bff;
+  color: white;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.editor-container button:hover {
+  background-color: #0056b3;
+}
+
+
+/* Code block styling */
+pre {
+  /* background-color: #f5f5f5; */
+  padding: 15px;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 1rem;
+  line-height: 1.6;
+  /* color: #333; */
+  border: 1px solid #ddd;
+}
+
+code {
+  font-family: 'Courier New', Courier, monospace;
+  color: #d6336c;  /* Optional: Highlight code in a pinkish color */
+}
+
+.ql-snow pre {
+  background-color: #1e1e1e;
+  color: #f8f8f2;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-bottom: 20px;
+}
+
+.ql-snow code {
+  font-family: 'Courier New', Courier, monospace;
+  color: #f8f8f2;
+}
+
+/* Ordered List Styles */
+ol {
+  list-style-type: decimal; /* Default numbering style (1, 2, 3, etc.) */
+  padding-left: 20px; /* Add some padding to the left */
+  margin: 10px 0; /* Add margin to space out the list */
+  font-size: 1rem; /* Set font size for readability */
+  line-height: 1.6; /* Adjust line height for better spacing between items */
+}
+
+ol li {
+  margin-bottom: 8px; /* Add space between list items */
+  color: #333; /* Dark text color */
+  font-family: 'Arial', sans-serif; /* Font family for list items */
+}
+
+/* Custom numbering style (e.g., using Roman numerals) */
+ol.roman {
+  list-style-type: upper-roman; /* Change to Roman numerals (I, II, III, etc.) */
+}
+
+/* Custom numbering style (e.g., using letters) */
+ol.alpha {
+  list-style-type: lower-alpha; /* Change to lowercase letters (a, b, c, etc.) */
+}
+
+/* Add styles for hover effects on list items */
+ol li:hover {
+  background-color: #f4f4f4; /* Light background on hover */
+  cursor: pointer; /* Change cursor to pointer */
+}
+
+/* Dark Mode Adjustments for Ordered Lists */
+body.dark ol {
+  color: #e0e0e0; /* Lighter text color in dark mode */
+  background-color: #2c2c2c; /* Dark background for ordered lists */
+}
+
+body.dark ol li {
+  background-color: #3c3c3c; /* Slightly darker background for list items */
+  border-radius: 4px; /* Rounded corners for list items */
+}
+
+body.dark ol li:hover {
+  background-color: #505050; /* Lighter hover effect for dark mode */
+}
+
+
+
+
+/* Default styling for links */
+/* Scoped link styles within BlogDetails */
+.blog-details-content a {
+  color: #007bff; /* Blue color */
+  text-decoration: none; /* Remove underline */
+  transition: color 0.3s ease, text-decoration 0.3s ease; /* Smooth transition for color and underline */
+}
+
+/* Hover state */
+.blog-details-content a:hover {
+  color: #0056b3; /* Darker blue color */
+  text-decoration: underline; /* Underline on hover */
+}
+
+/* Active state for when the link is clicked */
+.blog-details-content a:active {
+  color: #004085; /* Darker blue when the link is active */
+}
+
+/* Visited state */
+.blog-details-content a:visited {
+  color: #6f42c1; /* Purple color for visited links */
+}
+
+/* Focus state for accessibility */
+.blog-details-content a:focus {
+  outline: 2px solid #0056b3; /* Focus outline for accessibility */
+  outline-offset: 2px;
+}
+
+
+/* H1 styling */
+.blog-details-content h1 {
+  font-size: 2.5rem; /* Large font size for the main headings */
+  font-weight: 700; /* Bold text */
+  color: #000000; /* White color for light mode */
+  margin-bottom: 1rem; /* Spacing below the heading */
+  transition: color 0.3s ease; /* Smooth color transition */
+}
+
+/* H1 styling in dark mode */
+body.dark .blog-details-content h1 {
+  color: #ffffff; /* White color for dark mode */
+}
+
+/* H2 styling */
+.blog-details-content h2 {
+  font-size: 2rem; /* Slightly smaller than h1 */
+  font-weight: 600; /* Semi-bold text */
+  color: #ffffff; /* White color for light mode */
+  margin-bottom: 0.75rem; /* Spacing below the heading */
+  transition: color 0.3s ease; /* Smooth color transition */
+}
+
+/* H2 styling in dark mode */
+body.dark .blog-details-content h2 {
+  color: #ffffff; /* White color for dark mode */
+}

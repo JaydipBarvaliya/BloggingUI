@@ -95,3 +95,138 @@
   width: 100%;
   height: auto;
 }
+
+
+h1 {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+
+h1 strong {
+  color: #007BFF; /* Optional: If you want to highlight the strong text in h1 */
+}
+
+.ql-snow h1 {
+  font-size: 2rem; /* Adjust the size to make it more prominent */
+  font-weight: bold;
+  color: #333; /* Dark gray for readability */
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+
+
+h2 {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: #333;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+h2 strong {
+  color: #007BFF; /* Optional: If you want to highlight the strong text in h2 */
+}
+
+.ql-snow h2 {
+  font-size: 1.75rem; /* Adjust the size if needed */
+  font-weight: bold;
+  color: #333; /* Dark gray for readability */
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+
+
+
+/* Style for ordered lists */
+ol {
+  list-style-position: inside; /* Keep list numbers inside the container */
+  margin-left: 20px; /* Add margin to the left to align better */
+  padding-left: 10px; /* Add padding for proper spacing */
+  font-size: 1rem; /* Adjust the font size */
+}
+
+ol li {
+  margin-bottom: 10px; /* Add space between each list item */
+  color: #333; /* Dark color for the text */
+  font-weight: 400; /* Default weight */
+}
+
+/* Style for unordered lists */
+ul {
+  list-style-position: inside; /* Keep bullet points inside the container */
+  margin-left: 20px; /* Add margin to the left for alignment */
+  padding-left: 10px; /* Add padding for spacing */
+  font-size: 1rem; /* Adjust font size */
+}
+
+ul li {
+  margin-bottom: 8px; /* Space between list items */
+  color: #333; /* Dark color for text */
+  font-weight: 400; /* Default font weight */
+}
+
+/* Customize bullet points (for unordered list) */
+ul li::before {
+  content: "•"; /* Change bullet point style */
+  font-size: 1.2rem; /* Increase bullet point size */
+  color: #080808; /* Set color for bullet point */
+  margin-right: 10px; /* Add space between bullet and text */
+  font-weight: bold; /* Make the bullet point bold */
+}
+
+/* Style for the entire list container */
+ul, ol {
+  padding: 0;
+  margin: 0;
+}
+
+/* Style for code block container */
+code {
+  display: block;
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: 8px;
+  background-color: #f4f4f4;
+  border: 1px solid #ddd;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1rem;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+/* Style for the copy button */
+.copy-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* Highlight the code */
+code .highlight {
+  background-color: #f0f0f0;
+  padding: 0 5px;
+  border-radius: 4px;
+  color: #000;
+}
+
+/* Code block container (for scroll effect) */
+pre {
+  position: relative;
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 0;
+  padding-right: 30px; /* Space for the copy button */
+}

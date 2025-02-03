@@ -89,7 +89,7 @@ const App = () => {
 
               {/* Not found route */}
               <Route path="*" element={<NotFoundPage />} />
-
+              <Route path="/page-not-found" element={<NotFoundPage />} />
               <Route path="/admin/create-blog/:blogId" element={<BlogEditor />} />
             </Routes>
           </main>

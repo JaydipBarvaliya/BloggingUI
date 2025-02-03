@@ -17,11 +17,11 @@ const BlogEditor = () => {
   const blogData = location.state?.blog; // Get the blog details passed from BlogDetails
 
   const [editorContent, setEditorContent] = useState(blogData?.content || "");
-  const [authorName, setAuthorName] = useState(blogData?.author || "");
-  const [category, setCategory] = useState(blogData?.category || "");
+  const [authorName, setAuthorName] = useState(blogData?.author || "James Bond");
+  const [category, setCategory] = useState(blogData?.category || "Finance");
   const [image, setImage] = useState(null);
-  const [summary, setSummary] = useState(blogData?.summary || "");
-  const [blogTitle, setBlogTitle] = useState(blogData?.title || "");
+  const [summary, setSummary] = useState(blogData?.summary || " In 2025, web development is evolving rapidly with new technologies and trends. From AI-powered development tools to the rise of serverless architecture, this blog explores the top trends shaping the future of web development. Whether you're a seasoned developer or just starting, staying ahead of these trends will ensure your skills remain relevant in the ever-changing tech landscape.");
+  const [blogTitle, setBlogTitle] = useState(blogData?.title || "The Future of Web Development: Trends to Watch in 2025");
   const [slug, setSlug] = useState(blogData?.slug || "");
   const [imageError, setImageError] = useState(""); // Error message for image validation
 

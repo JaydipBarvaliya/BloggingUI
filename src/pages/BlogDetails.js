@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Lottie from "lottie-react";
 import clapAnimation from "../animations/clap.json";
+
 import {
   getBlogBySlug,
   getComments,
@@ -47,6 +48,10 @@ const BlogDetails = () => {
         // Fetch blog data based on slug
         const blogData = await getBlogBySlug(slug);
 
+        if(blogData.response && blogData.response.status === 404 && blogData.response.data === "Slug not found for requested URL"){
+          navigate('page-not-found');
+        }
+
         // Once blog is fetched, fetch comments and claps using the blog's ID
         const blogId = blogData.id;
 
@@ -69,7 +74,7 @@ const BlogDetails = () => {
     };
 
     fetchBlogDetails();
-  }, [slug, isLoggedIn, userId]);
+  }, [slug, isLoggedIn, userId, navigate]);
 
   const handleClap = async () => {
     const action = isClapped ? "remove" : "add";

@@ -123,7 +123,7 @@ export const getBlogBySlug = async (slug) => {
     return response.data;
   } catch (error) {
     console.error("Error fetching blog:", error);
-    return null;
+    return error;
   }
 };
 

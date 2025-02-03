@@ -1,12 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css"; // Import Quill styles
 import { createBlog, updateBlog } from "../api/axios"; // Import updateBlog function
 import "./BlogEditor.css"; // Import custom styles
-import Prism from "prismjs"; // Import Prism for syntax highlighting
-import "prismjs/themes/prism.css"; // Import default Prism theme
-import "prismjs/components/prism-javascript.min.js"; // Example language, you can add more
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -46,16 +43,6 @@ const BlogEditor = () => {
   const handleEditorChange = (value) => {
     setEditorContent(value);
   };
-
-  // Apply syntax highlighting to code blocks
-  const applyPrismHighlighting = () => {
-    Prism.highlightAll();
-  };
-
-  useEffect(() => {
-    // Apply Prism highlighting after content is updated
-    applyPrismHighlighting();
-  }, [editorContent]);
 
   // Handle form submission
   const handleSubmit = async (e) => {

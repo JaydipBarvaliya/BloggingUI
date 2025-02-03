@@ -2,7 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserCircle, faHeart, faPen } from "@fortawesome/free-solid-svg-icons"; // Importing the pen icon
+import {
+  faUserCircle,
+  faHeart,
+  faPen,
+} from "@fortawesome/free-solid-svg-icons"; // Importing the pen icon
 import apiClient from "../api/axios";
 
 const Header = ({ toggleDarkMode, isDarkMode }) => {
@@ -147,9 +151,10 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
                   >
                     Profile
                   </button>
+
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 text-red-500"
+                    className="block w-full text-left px-4 py-2 hover:bg-red-200 dark:hover:bg-red-600 text-red-600 dark:text-red-400 font-semibold rounded-lg transition duration-300 ease-in-out"
                   >
                     Logout
                   </button>

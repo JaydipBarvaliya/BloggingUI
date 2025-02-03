@@ -48,8 +48,12 @@ const BlogDetails = () => {
         // Fetch blog data based on slug
         const blogData = await getBlogBySlug(slug);
 
-        if(blogData.response && blogData.response.status === 404 && blogData.response.data === "Slug not found for requested URL"){
-          navigate('page-not-found');
+        if (
+          blogData.response &&
+          blogData.response.status === 404 &&
+          blogData.response.data === "Slug not found for requested URL"
+        ) {
+          navigate("page-not-found");
         }
 
         // Once blog is fetched, fetch comments and claps using the blog's ID
@@ -148,23 +152,25 @@ const BlogDetails = () => {
     localStorage.setItem("editingCommentId", commentId);
   };
 
-  // Function to fix the links in the content
-  const handleLinks = (htmlContent) => {
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = htmlContent;
-    const anchorTags = tempDiv.getElementsByTagName("a");
 
-    for (let i = 0; i < anchorTags.length; i++) {
-      const link = anchorTags[i];
-      const href = link.getAttribute("href");
-
-      if (href && !href.startsWith("http")) {
-        link.setAttribute("href", `http://${href}`);
+    // Function to fix the links in the content
+    const handleLinks = (htmlContent) => {
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = htmlContent;
+      const anchorTags = tempDiv.getElementsByTagName("a");
+  
+      for (let i = 0; i < anchorTags.length; i++) {
+        const link = anchorTags[i];
+        const href = link.getAttribute("href");
+  
+        if (href && !href.startsWith("http")) {
+          link.setAttribute("href", `http://${href}`);
+        }
       }
-    }
+  
+      return tempDiv.innerHTML;
+    };
 
-    return tempDiv.innerHTML;
-  };
 
   // Return early if `isClapped` is still null (loading state)
   if (isClapped === null) {

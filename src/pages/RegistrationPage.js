@@ -14,6 +14,9 @@ const RegistrationPage = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // Email validation regex pattern
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -21,6 +24,12 @@ const RegistrationPage = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+
+    // Check if email is valid using regex
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Invalid email address. Please enter a valid email.");
+      return; // Stop the form submission
+    }
 
     const response = await registerUser(formData);
     if (response.success) {

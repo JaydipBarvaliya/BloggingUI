@@ -67,7 +67,7 @@ const App = () => {
 
               {/* Private routes */}
               <Route path="/" element={<PrivateRoute><Homepage /></PrivateRoute>} />
-              <Route path="/blogs/:blogId" element={<BlogDetails />} />
+              <Route path="/blogs/:slug" element={<BlogDetails />} />
               <Route
                 path="/categories/:category"
                 element={<PrivateRoute><CategoryBlogsPage /></PrivateRoute>}
@@ -89,6 +89,8 @@ const App = () => {
 
               {/* Not found route */}
               <Route path="*" element={<NotFoundPage />} />
+
+              <Route path="/admin/create-blog/:blogId" element={<BlogEditor />} />
             </Routes>
           </main>
           <Footer />

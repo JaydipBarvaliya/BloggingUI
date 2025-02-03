@@ -117,9 +117,9 @@ export const registerUser = async (userData) => {
 
 
 // ✅ Fetch a single blog by ID
-export const getBlogById = async (blogId) => {
+export const getBlogBySlug = async (slug) => {
   try {
-    const response = await apiClient.get(`/blogs/${blogId}`);
+    const response = await apiClient.get(`/blogs/${slug}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching blog:", error);
@@ -235,6 +235,21 @@ export const createBlog = async (formData) => {
   } catch (error) {
     console.error('Error creating blog:', error);
     throw error; // Rethrow to be handled in the component
+  }
+};
+
+
+export const updateBlog = async (blogId, formData) => {
+  try {
+    const response = await apiClient.put(`/blogs/${blogId}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data", // Set correct content type
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating blog:", error);
+    throw error;
   }
 };
 

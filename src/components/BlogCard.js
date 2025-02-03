@@ -32,7 +32,7 @@ const BlogCard = ({ blog, isFavorite, onToggleFavorite }) => {
         {/* Actions */}
         <div className="flex justify-between items-center mt-4">
           {/* Read More Button */}
-          <Link to={`/blogs/${blog.id}`} aria-label={`Read more about ${blog.title}`}>
+          <Link to={`/blogs/${blog.slug}`} aria-label={`Read more about ${blog.title}`}>
             <button className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition duration-200">
               Read More
             </button>

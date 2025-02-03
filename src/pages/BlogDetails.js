@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import Lottie from "lottie-react";
 import clapAnimation from "../animations/clap.json";
 import {
-  getBlogById,
+  getBlogBySlug,
   getComments,
   getClapsCount,
   hasUserClapped,
@@ -16,7 +16,7 @@ import {
 } from "../api/axios";
 
 const BlogDetails = () => {
-  const { blogId } = useParams();
+  const { slug } = useParams(); // Extract slug from the URL
   const navigate = useNavigate(); // For redirect after deletion
   const { userId, isLoggedIn, userDetails } = useAuth();
 
@@ -27,27 +27,35 @@ const BlogDetails = () => {
   const [newComment, setNewComment] = useState("");
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
 
-  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false); // Modal state
-
-  const fetchComments = async () => {
+  // Function to fetch comments based on blogId
+  const fetchComments = async (blogId) => {
     const data = await getComments(blogId);
     setComments(data);
+  };
+
+  // Function to fetch claps count based on blogId
+  const fetchClapsCount = async (blogId) => {
+    const data = await getClapsCount(blogId);
+    setClapsCount(data);
   };
 
   useEffect(() => {
     const fetchBlogDetails = async () => {
       try {
-        const [blogData, commentsData, clapsData] = await Promise.all([
-          getBlogById(blogId),
-          getComments(blogId),
-          getClapsCount(blogId),
-        ]);
+        // Fetch blog data based on slug
+        const blogData = await getBlogBySlug(slug);
 
-        setBlog(blogData);
-        setComments(commentsData);
-        setClapsCount(clapsData);
+        // Once blog is fetched, fetch comments and claps using the blog's ID
+        const blogId = blogData.id;
 
+        // Fetch comments and claps based on the blog ID
+        await Promise.all([fetchComments(blogId), fetchClapsCount(blogId)]);
+
+        setBlog(blogData); // Set the fetched blog data
+
+        // Check if the user has clapped
         if (isLoggedIn && userId) {
           const userHasClapped = await hasUserClapped(blogId, userId);
           setIsClapped(userHasClapped); // Set the clapped state
@@ -61,12 +69,11 @@ const BlogDetails = () => {
     };
 
     fetchBlogDetails();
-  }, [blogId, isLoggedIn, userId]);
+  }, [slug, isLoggedIn, userId]);
 
   const handleClap = async () => {
     const action = isClapped ? "remove" : "add";
-
-    const success = await sendClap(blogId, userId, action);
+    const success = await sendClap(blog.id, userId, action);
 
     if (success) {
       setClapsCount((prev) => (isClapped ? prev - 1 : prev + 1)); // Update the clap count
@@ -75,10 +82,15 @@ const BlogDetails = () => {
   };
 
   const handleDeleteBlog = async () => {
-    const success = await deleteBlog(blogId);
+    const success = await deleteBlog(blog.id);
     if (success) {
       navigate("/"); // Redirect to the homepage after deletion
     }
+  };
+
+  const handleEditBlog = () => {
+    // Navigate to the BlogEditor with pre-populated blog data
+    navigate(`/admin/create-blog/${blog.id}`, { state: { blog } });
   };
 
   const handleDeleteConfirmation = () => {
@@ -101,10 +113,10 @@ const BlogDetails = () => {
       userDetails.lastName || "Unknown"
     }`;
 
-    const success = await postComment(blogId, newComment, userId, name);
+    const success = await postComment(blog.id, newComment, userId, name);
     if (success) {
       setNewComment("");
-      fetchComments();
+      fetchComments(blog.id); // Re-fetch comments after posting a new comment
     }
   };
 
@@ -113,7 +125,7 @@ const BlogDetails = () => {
     if (success) {
       setEditingCommentId(null);
       setEditedCommentContent("");
-      fetchComments();
+      fetchComments(blog.id); // Re-fetch comments after editing a comment
       localStorage.removeItem("editingCommentId");
     }
   };
@@ -121,7 +133,7 @@ const BlogDetails = () => {
   const handleDeleteComment = async (commentId) => {
     const success = await deleteComment(commentId, userId);
     if (success) {
-      fetchComments();
+      fetchComments(blog.id); // Re-fetch comments after deleting a comment
     }
   };
 
@@ -155,7 +167,24 @@ const BlogDetails = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 relative">
+      {/* Edit and Delete Buttons - Top Right Corner */}
+      <div className="absolute top-8 right-4 space-x-4 z-10">
+        <button
+          onClick={handleEditBlog}
+          className="bg-yellow-500 text-white px-4 py-2 rounded"
+        >
+          Edit Blog
+        </button>
+
+        <button
+          onClick={handleDeleteConfirmation}
+          className="bg-red-500 text-white px-4 py-2 rounded"
+        >
+          Delete Blog
+        </button>
+      </div>
+
       {blog.image && (
         <div className="relative mb-6 flex justify-center w-full">
           <img
@@ -176,16 +205,6 @@ const BlogDetails = () => {
           }`}
           dangerouslySetInnerHTML={{ __html: handleLinks(blog.content) }}
         />
-      </div>
-
-      {/* Add Delete Blog Button */}
-      <div className="mb-8 flex items-center space-x-4">
-        <button
-          onClick={handleDeleteConfirmation}
-          className="bg-red-500 text-white px-4 py-2 rounded"
-        >
-          Delete Blog
-        </button>
       </div>
 
       {/* Delete Confirmation Modal */}

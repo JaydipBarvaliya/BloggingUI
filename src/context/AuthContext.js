@@ -22,6 +22,14 @@ export const AuthProvider = ({ children }) => {
     if (storedToken) {
       setToken(storedToken);
       setIsLoggedIn(true);
+
+      const storedUserId = localStorage.getItem("userId");
+      const storedUserDetails = localStorage.getItem("userDetails");
+      const storedRole = localStorage.getItem("role");
+
+    if (storedUserId) setUserId(storedUserId);
+    if (storedUserDetails) setUserDetails(JSON.parse(storedUserDetails));
+    if (storedRole) setRole(storedRole);
     }
   }, []); // Only runs on mount
 
@@ -29,6 +37,9 @@ export const AuthProvider = ({ children }) => {
   const login = useCallback(
     (token, firstName, lastName, role, authType, userId) => {
       localStorage.setItem("token", token);
+      localStorage.setItem("userId", userId);
+      localStorage.setItem("userDetails", JSON.stringify({ firstName, lastName }));
+      localStorage.setItem("role", role);
 
       setToken(token);
       setIsLoggedIn(true);

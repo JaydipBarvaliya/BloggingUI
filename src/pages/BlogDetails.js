@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Lottie from "lottie-react";
 import clapAnimation from "../animations/clap.json";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 import {
   getBlogBySlug,
@@ -13,13 +15,13 @@ import {
   postComment,
   editComment,
   deleteComment,
-  deleteBlog, // Add the deleteBlog API
+  deleteBlog, // API for deleting a blog
 } from "../api/axios";
 
 const BlogDetails = () => {
   const { slug } = useParams(); // Extract slug from the URL
   const navigate = useNavigate(); // For redirect after deletion
-  const { userId, isLoggedIn, userDetails } = useAuth();
+  const { userId, isLoggedIn, userDetails, role } = useAuth(); // Include role from context
 
   const [blog, setBlog] = useState({});
   const [comments, setComments] = useState([]);
@@ -56,24 +58,21 @@ const BlogDetails = () => {
           navigate("page-not-found");
         }
 
-        // Once blog is fetched, fetch comments and claps using the blog's ID
         const blogId = blogData.id;
-
         // Fetch comments and claps based on the blog ID
         await Promise.all([fetchComments(blogId), fetchClapsCount(blogId)]);
-
-        setBlog(blogData); // Set the fetched blog data
+        setBlog(blogData);
 
         // Check if the user has clapped
         if (isLoggedIn && userId) {
           const userHasClapped = await hasUserClapped(blogId, userId);
-          setIsClapped(userHasClapped); // Set the clapped state
+          setIsClapped(userHasClapped);
         } else {
-          setIsClapped(false); // Default to false if user is not logged in
+          setIsClapped(false);
         }
       } catch (error) {
         console.error("Error fetching blog details:", error);
-        setIsClapped(false); // Default to false in case of error
+        setIsClapped(false);
       }
     };
 
@@ -85,34 +84,48 @@ const BlogDetails = () => {
     const success = await sendClap(blog.id, userId, action);
 
     if (success) {
-      setClapsCount((prev) => (isClapped ? prev - 1 : prev + 1)); // Update the clap count
-      setIsClapped(!isClapped); // Toggle the clapped state
+      setClapsCount((prev) => (isClapped ? prev - 1 : prev + 1));
+      setIsClapped(!isClapped);
     }
   };
 
   const handleDeleteBlog = async () => {
-    const success = await deleteBlog(blog.id);
-    if (success) {
-      navigate("/"); // Redirect to the homepage after deletion
+
+    if(role === "ADMIN"){
+      try {
+        const response = await deleteBlog(blog.id);
+        if (response) {
+          navigate("/"); // Redirect to the homepage after deletion
+        }
+      } catch (error) {
+        console.error("Error saving the blog:", error);
+        if (error.response && error.response.data) {
+          toast.error(error.response.data.message);
+        }
+      }
     }
+   
   };
 
   const handleEditBlog = () => {
     // Navigate to the BlogEditor with pre-populated blog data
-    navigate(`/admin/create-blog/${blog.id}`, { state: { blog } });
+    if(role === "ADMIN"){
+      navigate(`/admin/create-blog/${blog.id}`, { state: { blog } });
+    }
+    
   };
 
   const handleDeleteConfirmation = () => {
-    setDeleteModalOpen(true); // Open the modal for confirmation
+    setDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = async () => {
-    setDeleteModalOpen(false); // Close the modal
-    await handleDeleteBlog(); // Proceed with deletion
+    setDeleteModalOpen(false);
+    await handleDeleteBlog();
   };
 
   const handleCancelDelete = () => {
-    setDeleteModalOpen(false); // Close the modal if canceled
+    setDeleteModalOpen(false);
   };
 
   const handlePostComment = async () => {
@@ -125,7 +138,7 @@ const BlogDetails = () => {
     const success = await postComment(blog.id, newComment, userId, name);
     if (success) {
       setNewComment("");
-      fetchComments(blog.id); // Re-fetch comments after posting a new comment
+      fetchComments(blog.id);
     }
   };
 
@@ -134,7 +147,7 @@ const BlogDetails = () => {
     if (success) {
       setEditingCommentId(null);
       setEditedCommentContent("");
-      fetchComments(blog.id); // Re-fetch comments after editing a comment
+      fetchComments(blog.id);
       localStorage.removeItem("editingCommentId");
     }
   };
@@ -142,7 +155,7 @@ const BlogDetails = () => {
   const handleDeleteComment = async (commentId) => {
     const success = await deleteComment(commentId, userId);
     if (success) {
-      fetchComments(blog.id); // Re-fetch comments after deleting a comment
+      fetchComments(blog.id);
     }
   };
 
@@ -152,49 +165,46 @@ const BlogDetails = () => {
     localStorage.setItem("editingCommentId", commentId);
   };
 
+  // Function to fix the links in the content
+  const handleLinks = (htmlContent) => {
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = htmlContent;
+    const anchorTags = tempDiv.getElementsByTagName("a");
 
-    // Function to fix the links in the content
-    const handleLinks = (htmlContent) => {
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = htmlContent;
-      const anchorTags = tempDiv.getElementsByTagName("a");
-  
-      for (let i = 0; i < anchorTags.length; i++) {
-        const link = anchorTags[i];
-        const href = link.getAttribute("href");
-  
-        if (href && !href.startsWith("http")) {
-          link.setAttribute("href", `http://${href}`);
-        }
+    for (let i = 0; i < anchorTags.length; i++) {
+      const link = anchorTags[i];
+      const href = link.getAttribute("href");
+      if (href && !href.startsWith("http")) {
+        link.setAttribute("href", `http://${href}`);
       }
-  
-      return tempDiv.innerHTML;
-    };
+    }
+    return tempDiv.innerHTML;
+  };
 
-
-  // Return early if `isClapped` is still null (loading state)
+  // Return early if isClapped is still null (loading state)
   if (isClapped === null) {
     return <div>Loading...</div>;
   }
 
   return (
     <div className="container mx-auto px-4 py-8 relative">
-      {/* Edit and Delete Buttons - Top Right Corner */}
-      <div className="absolute top-8 right-4 space-x-4 z-10">
-        <button
-          onClick={handleEditBlog}
-          className="bg-yellow-500 text-white px-4 py-2 rounded"
-        >
-          Edit Blog
-        </button>
-
-        <button
-          onClick={handleDeleteConfirmation}
-          className="bg-red-500 text-white px-4 py-2 rounded"
-        >
-          Delete Blog
-        </button>
-      </div>
+      {/* Conditionally render Edit and Delete Buttons only for Admin users */}
+      {role === "ADMIN" && (
+        <div className="absolute top-8 right-4 space-x-4 z-10">
+          <button
+            onClick={handleEditBlog}
+            className="bg-yellow-500 text-white px-4 py-2 rounded"
+          >
+            Edit Blog
+          </button>
+          <button
+            onClick={handleDeleteConfirmation}
+            className="bg-red-500 text-white px-4 py-2 rounded"
+          >
+            Delete Blog
+          </button>
+        </div>
+      )}
 
       {blog.image && (
         <div className="relative mb-6 flex justify-center w-full">
@@ -248,11 +258,11 @@ const BlogDetails = () => {
           <Lottie
             animationData={clapAnimation}
             loop={false}
-            className={`w-16 h-16 ${isClapped ? "opacity-100" : "opacity-50"} 
-              hover:opacity-100 hover:scale-125 hover:rotate-12 hover:translate-y-1 transform transition-all duration-500 ease-in-out`}
+            className={`w-16 h-16 ${
+              isClapped ? "opacity-100" : "opacity-50"
+            } hover:opacity-100 hover:scale-125 hover:rotate-12 hover:translate-y-1 transform transition-all duration-500 ease-in-out`}
           />
         </button>
-
         <span className="text-gray-800 dark:text-gray-200">
           {clapsCount} {clapsCount === 1 ? "Clap" : "Claps"}
         </span>
@@ -262,7 +272,6 @@ const BlogDetails = () => {
         <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
           Comments
         </h2>
-
         {isLoggedIn && (
           <div className="comment-form mb-6">
             <textarea
@@ -279,12 +288,10 @@ const BlogDetails = () => {
             </button>
           </div>
         )}
-
         {comments.length > 0 ? (
           comments.map((comment) => {
             const normalizedCommentUserId = Number(comment.userId);
             const normalizedUserId = Number(userId);
-
             return (
               <div
                 key={comment.id}
@@ -299,7 +306,6 @@ const BlogDetails = () => {
                     ? comment.name
                     : `${userDetails.firstName} ${userDetails.lastName}`}
                 </small>
-
                 {isLoggedIn && normalizedCommentUserId === normalizedUserId && (
                   <div className="mt-2">
                     {editingCommentId === comment.id ? (

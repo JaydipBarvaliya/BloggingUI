@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import BlogCard from "../components/BlogCard";
 import ConfirmationDialog from "../pages/ConfirmationDialog";
 import { getBlogsByCategory, getUserFavorites, toggleFavoriteBlog } from "../api/axios";
+import { useAuth } from "../context/AuthContext";
+
 
 const CategoryBlogsPage = () => {
   const { category } = useParams();
@@ -10,7 +12,7 @@ const CategoryBlogsPage = () => {
   const [favoriteBlogIds, setFavoriteBlogIds] = useState(new Set());
   const [showDialog, setShowDialog] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState(null);
-  const userId = localStorage.getItem("userId");
+  const { userId } = useAuth();
 
   // ✅ Fetch blogs & favorites
   const fetchBlogsAndFavorites = useCallback(async () => {

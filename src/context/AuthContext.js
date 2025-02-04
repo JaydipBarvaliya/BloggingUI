@@ -1,56 +1,71 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useMemo,
+  useCallback
+} from "react";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const [token, setToken] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userId, setUserId] = useState(null);
   const [userDetails, setUserDetails] = useState({ firstName: "", lastName: "" });
+  const [role, setRole] = useState(null);
 
-  // Sync state with localStorage on mount
   useEffect(() => {
-    const storedToken = localStorage.getItem("authToken");
-    const storedUserId = localStorage.getItem("userId");
-    const storedFirstName = localStorage.getItem("firstName");
-    const storedLastName = localStorage.getItem("lastName");
+    const storedToken = localStorage.getItem("token");
 
-    if (storedToken && storedUserId) {
+    if (storedToken) {
+      setToken(storedToken);
       setIsLoggedIn(true);
-      setUserId(storedUserId);
-      setUserDetails({ firstName: storedFirstName || "", lastName: storedLastName || "" });
     }
-  }, []); // Dependency array ensures this runs only once on mount
+  }, []); // Only runs on mount
 
-  const login = (token, userId, firstName, lastName) => {
-    // Update localStorage
-    localStorage.setItem("authToken", token);
-    localStorage.setItem("userId", userId);
-    localStorage.setItem("firstName", firstName);
-    localStorage.setItem("lastName", lastName);
+  // Wrap login in useCallback so its identity remains stable
+  const login = useCallback(
+    (token, firstName, lastName, role, authType, userId) => {
+      localStorage.setItem("token", token);
 
-    // Update state
-    setIsLoggedIn(true);
-    setUserId(userId);
-    setUserDetails({ firstName, lastName });
-  };
+      setToken(token);
+      setIsLoggedIn(true);
+      setUserId(userId);
+      setUserDetails({ firstName, lastName });
+      setRole(role); // Update role state as well
+    },
+    []
+  );
 
-  const logout = () => {
-    // Clear localStorage
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("firstName");
-    localStorage.removeItem("lastName");
+  // Wrap logout in useCallback for stability
+  const logout = useCallback(() => {
+    localStorage.removeItem("token");
 
-    // Reset state
+    setToken(null);
     setIsLoggedIn(false);
     setUserId(null);
     setUserDetails({ firstName: "", lastName: "" });
-  };
+    setRole(null);
+  }, []);
+
+  // Memoize the context value including the stable login and logout functions.
+  const authValue = useMemo(
+    () => ({
+      token,
+      isLoggedIn,
+      userId,
+      userDetails,
+      role,
+      login,
+      logout
+    }),
+    [token, isLoggedIn, userId, userDetails, role, login, logout]
+  );
 
   return (
-    <AuthContext.Provider
-      value={{ isLoggedIn, userId, userDetails, login, logout }}
-    >
+    <AuthContext.Provider value={authValue}>
       {children}
     </AuthContext.Provider>
   );

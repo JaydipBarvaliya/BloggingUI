@@ -10,6 +10,7 @@ const RegistrationPage = () => {
     lastName: "",
     email: "",
     password: "",
+    authType: "MANUAL"
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();

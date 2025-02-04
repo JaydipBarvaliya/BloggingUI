@@ -2,14 +2,15 @@ import React, { useState, useEffect } from "react";
 import { getUserProfile, updateUserProfile, updateUserPassword } from "../api/axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useAuth } from "../context/AuthContext";
+
 
 const ProfilePage = () => {
-  const [profile, setProfile] = useState({ firstName: "", lastName: "", email: "" });
+  const [profile, setProfile] = useState({ firstName: "", lastName: "", email: "", authType: "" });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
-
-  const userId = localStorage.getItem("userId");
+  const { userId } = useAuth();
 
   // ✅ Fetch user details on component mount
   useEffect(() => {
@@ -115,47 +116,49 @@ const ProfilePage = () => {
           </form>
         </div>
 
-        {/* Update Password Section */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded shadow-lg">
-          <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
-            Update Password
-          </h2>
-          <form onSubmit={handlePasswordUpdate}>
-            <div className="mb-4">
-              <label className="block text-gray-800 dark:text-gray-200 mb-1">
-                New Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-gray-200"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-800 dark:text-gray-200 mb-1">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  setPasswordError(e.target.value !== password ? "Passwords do not match." : "");
-                }}
-                className={`w-full px-4 py-2 border rounded dark:bg-gray-700 ${
-                  passwordError ? "border-red-500" : ""
-                }`}
-                required
-              />
-              {passwordError && <p className="text-red-500 text-sm mt-1">{passwordError}</p>}
-            </div>
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        {/* Conditionally render Update Password Section */}
+        {profile.authType === "MANUAL" && (
+          <div className="bg-white dark:bg-gray-800 p-6 rounded shadow-lg">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
               Update Password
-            </button>
-          </form>
-        </div>
+            </h2>
+            <form onSubmit={handlePasswordUpdate}>
+              <div className="mb-4">
+                <label className="block text-gray-800 dark:text-gray-200 mb-1">
+                  New Password
+                </label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-gray-200"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-800 dark:text-gray-200 mb-1">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setPasswordError(e.target.value !== password ? "Passwords do not match." : "");
+                  }}
+                  className={`w-full px-4 py-2 border rounded dark:bg-gray-700 ${
+                    passwordError ? "border-red-500" : ""
+                  }`}
+                  required
+                />
+                {passwordError && <p className="text-red-500 text-sm mt-1">{passwordError}</p>}
+              </div>
+              <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Update Password
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </div>
   );

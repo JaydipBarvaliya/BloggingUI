@@ -1,10 +1,14 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import apiClient from "../api/axios";
+import {
+  loginUser,
+  loginViaGoogle,
+  registerUserWithGoogle,
+} from "../api/axios";
+import { GoogleLogin } from "@react-oauth/google";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -12,7 +16,6 @@ const Login = () => {
   const [error, setError] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -23,25 +26,63 @@ const Login = () => {
     }
 
     try {
-      const response = await apiClient.post("/auth/login", { email, password });
-      const { token, userId, firstName, lastName } = response.data;
+      const response = await loginUser(email, password);
+      const token = response.data;
 
-      // Store token and userId in localStorage
-      localStorage.setItem("authToken", token);
-      localStorage.setItem("userId", userId);
+      const { userId, firstName, lastName, role, authType } = parseJwt(response.data);
 
-      // Update global login state
-      login(token, userId, firstName, lastName);
+      const cleanedRole = role.replace(/[\[\]]/g, "");
 
-      toast.success(`Welcome back, ${firstName}!`);
+      // Call the context login function (which updates localStorage and state)
+      login(token, firstName, lastName, cleanedRole, authType, userId);
 
-      // Redirect to the requested URL or homepage
-      const redirectTo = location.state?.from?.pathname || "/";
-      navigate(redirectTo);
+      // toast.success(`Welcome back, ${firstName}!`);
+      navigate("/");
     } catch (err) {
       setError("Invalid email or password");
       console.error("Login error:", err);
     }
+  };
+
+  const handleGoogleLoginSuccess = async (response) => {
+    try {
+      const { credential } = response;
+      const { email } = parseJwt(credential);
+      const { given_name } = parseJwt(credential);
+      const { family_name } = parseJwt(credential);
+
+      // Check if user already exists
+      const userResponse = await loginViaGoogle(
+        email,
+        given_name,
+        family_name,
+        "Google"
+      );
+      if (userResponse.data) {
+        const { token, userId, firstName, lastName, role } = userResponse.data;
+        login(token, userId, firstName, lastName, role);
+        toast.success(`Welcome back, ${firstName}!`);
+        navigate("/");
+      } else {
+        // User doesn't exist, create a new user
+        await registerUserWithGoogle(email);
+        toast.success(`Account created with Google!`);
+        navigate("/");
+      }
+    } catch (err) {
+      console.error("Google login error:", err);
+    }
+  };
+
+  const parseJwt = (token) => {
+    const base64Url = token.split(".")[1];
+    const base64 = decodeURIComponent(
+      atob(base64Url)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(base64);
   };
 
   return (
@@ -106,6 +147,15 @@ const Login = () => {
           >
             Register
           </button>
+        </div>
+        <div className="mt-4 text-center">
+          <p className="text-gray-400">Or</p>
+          <GoogleLogin
+            onSuccess={handleGoogleLoginSuccess}
+            onError={(err) => console.log(err)}
+            useOneTap
+            className="mt-4 mb-4" // Added margin-bottom for space below the button
+          />
         </div>
       </div>
     </div>

@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css"; // Import Quill styles
-import { createBlog, updateBlog } from "../api/axios"; // Import updateBlog function
+import { createBlog, updateBlog } from "../api/axios";
 import "./BlogEditor.css"; // Import custom styles
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 
 const BlogEditor = () => {
   const navigate = useNavigate(); // Hook to navigate
@@ -17,10 +16,24 @@ const BlogEditor = () => {
   const [authorName, setAuthorName] = useState(blogData?.author || "James Bond");
   const [category, setCategory] = useState(blogData?.category || "Finance");
   const [image, setImage] = useState(null);
-  const [summary, setSummary] = useState(blogData?.summary || " In 2025, web development is evolving rapidly with new technologies and trends. From AI-powered development tools to the rise of serverless architecture, this blog explores the top trends shaping the future of web development. Whether you're a seasoned developer or just starting, staying ahead of these trends will ensure your skills remain relevant in the ever-changing tech landscape.");
-  const [blogTitle, setBlogTitle] = useState(blogData?.title || "The Future of Web Development: Trends to Watch in 2025");
+  const [summary, setSummary] = useState(
+    blogData?.summary ||
+      " In 2025, web development is evolving rapidly with new technologies and trends. From AI-powered development tools to the rise of serverless architecture, this blog explores the top trends shaping the future of web development. Whether you're a seasoned developer or just starting, staying ahead of these trends will ensure your skills remain relevant in the ever-changing tech landscape."
+  );
+  const [blogTitle, setBlogTitle] = useState(
+    blogData?.title ||
+      "The Future of Web Development: Trends to Watch in 2025"
+  );
   const [slug, setSlug] = useState(blogData?.slug || "");
   const [imageError, setImageError] = useState(""); // Error message for image validation
+
+  // New state to track mounting status
+  const [isMounted, setIsMounted] = useState(false);
+  const quillRef = useRef(null);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Handle title change and generate slug
   const handleTitleChange = (e) => {
@@ -70,7 +83,7 @@ const BlogEditor = () => {
     } catch (error) {
       console.error("Error saving the blog:", error);
       if (error.response && error.response.data) {
-        toast.error(error.response.data);
+        toast.error(error.response.data.message);
       }
     }
   };
@@ -96,8 +109,6 @@ const BlogEditor = () => {
 
   return (
     <div className="editor-container">
-      {/* Show notification if error occurs */}
-
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <div>
@@ -137,7 +148,7 @@ const BlogEditor = () => {
               onChange={handleImageUpload}
               accept="image/*"
             />
-            {imageError && <p className="text-red-500 text-sm">{imageError}</p>} {/* Display error message */}
+            {imageError && <p className="text-red-500 text-sm">{imageError}</p>}
           </div>
 
           <div>
@@ -161,32 +172,35 @@ const BlogEditor = () => {
               type="text"
               placeholder="Blog Title"
               value={blogTitle}
-              onChange={handleTitleChange} 
+              onChange={handleTitleChange}
               required
             />
           </div>
         </div>
 
-        {/* Slug (hidden field) */}
+        {/* Hidden slug field */}
         <input type="hidden" value={slug} name="slug" />
 
         {/* Quill Editor */}
         <div className="editor-section">
-          <ReactQuill
-            value={editorContent}
-            onChange={handleEditorChange}
-            modules={{
-              toolbar: [
-                [{ header: "1" }, { header: "2" }],
-                [{ font: [] }],
-                [{ list: "ordered" }, { list: "bullet" }],
-                ["bold", "italic", "underline"],
-                ["link", "image"],
-                [{ align: [] }],
-                ["blockquote", "code-block"],
-              ],
-            }}
-          />
+          {isMounted && (
+            <ReactQuill
+              ref={quillRef}
+              value={editorContent}
+              onChange={handleEditorChange}
+              modules={{
+                toolbar: [
+                  [{ header: "1" }, { header: "2" }],
+                  [{ font: [] }],
+                  [{ list: "ordered" }, { list: "bullet" }],
+                  ["bold", "italic", "underline"],
+                  ["link", "image"],
+                  [{ align: [] }],
+                  ["blockquote", "code-block"],
+                ],
+              }}
+            />
+          )}
         </div>
 
         {/* Submit Button */}

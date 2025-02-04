@@ -2,62 +2,40 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faUserCircle,
-  faHeart,
-  faPen,
-} from "@fortawesome/free-solid-svg-icons"; // Importing the pen icon
-import apiClient from "../api/axios";
+import { faUserCircle, faHeart, faPen } from "@fortawesome/free-solid-svg-icons";
+import { fetchCategories, fetchUserDetails } from "../api/axios";
 
 const Header = ({ toggleDarkMode, isDarkMode }) => {
-  const { isLoggedIn, logout } = useAuth();
+  const { userId, role, isLoggedIn, logout } = useAuth();
   const navigate = useNavigate();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [categories, setCategories] = useState([]);
-  const [firstName, setFirstName] = useState("Profile"); // Default to "Profile"
+  const [firstName, setFirstName] = useState("Profile");
   const dropdownRef = useRef(null);
-
   const handleLogout = () => {
-    logout(); // Clear user session
-    localStorage.removeItem("authToken"); // Clear any stored authentication token
-    localStorage.removeItem("userId"); // Clear the stored user ID
-    navigate("/login"); // Redirect the user to the login page
+    logout();
+    localStorage.removeItem("token");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("role");
+    setProfileMenuOpen(false); // Close the dropdown when logging out
+    navigate("/login");
   };
 
   useEffect(() => {
-    // Fetch categories from backend
-    const fetchCategories = async () => {
-      try {
-        const response = await apiClient.get("/categories");
-        setCategories(response.data);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    };
-
     if (isLoggedIn) {
-      fetchCategories();
+      fetchCategories()
+        .then((data) => setCategories(data))
+        .catch((error) => console.error("Error fetching categories:", error));
     }
   }, [isLoggedIn]);
 
   useEffect(() => {
-    // Fetch user details to get the first name
-    const fetchUserDetails = async () => {
-      try {
-        const userId = localStorage.getItem("userId");
-        if (!userId) return;
-
-        const response = await apiClient.get(`/users/${userId}`);
-        setFirstName(response.data.firstName || "Profile");
-      } catch (error) {
-        console.error("Error fetching user details:", error);
-      }
-    };
-
-    if (isLoggedIn) {
-      fetchUserDetails();
+    if (isLoggedIn && userId) {
+        fetchUserDetails(userId)
+          .then((data) => setFirstName(data.firstName || "Profile"))
+          .catch((error) => console.error("Error fetching user details:", error));
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, userId]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -78,14 +56,12 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
   return (
     <header className="bg-gray-100 dark:bg-gray-900 py-4 shadow-md sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center px-4">
-        {/* Logo */}
         <Link to="/">
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
             Data Engineering
           </h1>
         </Link>
 
-        {/* Categories */}
         {isLoggedIn && (
           <nav className="flex space-x-4">
             {categories.map((category) => (
@@ -100,20 +76,17 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
           </nav>
         )}
 
-        {/* Right Section */}
         <div className="flex items-center space-x-4">
-          {/* Editor Button with Pen Icon */}
-          {isLoggedIn && (
+          {isLoggedIn && role === "ADMIN" && (
             <button
               onClick={() => navigate("/admin/create-blog")}
               className="flex items-center bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700"
             >
-              <FontAwesomeIcon icon={faPen} className="mr-2" /> {/* Pen Icon */}
+              <FontAwesomeIcon icon={faPen} className="mr-2" />
               Editor
             </button>
           )}
 
-          {/* Favorites */}
           {isLoggedIn && (
             <button
               onClick={() => navigate("/favorites")}
@@ -124,7 +97,6 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
             </button>
           )}
 
-          {/* Dark Mode Toggle */}
           <button
             onClick={toggleDarkMode}
             className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg"
@@ -132,7 +104,6 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
             {isDarkMode ? "Light Mode" : "Dark Mode"}
           </button>
 
-          {/* Profile Dropdown */}
           {isLoggedIn && (
             <div className="relative" ref={dropdownRef}>
               <button

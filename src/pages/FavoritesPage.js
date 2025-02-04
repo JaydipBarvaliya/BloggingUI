@@ -2,13 +2,14 @@ import React, { useEffect, useState, useCallback } from "react";
 import BlogCard from "../components/BlogCard";
 import ConfirmationDialog from "../pages/ConfirmationDialog";
 import { getUserFavorites, toggleFavoriteBlog } from "../api/axios";
+import { useAuth } from "../context/AuthContext";
 
 const FavoritesPage = () => {
   const [favorites, setFavorites] = useState([]);
   const [favoriteBlogIds, setFavoriteBlogIds] = useState(new Set());
   const [showDialog, setShowDialog] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState(null);
-  const userId = localStorage.getItem("userId");
+  const { userId } = useAuth();
 
   // ✅ Fetch favorites from API
   const fetchFavorites = useCallback(async () => {

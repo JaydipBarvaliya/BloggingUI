@@ -2,8 +2,20 @@ import axios from "axios";
 
 const apiClient = axios.create({
   baseURL: "http://localhost:8080/api", // Ensure this matches your backend URL
-  headers: { "Content-Type": "application/json" },
+  headers: { "Content-Type": "application/json"},
 });
+
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token"); // Get JWT token from localStorage
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;  // Attach JWT token to header
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 
 // ✅ Fetch all blogs
 export const getAllBlogs = async () => {
@@ -252,5 +264,40 @@ export const updateBlog = async (blogId, formData) => {
     throw error;
   }
 };
+
+export const loginUser = (email, password) => {
+  return apiClient.post('/auth/login', { email, password });
+};
+
+export const loginViaGoogle = (email, firstName, lastName, authType) => {
+  return apiClient.post('/auth/loginViaGoogle', { email, firstName, lastName, authType });
+};
+
+export const registerUserWithGoogle = (email) => {
+  return apiClient.post('/auth/register', { email, googleAuth: true });
+};
+
+// Fetch categories
+export const fetchCategories = async () => {
+  try {
+    const response = await apiClient.get("/categories");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    throw error;
+  }
+};
+
+// Fetch user details
+export const fetchUserDetails = async (userId) => {
+  try {
+    const response = await apiClient.get(`/users/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    throw error;
+  }
+};
+
 
 export default apiClient;

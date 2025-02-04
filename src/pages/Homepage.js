@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import BlogCard from "../components/BlogCard";
 import ConfirmationDialog from "../pages/ConfirmationDialog"; // ✅ Import the confirmation modal
+import { useAuth } from "../context/AuthContext";
 import {
   getAllBlogs,
   getUserFavorites,
@@ -12,7 +13,7 @@ const Homepage = () => {
   const [favoriteBlogIds, setFavoriteBlogIds] = useState(new Set());
   const [modalOpen, setModalOpen] = useState(false); // ✅ Controls dialog visibility
   const [selectedBlog, setSelectedBlog] = useState(null); // ✅ Stores the selected blog for removal
-  const userId = localStorage.getItem("userId");
+  const { userId } = useAuth();
 
   // ✅ Fetch blogs and favorites
   const fetchBlogsAndFavorites = useCallback(async () => {

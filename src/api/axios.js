@@ -269,7 +269,7 @@ export const loginUser = (email, password) => {
   return apiClient.post('/auth/login', { email, password });
 };
 
-export const loginViaGoogle = (email, firstName, lastName, authType) => {
+export const loginViaGoogle = (email, firstName, lastName, authType ) => {
   return apiClient.post('/auth/loginViaGoogle', { email, firstName, lastName, authType });
 };
 

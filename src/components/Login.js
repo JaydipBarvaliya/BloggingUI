@@ -29,7 +29,7 @@ const Login = () => {
       const response = await loginUser(email, password);
       const token = response.data;
 
-      const { userId, firstName, lastName, role, authType } = parseJwt(response.data);
+      const { userId, firstName, lastName, role, authType } = parseJwt(token);
 
       const cleanedRole = role.replace(/[\[\]]/g, "");
 
@@ -46,21 +46,18 @@ const Login = () => {
 
   const handleGoogleLoginSuccess = async (response) => {
     try {
-      const { credential } = response;
-      const { email } = parseJwt(credential);
-      const { given_name } = parseJwt(credential);
-      const { family_name } = parseJwt(credential);
+      const { given_name, family_name, email } = parseJwt(response.credential);
 
       // Check if user already exists
-      const userResponse = await loginViaGoogle(
-        email,
-        given_name,
-        family_name,
-        "Google"
-      );
+      const userResponse = await loginViaGoogle(email, given_name, family_name, "Google");
       if (userResponse.data) {
-        const { token, userId, firstName, lastName, role } = userResponse.data;
-        login(token, userId, firstName, lastName, role);
+        
+        const token = userResponse.data;
+        const { userId, firstName, lastName, role, authType } = parseJwt(token);
+
+        const cleanedRole = role.replace(/[\[\]]/g, "");
+
+        login(token, firstName, lastName, cleanedRole, authType, userId);
         toast.success(`Welcome back, ${firstName}!`);
         navigate("/");
       } else {

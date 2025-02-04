@@ -117,7 +117,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Conditionally render Update Password Section */}
-        {profile.authType === "MANUAL" && (
+        {profile.authType === "Manual" && (
           <div className="bg-white dark:bg-gray-800 p-6 rounded shadow-lg">
             <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
               Update Password

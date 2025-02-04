@@ -31,7 +31,7 @@ export const getAllBlogs = async () => {
 // ✅ Fetch blogs by category
 export const getBlogsByCategory = async (category) => {
   try {
-    const response = await apiClient.get(`/categories/${category}/blogs`);
+    const response = await apiClient.get(`/blogs/${category}/blogs`);
     return response.data;
   } catch (error) {
     console.error("Error fetching category blogs:", error);
@@ -44,7 +44,7 @@ export const getUserFavorites = async (userId) => {
   try {
     if (!userId) return [];
 
-    const response = await apiClient.get(`/blogs/favorited/${userId}`);
+    const response = await apiClient.get(`/favorites/${userId}`);
 
     return Array.isArray(response.data) ? response.data : []; // ✅ Ensure it's an array
   } catch (error) {
@@ -55,7 +55,7 @@ export const getUserFavorites = async (userId) => {
 // ✅ Toggle favorite status (Add/Remove)
 export const toggleFavoriteBlog = async (blogId, userId) => {
   try {
-    const response = await apiClient.post(`/blogs/${blogId}/favorite/${userId}`);
+    const response = await apiClient.post(`/favorites/${blogId}/${userId}`);
     return response.data.isFavorited;
   } catch (error) {
     console.error("Error toggling favorite:", error);
@@ -153,7 +153,7 @@ export const getComments = async (blogId) => {
 // ✅ Fetch claps count
 export const getClapsCount = async (blogId) => {
   try {
-    const response = await apiClient.get(`/blogs/${blogId}/claps-count`);
+    const response = await apiClient.get(`/claps/${blogId}/claps-count`);
     return response.data.count || 0;
   } catch (error) {
     console.error("Error fetching claps count:", error);
@@ -164,7 +164,7 @@ export const getClapsCount = async (blogId) => {
 // ✅ Check if the user has clapped
 export const hasUserClapped = async (blogId, userId) => {
   try {
-    const response = await apiClient.get(`/blogs/${blogId}/clapped/${userId}`);
+    const response = await apiClient.get(`/claps/${blogId}/clapped/${userId}`);
     return response.data;
   } catch (error) {
     console.error("Error checking if user clapped:", error);
@@ -175,7 +175,7 @@ export const hasUserClapped = async (blogId, userId) => {
 //✅ Send a clap
 export const sendClap = async (blogId, userId) => {
   try {
-    await apiClient.post(`/blogs/${blogId}/clap/${userId}`);
+    await apiClient.post(`/claps/${blogId}/clap/${userId}`);
     return true;
   } catch (error) {
     console.error("Error sending clap:", error);

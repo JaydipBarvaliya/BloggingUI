@@ -1,16 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import ReactQuill from "react-quill";
+import ReactQuill, { Quill } from "react-quill";
 import "react-quill/dist/quill.snow.css"; // Import Quill styles
 import { createBlog, updateBlog } from "../api/axios";
 import "./BlogEditor.css"; // Import custom styles
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// Register fonts for Quill
+const Font = Quill.import('formats/font');
+Font.whitelist = ['sans-serif', 'serif', 'monospace']; // Add additional font names if needed
+Quill.register(Font, true);
+
 const BlogEditor = () => {
   const navigate = useNavigate(); // Hook to navigate
-  const location = useLocation(); // To access the state passed from BlogDetails
-  const blogData = location.state?.blog; // Get the blog details passed from BlogDetails
+  const location = useLocation(); // To access state passed from BlogDetails
+  const blogData = location.state?.blog; // Blog details from BlogDetails
 
   const [editorContent, setEditorContent] = useState(blogData?.content || "");
   const [authorName, setAuthorName] = useState(blogData?.author || "James Bond");
@@ -27,39 +32,50 @@ const BlogEditor = () => {
   const [slug, setSlug] = useState(blogData?.slug || "");
   const [imageError, setImageError] = useState(""); // Error message for image validation
 
-  // New state to track mounting status
-  const [isMounted, setIsMounted] = useState(false);
   const quillRef = useRef(null);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  // Helper function to process code blocks on submission.
+  // Wraps any <pre class="ql-syntax"> lacking a <code> wrapper with one,
+  // adding a default language class.
+  const processCodeBlocks = (html) => {
+    return html.replace(
+      /<pre class="ql-syntax"([^>]*)>([\s\S]*?)<\/pre>/g,
+      (match, attr, codeContent) => {
+        if (/<code.*>[\s\S]*<\/code>/.test(match)) {
+          return match;
+        }
+        return `<pre class="ql-syntax language-javascript"${attr}><code class="language-javascript">${codeContent}</code></pre>`;
+      }
+    );
+  };
 
-  // Handle title change and generate slug
+  // Handle title change and generate slug.
   const handleTitleChange = (e) => {
     setBlogTitle(e.target.value);
     const generatedSlug = generateSlug(e.target.value);
     setSlug(generatedSlug);
   };
 
-  // Function to generate a slug from the title
+  // Generate a slug from the title.
   const generateSlug = (title) => {
     return title
       .toLowerCase()
       .trim()
-      .replace(/[^a-z0-9\s-]/g, "") // Remove special characters
-      .replace(/\s+/g, "-") // Replace spaces with hyphens
-      .replace(/-+/g, "-"); // Replace multiple hyphens with a single hyphen
+      .replace(/[^a-z0-9\s-]/g, "") // Remove special characters.
+      .replace(/\s+/g, "-") // Replace spaces with hyphens.
+      .replace(/-+/g, "-"); // Replace multiple hyphens with one.
   };
 
-  // Handle editor content change
+  // Handle editor content change.
   const handleEditorChange = (value) => {
     setEditorContent(value);
   };
 
-  // Handle form submission
+  // Handle form submission.
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Process the content to wrap code blocks properly.
+    const processedContent = processCodeBlocks(editorContent);
 
     const formData = new FormData();
     formData.append("author", authorName);
@@ -67,16 +83,16 @@ const BlogEditor = () => {
     formData.append("summary", summary);
     formData.append("title", blogTitle);
     formData.append("slug", slug);
-    formData.append("content", editorContent);
-    formData.append("image", image); // Append the image file
+    formData.append("content", processedContent);
+    formData.append("image", image); // Append the image file.
 
     try {
       if (blogData?.id) {
-        // If the blog has an ID, update the existing blog
+        // Update existing blog.
         const updatedBlog = await updateBlog(blogData.id, formData);
         navigate(`/blogs/${updatedBlog.slug}`);
       } else {
-        // If no ID, create a new blog
+        // Create new blog.
         const newBlog = await createBlog(formData);
         navigate(`/blogs/${newBlog.slug}`);
       }
@@ -88,21 +104,19 @@ const BlogEditor = () => {
     }
   };
 
-  // Handle image upload
+  // Handle image upload.
   const handleImageUpload = (e) => {
-    const file = e.target.files[0]; // Get the first file uploaded
+    const file = e.target.files[0]; // Get the first file uploaded.
     if (file) {
-      // Validate file type (only images)
       if (!file.type.startsWith("image/")) {
         setImageError("Please upload a valid image file.");
         setImage(null);
       } else if (file.size > 5000000) {
-        // 5MB limit
         setImageError("The image file size is too large. Please upload a file smaller than 5MB.");
         setImage(null);
       } else {
-        setImage(file); // Set the selected file
-        setImageError(""); // Clear error
+        setImage(file);
+        setImageError("");
       }
     }
   };
@@ -123,7 +137,6 @@ const BlogEditor = () => {
               required
             />
           </div>
-
           <div>
             {/* Category */}
             <label htmlFor="category">Category</label>
@@ -137,7 +150,6 @@ const BlogEditor = () => {
             />
           </div>
         </div>
-
         <div className="form-group">
           <div>
             {/* Image Upload */}
@@ -150,7 +162,6 @@ const BlogEditor = () => {
             />
             {imageError && <p className="text-red-500 text-sm">{imageError}</p>}
           </div>
-
           <div>
             {/* Summary */}
             <label htmlFor="summary">Summary</label>
@@ -162,7 +173,6 @@ const BlogEditor = () => {
             />
           </div>
         </div>
-
         <div className="form-group">
           <div>
             {/* Blog Title */}
@@ -177,34 +187,41 @@ const BlogEditor = () => {
             />
           </div>
         </div>
-
         {/* Hidden slug field */}
         <input type="hidden" value={slug} name="slug" />
-
         {/* Quill Editor */}
         <div className="editor-section">
-          {isMounted && (
-            <ReactQuill
-              ref={quillRef}
-              value={editorContent}
-              onChange={handleEditorChange}
-              modules={{
-                toolbar: [
-                  [{ header: "1" }, { header: "2" }],
-                  [{ font: [] }],
-                  [{ list: "ordered" }, { list: "bullet" }],
-                  ["bold", "italic", "underline"],
-                  ["link", "image"],
-                  [{ align: [] }],
-                  ["blockquote", "code-block"],
-                ],
-              }}
-            />
-          )}
+          <ReactQuill
+            ref={quillRef}
+            value={editorContent}
+            onChange={handleEditorChange}
+            modules={{
+              toolbar: [
+                [{ header: "1" }, { header: "2" }],
+                [{ font: [] }], // Font dropdown based on the whitelist
+                [{ list: "ordered" }, { list: "bullet" }],
+                ["bold", "italic", "underline"],
+                ["link", "image"],
+                [{ align: [] }],
+                ["blockquote", "code-block"],
+              ],
+            }}
+            formats={[
+              "header",
+              "font",
+              "bold",
+              "italic",
+              "underline",
+              "list",
+              "bullet",
+              "link",
+              "image",
+              "blockquote",
+              "code-block"
+            ]}
+          />
         </div>
-
-        {/* Submit Button */}
-        <button type="submit">Save Blog</button>
+        <button type="submit">Publish Blog</button>
       </form>
     </div>
   );

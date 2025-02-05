@@ -5,6 +5,8 @@ import Lottie from "lottie-react";
 import clapAnimation from "../animations/clap.json";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Prism from "prismjs";
+import "prismjs/themes/prism.css"; // or your chosen theme
 
 import {
   getBlogBySlug,
@@ -46,6 +48,16 @@ const BlogDetails = () => {
     setClapsCount(data);
   };
 
+  // Use an effect to add default language class and trigger Prism highlighting when blog content changes
+  useEffect(() => {
+    // Find all pre elements with the ql-syntax class that lack a language class
+    const codeBlocks = document.querySelectorAll("pre.ql-syntax:not([class*='language-'])");
+    codeBlocks.forEach((block) => {
+      block.classList.add("language-javascript"); // Add a default language; change as needed
+    });
+    Prism.highlightAll();
+  }, [blog.content]);
+
   useEffect(() => {
     const fetchBlogDetails = async () => {
       try {
@@ -57,7 +69,8 @@ const BlogDetails = () => {
           blogData.response.status === 404 &&
           blogData.response.data === "Slug not found for requested URL"
         ) {
-          navigate("page-not-found");
+          navigate("/page-not-found", { replace: true });
+          return;
         }
 
         const blogId = blogData.id;
@@ -74,6 +87,7 @@ const BlogDetails = () => {
         }
       } catch (error) {
         console.error("Error fetching blog details:", error);
+        navigate("/page-not-found", { replace: true });
         setIsClapped(false);
       }
     };
@@ -83,6 +97,7 @@ const BlogDetails = () => {
 
   const handleClap = async () => {
     if (!isLoggedIn) {
+      localStorage.setItem("redirectAfterLogin", window.location.pathname);
       // Open the login modal if user is not logged in
       setLoginModalOpen(true);
       return;
@@ -133,7 +148,7 @@ const BlogDetails = () => {
 
   const handlePostComment = async () => {
     if (!isLoggedIn) {
-      // Open the login modal if user is not logged in
+      localStorage.setItem("redirectAfterLogin", window.location.pathname);
       setLoginModalOpen(true);
       return;
     }
@@ -312,50 +327,54 @@ const BlogDetails = () => {
                     ? comment.name
                     : `${userDetails.firstName} ${userDetails.lastName}`}
                 </small>
-                {isLoggedIn && normalizedCommentUserId === normalizedUserId && (
-                  <div className="mt-2">
-                    {editingCommentId === comment.id ? (
-                      <div>
-                        <textarea
-                          value={editedCommentContent}
-                          onChange={(e) =>
-                            setEditedCommentContent(e.target.value)
-                          }
-                          className="w-full p-2 border rounded text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800"
-                        />
-                        <button
-                          onClick={() => handleEditComment(comment.id)}
-                          className="mt-2 bg-yellow-500 text-white px-4 py-2 rounded"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditingCommentId(null)}
-                          className="ml-2 mt-2 bg-gray-500 text-white px-4 py-2 rounded"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <button
-                          onClick={() =>
-                            handleEditButtonClick(comment.id, comment.content)
-                          }
-                          className="bg-yellow-500 text-white px-3 py-1 rounded"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteComment(comment.id)}
-                          className="ml-2 bg-red-500 text-white px-3 py-1 rounded"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {isLoggedIn &&
+                  normalizedCommentUserId === normalizedUserId && (
+                    <div className="mt-2">
+                      {editingCommentId === comment.id ? (
+                        <div>
+                          <textarea
+                            value={editedCommentContent}
+                            onChange={(e) =>
+                              setEditedCommentContent(e.target.value)
+                            }
+                            className="w-full p-2 border rounded text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800"
+                          />
+                          <button
+                            onClick={() => handleEditComment(comment.id)}
+                            className="mt-2 bg-yellow-500 text-white px-4 py-2 rounded"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setEditingCommentId(null)}
+                            className="ml-2 mt-2 bg-gray-500 text-white px-4 py-2 rounded"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <button
+                            onClick={() =>
+                              handleEditButtonClick(
+                                comment.id,
+                                comment.content
+                              )
+                            }
+                            className="bg-yellow-500 text-white px-3 py-1 rounded"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="ml-2 bg-red-500 text-white px-3 py-1 rounded"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
               </div>
             );
           })

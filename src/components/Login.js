@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   loginUser,
@@ -16,6 +16,8 @@ const Login = () => {
   const [error, setError] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -36,9 +38,13 @@ const Login = () => {
 
       // Call the context login function (which updates localStorage and state)
       login(token, firstName, lastName, cleanedRole, authType, userId);
+      toast.success(`Welcome back, ${firstName}!`);
 
-      // toast.success(`Welcome back, ${firstName}!`);
-      navigate("/");
+
+      const redirectPath  =location.state?.from || localStorage.getItem("redirectAfterLogin") || "/";
+      localStorage.removeItem("redirectAfterLogin"); // ✅ Clear the stored path
+      navigate(redirectPath, { replace: true }); // ✅ Redirect back to where user was
+
     } catch (err) {
       setError("Invalid email or password");
       console.error("Login error:", err);

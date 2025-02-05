@@ -1,0 +1,29 @@
+<!-- src/assets/Logo.svg -->
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Define gradients for the pen nib -->
+  <defs>
+    <linearGradient id="penGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#0a3d62; stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1abc9c; stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Group for pen nib and digital nodes -->
+  <g>
+    <!-- Pen nib shape -->
+    <path d="M20,10 L30,50 L20,90 L40,50 Z" fill="url(#penGradient)" />
+    <!-- Data node circles -->
+    <circle cx="55" cy="50" r="4" fill="#1abc9c" />
+    <circle cx="70" cy="40" r="4" fill="#1abc9c" />
+    <circle cx="70" cy="60" r="4" fill="#1abc9c" />
+    <!-- Connecting lines -->
+    <line x1="40" y1="50" x2="55" y2="50" stroke="#1abc9c" stroke-width="2" />
+    <line x1="55" y1="50" x2="70" y2="40" stroke="#1abc9c" stroke-width="2" />
+    <line x1="55" y1="50" x2="70" y2="60" stroke="#1abc9c" stroke-width="2" />
+  </g>
+  
+  <!-- Application name text -->
+  <text x="100" y="65" font-family="Montserrat, sans-serif" font-size="24" fill="#0a3d62">
+    Data Engineering Blog
+  </text>
+</svg>

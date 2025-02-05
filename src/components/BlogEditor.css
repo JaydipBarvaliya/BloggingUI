@@ -140,22 +140,25 @@ pre {
   overflow-x: auto;
   font-size: 1rem;
   line-height: 1.6;
+  /* Remove or lower the border if Prism's style should dominate */
   border: 1px solid #ddd;
+  background-color: inherit; /* Let Prism set the background */
 }
 
+/* Reset code element styling to let Prism control token colors */
 code {
   font-family: 'Courier New', Courier, monospace;
-  color: #d6336c;  /* Optional: Highlight code in a pinkish color */
+  color: inherit; /* Allow Prism to apply its token styles */
 }
 
 /* Dark Mode Code Styling */
 body.dark pre {
   background-color: #1e1e1e;
-  color: #f8f8f2;
+  color: inherit;
 }
 
 body.dark code {
-  color: #f8f8f2;
+  color: inherit;
 }
 
 /* Ordered List Styles */
@@ -244,4 +247,19 @@ h2,
 body.dark h2,
 body.dark .blog-details-content h2 {
   color: #fff;
+}
+
+
+
+.ql-font-serif {
+  font-family: "Times New Roman", Georgia, serif;
+}
+
+.ql-font-monospace {
+  font-family: "Courier New", Courier, monospace;
+}
+
+/* Optionally, you can also define a default for the sans-serif case */
+.ql-font-sans-serif {
+  font-family: Arial, Helvetica, sans-serif;
 }

@@ -2,9 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserCircle, faHeart, faPen } from "@fortawesome/free-solid-svg-icons";
+import {
+  faUserCircle,
+  faHeart,
+  faPen,
+} from "@fortawesome/free-solid-svg-icons";
 import { fetchCategories, fetchUserDetails } from "../api/axios";
-import LoginModal from "../components/LoginModal"; // Import the LoginModal
+import LoginModal from "../components/LoginModal";
+import { ReactComponent as Logo } from "../assests/Logo.svg";
 
 const Header = ({ toggleDarkMode, isDarkMode }) => {
   const { userId, role, isLoggedIn, logout } = useAuth();
@@ -22,6 +27,8 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("role");
+    localStorage.removeItem("userDetails");
+    localStorage.removeItem("redirectAfterLogin");
     setProfileMenuOpen(false);
     navigate("/login");
   };
@@ -63,16 +70,18 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
     if (isLoggedIn) {
       navigate("/favorites");
     } else {
+      localStorage.setItem("redirectAfterLogin", window.location.pathname);
       setLoginModalOpen(true);
     }
   };
 
   return (
-    <header className="bg-gray-100 dark:bg-gray-900 py-4 shadow-md sticky top-0 z-50">
-      <div className="container mx-auto flex justify-between items-center px-4">
-        <Link to="/">
+    <header className="bg-gray-100 dark:bg-gray-900 py-2 shadow-md sticky top-0 z-50">
+      <div className="container mx-auto flex justify-between items-center px-4 h-16">
+        <Link to="/" className="flex items-center space-x-2">
+          <Logo className="w-12 h-12" /> {/* Reduce from w-16 h-16 */}
           <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
-            Data Engineering
+            Data Blogs
           </h1>
         </Link>
 
@@ -85,9 +94,11 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
                 key={category}
                 to={`/categories/${category}`}
                 className={`px-3 py-1 rounded-full transition duration-300 
-                  ${isActive
-                    ? "bg-blue-300 dark:bg-blue-700 text-blue-900 dark:text-blue-100"
-                    : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"}`}
+                  ${
+                    isActive
+                      ? "bg-blue-300 dark:bg-blue-700 text-blue-900 dark:text-blue-100"
+                      : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"
+                  }`}
               >
                 {category}
               </Link>
@@ -160,10 +171,13 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
           )}
         </div>
       </div>
-      
+
       {/* Render the LoginModal when required */}
       {loginModalOpen && (
-        <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
+        <LoginModal
+          isOpen={loginModalOpen}
+          onClose={() => setLoginModalOpen(false)}
+        />
       )}
     </header>
   );

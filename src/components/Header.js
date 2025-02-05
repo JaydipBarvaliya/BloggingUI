@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserCircle, faHeart, faPen } from "@fortawesome/free-solid-svg-icons";
 import { fetchCategories, fetchUserDetails } from "../api/axios";
+import { toast } from "react-toastify";
 
 const Header = ({ toggleDarkMode, isDarkMode }) => {
   const { userId, role, isLoggedIn, logout } = useAuth();
@@ -12,31 +13,35 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
   const [categories, setCategories] = useState([]);
   const [firstName, setFirstName] = useState("Profile");
   const dropdownRef = useRef(null);
+
+  // Handle logout: clear context and optionally localStorage,
+  // then navigate to the login page.
   const handleLogout = () => {
     logout();
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("role");
-    setProfileMenuOpen(false); // Close the dropdown when logging out
+    setProfileMenuOpen(false);
     navigate("/login");
   };
 
+  // Fetch categories on mount (public content)
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchCategories()
-        .then((data) => setCategories(data))
-        .catch((error) => console.error("Error fetching categories:", error));
-    }
-  }, [isLoggedIn]);
+    fetchCategories()
+      .then((data) => setCategories(data))
+      .catch((error) => console.error("Error fetching categories:", error));
+  }, []);
 
+  // Fetch user details if logged in
   useEffect(() => {
     if (isLoggedIn && userId) {
-        fetchUserDetails(userId)
-          .then((data) => setFirstName(data.firstName || "Profile"))
-          .catch((error) => console.error("Error fetching user details:", error));
+      fetchUserDetails(userId)
+        .then((data) => setFirstName(data.firstName || "Profile"))
+        .catch((error) => console.error("Error fetching user details:", error));
     }
   }, [isLoggedIn, userId]);
 
+  // Close dropdown if clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -47,11 +52,22 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
     if (profileMenuOpen) {
       window.addEventListener("click", handleClickOutside);
     }
-
     return () => {
       window.removeEventListener("click", handleClickOutside);
     };
   }, [profileMenuOpen]);
+
+  // Handler for restricted action: Favorites.
+  // If user is not logged in, show a toast notification.
+  const handleFavoritesClick = () => {
+    if (isLoggedIn) {
+      navigate("/favorites");
+    } else {
+      toast.info("Please log in to add favorites.");
+      // Optionally, you could also navigate to the login page:
+      // navigate("/login");
+    }
+  };
 
   return (
     <header className="bg-gray-100 dark:bg-gray-900 py-4 shadow-md sticky top-0 z-50">
@@ -62,19 +78,17 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
           </h1>
         </Link>
 
-        {isLoggedIn && (
-          <nav className="flex space-x-4">
-            {categories.map((category) => (
-              <Link
-                key={category}
-                to={`/categories/${category}`}
-                className="text-gray-800 dark:text-gray-200 hover:text-blue-500"
-              >
-                {category}
-              </Link>
-            ))}
-          </nav>
-        )}
+        <nav className="flex space-x-4">
+          {categories.map((category) => (
+            <Link
+              key={category}
+              to={`/categories/${category}`}
+              className="text-gray-800 dark:text-gray-200 hover:text-blue-500"
+            >
+              {category}
+            </Link>
+          ))}
+        </nav>
 
         <div className="flex items-center space-x-4">
           {isLoggedIn && role === "ADMIN" && (
@@ -87,15 +101,14 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
             </button>
           )}
 
-          {isLoggedIn && (
-            <button
-              onClick={() => navigate("/favorites")}
-              className="flex items-center bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700"
-            >
-              <FontAwesomeIcon icon={faHeart} className="mr-2 text-red-500" />
-              Favorites
-            </button>
-          )}
+          {/* Favorites button is always visible. */}
+          <button
+            onClick={handleFavoritesClick}
+            className="flex items-center bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700"
+          >
+            <FontAwesomeIcon icon={faHeart} className="mr-2 text-red-500" />
+            Favorites
+          </button>
 
           <button
             onClick={toggleDarkMode}
@@ -104,7 +117,8 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
             {isDarkMode ? "Light Mode" : "Dark Mode"}
           </button>
 
-          {isLoggedIn && (
+          {/* Show profile dropdown if logged in; otherwise show Login button */}
+          {isLoggedIn ? (
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setProfileMenuOpen((prev) => !prev)}
@@ -113,7 +127,6 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
                 <FontAwesomeIcon icon={faUserCircle} size="lg" />
                 <span>{firstName}</span>
               </button>
-
               {profileMenuOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 shadow-md rounded-lg">
                   <button
@@ -122,7 +135,6 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
                   >
                     Profile
                   </button>
-
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 hover:bg-red-200 dark:hover:bg-red-600 text-red-600 dark:text-red-400 font-semibold rounded-lg transition duration-300 ease-in-out"
@@ -132,6 +144,14 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
                 </div>
               )}
             </div>
+          ) : (
+            <button
+              onClick={() => navigate("/login")}
+              className="flex items-center space-x-2 bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg"
+            >
+              <FontAwesomeIcon icon={faUserCircle} size="lg" />
+              <span>Login</span>
+            </button>
           )}
         </div>
       </div>

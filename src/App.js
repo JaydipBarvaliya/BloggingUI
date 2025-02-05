@@ -18,42 +18,63 @@ import BlogEditor from "./components/BlogEditor";
 import "./App.css";
 
 const AppRoutes = () => {
-  const { isLoggedIn } = useAuth(); // Fetch isLoggedIn status from context
+  const { isLoggedIn } = useAuth(); // Get auth status from context
 
   return (
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={isLoggedIn ? <Navigate to="/" /> : <Login />} />
       <Route path="/register" element={<RegistrationPage />} />
-
-      {/* Private routes */}
-      <Route path="/" element={<PrivateRoute allowedRoles={["USER", "ADMIN"]}><Homepage /></PrivateRoute>} />
+      <Route path="/" element={<Homepage />} />
       <Route path="/blogs/:slug" element={<BlogDetails />} />
-      <Route path="/categories/:category" element={<PrivateRoute allowedRoles={["USER", "ADMIN"]}><CategoryBlogsPage /></PrivateRoute>} />
-      <Route path="/favorites" element={<PrivateRoute allowedRoles={["USER", "ADMIN"]}><FavoritesPage /></PrivateRoute>} />
-      <Route path="/profile" element={<PrivateRoute allowedRoles={["USER", "ADMIN"]}><ProfilePage /></PrivateRoute>} />
+      <Route path="/categories/:category" element={<CategoryBlogsPage />} />
 
-      {/* Admin route for blog creation */}
-      <Route path="/admin/create-blog" element={<PrivateRoute allowedRoles={["ADMIN"]}><BlogEditor /></PrivateRoute>} />
+      {/* Private routes for restricted activities */}
+      <Route 
+        path="/favorites" 
+        element={
+          <PrivateRoute allowedRoles={["USER", "ADMIN"]}>
+            <FavoritesPage />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/profile" 
+        element={
+          <PrivateRoute allowedRoles={["USER", "ADMIN"]}>
+            <ProfilePage />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/admin/create-blog" 
+        element={
+          <PrivateRoute allowedRoles={["ADMIN"]}>
+            <BlogEditor />
+          </PrivateRoute>
+        } 
+      />
+      <Route 
+        path="/admin/create-blog/:blogId" 
+        element={
+          <PrivateRoute allowedRoles={["ADMIN"]}>
+            <BlogEditor />
+          </PrivateRoute>
+        } 
+      />
 
-      {/* Unauthorized page */}
+      {/* Unauthorized and not found pages */}
       <Route path="/unauthorized" element={<Unauthorized />} />
-
-      {/* Not found routes */}
       <Route path="*" element={<NotFoundPage />} />
       <Route path="/page-not-found" element={<NotFoundPage />} />
-      <Route path="/admin/create-blog/:blogId" element={<PrivateRoute allowedRoles={["ADMIN"]}><BlogEditor /></PrivateRoute>} />
     </Routes>
   );
 };
 
 const App = () => {
-  // Dark mode state management
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem("darkMode") === "true";
-  });
+  // Manage dark mode state and apply the appropriate class to the document
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("darkMode") === "true");
 
-  // Toggle dark mode and save to localStorage
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
@@ -61,7 +82,6 @@ const App = () => {
     document.documentElement.classList.toggle("dark", newMode);
   };
 
-  // Apply dark mode class on mount/update
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add("dark");

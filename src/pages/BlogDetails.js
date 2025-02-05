@@ -17,6 +17,7 @@ import {
   deleteComment,
   deleteBlog, // API for deleting a blog
 } from "../api/axios";
+import LoginModal from "../components/LoginModal"; // Import the LoginModal
 
 const BlogDetails = () => {
   const { slug } = useParams(); // Extract slug from the URL
@@ -31,6 +32,7 @@ const BlogDetails = () => {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editedCommentContent, setEditedCommentContent] = useState("");
   const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false); // Controls the login modal
 
   // Function to fetch comments based on blogId
   const fetchComments = async (blogId) => {
@@ -80,9 +82,13 @@ const BlogDetails = () => {
   }, [slug, isLoggedIn, userId, navigate]);
 
   const handleClap = async () => {
+    if (!isLoggedIn) {
+      // Open the login modal if user is not logged in
+      setLoginModalOpen(true);
+      return;
+    }
     const action = isClapped ? "remove" : "add";
     const success = await sendClap(blog.id, userId, action);
-
     if (success) {
       setClapsCount((prev) => (isClapped ? prev - 1 : prev + 1));
       setIsClapped(!isClapped);
@@ -90,29 +96,26 @@ const BlogDetails = () => {
   };
 
   const handleDeleteBlog = async () => {
-
-    if(role === "ADMIN"){
+    if (role === "ADMIN") {
       try {
         const response = await deleteBlog(blog.id);
         if (response) {
           navigate("/"); // Redirect to the homepage after deletion
         }
       } catch (error) {
-        console.error("Error saving the blog:", error);
+        console.error("Error deleting the blog:", error);
         if (error.response && error.response.data) {
           toast.error(error.response.data.message);
         }
       }
     }
-   
   };
 
   const handleEditBlog = () => {
     // Navigate to the BlogEditor with pre-populated blog data
-    if(role === "ADMIN"){
+    if (role === "ADMIN") {
       navigate(`/admin/create-blog/${blog.id}`, { state: { blog } });
     }
-    
   };
 
   const handleDeleteConfirmation = () => {
@@ -129,6 +132,11 @@ const BlogDetails = () => {
   };
 
   const handlePostComment = async () => {
+    if (!isLoggedIn) {
+      // Open the login modal if user is not logged in
+      setLoginModalOpen(true);
+      return;
+    }
     if (!newComment.trim()) return;
 
     const name = `${userDetails.firstName || "Unknown"} ${
@@ -170,7 +178,6 @@ const BlogDetails = () => {
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = htmlContent;
     const anchorTags = tempDiv.getElementsByTagName("a");
-
     for (let i = 0; i < anchorTags.length; i++) {
       const link = anchorTags[i];
       const href = link.getAttribute("href");
@@ -272,22 +279,21 @@ const BlogDetails = () => {
         <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
           Comments
         </h2>
-        {isLoggedIn && (
-          <div className="comment-form mb-6">
-            <textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Write a comment..."
-              className="w-full p-2 border rounded text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800"
-            />
-            <button
-              onClick={handlePostComment}
-              className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
-            >
-              Post Comment
-            </button>
-          </div>
-        )}
+        {/* Always render the comment form so that the user can type a comment */}
+        <div className="comment-form mb-6">
+          <textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Write a comment..."
+            className="w-full p-2 border rounded text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-800"
+          />
+          <button
+            onClick={handlePostComment}
+            className="mt-2 bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            Post Comment
+          </button>
+        </div>
         {comments.length > 0 ? (
           comments.map((comment) => {
             const normalizedCommentUserId = Number(comment.userId);
@@ -359,6 +365,12 @@ const BlogDetails = () => {
           </p>
         )}
       </div>
+
+      {/* Render the LoginModal for posting comments or clapping when not logged in */}
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+      />
     </div>
   );
 };

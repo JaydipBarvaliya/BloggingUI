@@ -16,10 +16,6 @@ const CategoryBlogsPage = () => {
 
   // ✅ Fetch blogs & favorites
   const fetchBlogsAndFavorites = useCallback(async () => {
-    if (!userId) {
-      console.warn("User ID is not available. Please log in.");
-      return;
-    }
 
     try {
       const [blogsData, favoriteBlogsData] = await Promise.all([

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserCircle, faHeart, faPen } from "@fortawesome/free-solid-svg-icons";
@@ -9,6 +9,7 @@ import { toast } from "react-toastify";
 const Header = ({ toggleDarkMode, isDarkMode }) => {
   const { userId, role, isLoggedIn, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [firstName, setFirstName] = useState("Profile");
@@ -64,8 +65,6 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
       navigate("/favorites");
     } else {
       toast.info("Please log in to add favorites.");
-      // Optionally, you could also navigate to the login page:
-      // navigate("/login");
     }
   };
 
@@ -78,16 +77,23 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
           </h1>
         </Link>
 
-        <nav className="flex space-x-4">
-          {categories.map((category) => (
-            <Link
-              key={category}
-              to={`/categories/${category}`}
-              className="text-gray-800 dark:text-gray-200 hover:text-blue-500"
-            >
-              {category}
-            </Link>
-          ))}
+        {/* Categories navigation styled as pill links with active state */}
+        <nav className="flex space-x-2">
+          {categories.map((category) => {
+            const isActive = location.pathname === `/categories/${category}`;
+            return (
+              <Link
+                key={category}
+                to={`/categories/${category}`}
+                className={`px-3 py-1 rounded-full transition duration-300 
+                  ${isActive
+                    ? "bg-blue-300 dark:bg-blue-700 text-blue-900 dark:text-blue-100"
+                    : "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-800"}`}
+              >
+                {category}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center space-x-4">

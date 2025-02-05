@@ -31,6 +31,7 @@ const Login = () => {
 
       const { userId, firstName, lastName, role, authType } = parseJwt(token);
 
+      //eslint-disable-next-line
       const cleanedRole = role.replace(/[\[\]]/g, "");
 
       // Call the context login function (which updates localStorage and state)
@@ -55,6 +56,7 @@ const Login = () => {
         const token = userResponse.data;
         const { userId, firstName, lastName, role, authType } = parseJwt(token);
 
+        //eslint-disable-next-line
         const cleanedRole = role.replace(/[\[\]]/g, "");
 
         login(token, firstName, lastName, cleanedRole, authType, userId);

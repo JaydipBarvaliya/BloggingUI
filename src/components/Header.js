@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUserCircle, faHeart, faPen } from "@fortawesome/free-solid-svg-icons";
 import { fetchCategories, fetchUserDetails } from "../api/axios";
-import { toast } from "react-toastify";
+import LoginModal from "../components/LoginModal"; // Import the LoginModal
 
 const Header = ({ toggleDarkMode, isDarkMode }) => {
   const { userId, role, isLoggedIn, logout } = useAuth();
@@ -13,10 +13,10 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [categories, setCategories] = useState([]);
   const [firstName, setFirstName] = useState("Profile");
+  const [loginModalOpen, setLoginModalOpen] = useState(false); // New state for LoginModal
   const dropdownRef = useRef(null);
 
-  // Handle logout: clear context and optionally localStorage,
-  // then navigate to the login page.
+  // Handle logout: clear context and optionally localStorage, then navigate to the login page.
   const handleLogout = () => {
     logout();
     localStorage.removeItem("token");
@@ -58,13 +58,12 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
     };
   }, [profileMenuOpen]);
 
-  // Handler for restricted action: Favorites.
-  // If user is not logged in, show a toast notification.
+  // Handler for Favorites click. If not logged in, open the LoginModal.
   const handleFavoritesClick = () => {
     if (isLoggedIn) {
       navigate("/favorites");
     } else {
-      toast.info("Please log in to add favorites.");
+      setLoginModalOpen(true);
     }
   };
 
@@ -161,6 +160,11 @@ const Header = ({ toggleDarkMode, isDarkMode }) => {
           )}
         </div>
       </div>
+      
+      {/* Render the LoginModal when required */}
+      {loginModalOpen && (
+        <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
+      )}
     </header>
   );
 };

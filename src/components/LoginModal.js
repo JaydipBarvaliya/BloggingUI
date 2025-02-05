@@ -17,7 +17,7 @@ const LoginModal = ({ isOpen, onClose }) => {
             Login Required
           </h2>
           <p className="mb-4 text-gray-700 dark:text-gray-300">
-            You must log in to favorite this blog!
+            You must log in to to perform this action!
           </p>
           <div className="flex justify-end space-x-4">
             <button

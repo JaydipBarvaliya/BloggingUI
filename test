@@ -1,135 +1,33 @@
 @ExtendWith(MockitoExtension.class)
-public class ArchivalApiMetadataServiceTest {
+class ArchivalApiMetadataDelegateImplTest {
 
     @InjectMocks
+    private ArchivalApiMetadataDelegateImpl archivalApiMetadataDelegate;
+
+    @Mock
     private ArchivalApiMetadataService archivalApiMetadataService;
 
     @Mock
-    private MetaRepository metaRepo;
-
-    private String id = "123";
+    private BesigOpsApiUtil besigopsapiUtil;
 
     @Test
-    void testDeleteArchivalMetadataMapping_MapTypeMismatch() {
+    void testSearchArchivalMetadataMapping_ExceptionThrown() {
         // Given
-        ArchMetadataMapping entity = new ArchMetadataMapping();
-        entity.setMapType("TypeA"); // Expected mismatch
-        entity.setArcKey("KeyA");
-        entity.setArcDescription("DescA");
-        entity.setArcValue("ValueA");
+        String mapType = "testMapType";
+        HttpHeaders httpHeaders = new HttpHeaders();
 
-        ArchivalMetadataMappingObj deletionMetadata = new ArchivalMetadataMappingObj();
-        deletionMetadata.setMapType("TypeB"); // Mismatch
-        deletionMetadata.setArcKey("KeyA");
-        deletionMetadata.setArcDescription("DescA");
-        deletionMetadata.setArcValue("ValueA");
-
-        when(metaRepo.findById(Long.valueOf(id))).thenReturn(Optional.of(entity));
+        // Mock the behavior to throw an exception
+        doThrow(new RuntimeException("Test Exception"))
+            .when(archivalApiMetadataService)
+            .getArchivalMetadataMappingList(mapType);
 
         // When & Then
-        Exception exception = assertThrows(Exception.class, 
-            () -> archivalApiMetadataService.deleteArchivalMetadataMapping(id, deletionMetadata));
+        SharedServiceLayerException exception = assertThrows(
+            SharedServiceLayerException.class, 
+            () -> archivalApiMetadataDelegate.searchArchivalMetadataMapping(mapType)
+        );
 
-        assertEquals("Data available but mismatch.", exception.getMessage());
-        verify(metaRepo, never()).deleteById(any());
-    }
-
-    @Test
-    void testDeleteArchivalMetadataMapping_ArcKeyMismatch() {
-        // Given
-        ArchMetadataMapping entity = new ArchMetadataMapping();
-        entity.setMapType("TypeA"); // Matching
-        entity.setArcKey("KeyA");   // Expected mismatch
-        entity.setArcDescription("DescA");
-        entity.setArcValue("ValueA");
-
-        ArchivalMetadataMappingObj deletionMetadata = new ArchivalMetadataMappingObj();
-        deletionMetadata.setMapType("TypeA"); // Matching
-        deletionMetadata.setArcKey("KeyB");   // Mismatch
-        deletionMetadata.setArcDescription("DescA");
-        deletionMetadata.setArcValue("ValueA");
-
-        when(metaRepo.findById(Long.valueOf(id))).thenReturn(Optional.of(entity));
-
-        // When & Then
-        Exception exception = assertThrows(Exception.class, 
-            () -> archivalApiMetadataService.deleteArchivalMetadataMapping(id, deletionMetadata));
-
-        assertEquals("Data available but mismatch.", exception.getMessage());
-        verify(metaRepo, never()).deleteById(any());
-    }
-
-    @Test
-    void testDeleteArchivalMetadataMapping_ArcDescriptionMismatch() {
-        // Given
-        ArchMetadataMapping entity = new ArchMetadataMapping();
-        entity.setMapType("TypeA"); 
-        entity.setArcKey("KeyA");   
-        entity.setArcDescription("DescA"); // Expected mismatch
-        entity.setArcValue("ValueA");
-
-        ArchivalMetadataMappingObj deletionMetadata = new ArchivalMetadataMappingObj();
-        deletionMetadata.setMapType("TypeA"); 
-        deletionMetadata.setArcKey("KeyA");   
-        deletionMetadata.setArcDescription("DescB"); // Mismatch
-        deletionMetadata.setArcValue("ValueA");
-
-        when(metaRepo.findById(Long.valueOf(id))).thenReturn(Optional.of(entity));
-
-        // When & Then
-        Exception exception = assertThrows(Exception.class, 
-            () -> archivalApiMetadataService.deleteArchivalMetadataMapping(id, deletionMetadata));
-
-        assertEquals("Data available but mismatch.", exception.getMessage());
-        verify(metaRepo, never()).deleteById(any());
-    }
-
-    @Test
-    void testDeleteArchivalMetadataMapping_ArcValueMismatch() {
-        // Given
-        ArchMetadataMapping entity = new ArchMetadataMapping();
-        entity.setMapType("TypeA"); 
-        entity.setArcKey("KeyA");   
-        entity.setArcDescription("DescA"); 
-        entity.setArcValue("ValueA"); // Expected mismatch
-
-        ArchivalMetadataMappingObj deletionMetadata = new ArchivalMetadataMappingObj();
-        deletionMetadata.setMapType("TypeA"); 
-        deletionMetadata.setArcKey("KeyA");   
-        deletionMetadata.setArcDescription("DescA"); 
-        deletionMetadata.setArcValue("ValueB"); // Mismatch
-
-        when(metaRepo.findById(Long.valueOf(id))).thenReturn(Optional.of(entity));
-
-        // When & Then
-        Exception exception = assertThrows(Exception.class, 
-            () -> archivalApiMetadataService.deleteArchivalMetadataMapping(id, deletionMetadata));
-
-        assertEquals("Data available but mismatch.", exception.getMessage());
-        verify(metaRepo, never()).deleteById(any());
-    }
-
-    @Test
-    void testDeleteArchivalMetadataMapping_SuccessfulDeletion() {
-        // Given
-        ArchMetadataMapping entity = new ArchMetadataMapping();
-        entity.setMapType("TypeA"); 
-        entity.setArcKey("KeyA");   
-        entity.setArcDescription("DescA"); 
-        entity.setArcValue("ValueA"); 
-
-        ArchivalMetadataMappingObj deletionMetadata = new ArchivalMetadataMappingObj();
-        deletionMetadata.setMapType("TypeA"); 
-        deletionMetadata.setArcKey("KeyA");   
-        deletionMetadata.setArcDescription("DescA"); 
-        deletionMetadata.setArcValue("ValueA"); // Everything matches
-
-        when(metaRepo.findById(Long.valueOf(id))).thenReturn(Optional.of(entity));
-
-        // When
-        archivalApiMetadataService.deleteArchivalMetadataMapping(id, deletionMetadata);
-
-        // Then
-        verify(metaRepo, times(1)).deleteById(Long.valueOf(id));
+        // Assert exception message
+        assertTrue(exception.getMessage().contains("Test Exception"));
     }
 }

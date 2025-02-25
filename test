@@ -1,48 +1,43 @@
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import com.td.besig.opsapi.util.SharedServiceLayerException;
-import org.junit.jupiter.api.BeforeEach;
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.ResponseEntity;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
-
-class ArchivalApiMetadataDelegateImplTest {
+@ExtendWith(MockitoExtension.class)
+public class ArchivalApiMetadataServiceTest {
 
     @Mock
-    private BesigOpsApiUtil besigopsapiUtil;
-
-    @Mock
-    private ArchivalApiMetadataService archivalApiMetadataService;
+    private MetaRepository metaRepo;  // Mock the repository
 
     @InjectMocks
-    private ArchivalApiMetadataDelegateImpl delegate;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
+    private ArchivalApiMetadataService archivalApiMetadataService; // Class under test
 
     @Test
-    void testCreateArchivalMetadataMapping_ExceptionThrown() {
-        // Given
-        ArchivalMetadataMappingObj archivalMetadataMappingObj = new ArchivalMetadataMappingObj();
+    void testDeleteArchivalMetadataMapping_SuccessfulDeletion() throws Exception {
+        // Given: Mocked database entity
+        String id = "123";
+        ArchMetadataMapping entity = new ArchMetadataMapping();
+        entity.setMapType("Type1");
+        entity.setArcKey("Key1");
+        entity.setArcDescription("Description1");
+        entity.setArcValue("Value1");
 
-        // Mock besigopsapiUtil.validateTokenAndClientId to throw an exception
-        doThrow(new RuntimeException("Test Exception"))
-                .when(besigopsapiUtil).validateTokenAndClientId(any());
+        // Given: Deletion metadata (matching entity attributes)
+        ArchivalMetadataMappingObj deletionMetadata = new ArchivalMetadataMappingObj("Type1", "Key1", "Description1", "Value1");
 
-        // When & Then
-        SharedServiceLayerException exception = assertThrows(
-                SharedServiceLayerException.class,
-                () -> delegate.createArchivalMetadataMapping(archivalMetadataMappingObj)
-        );
+        // Mock repository to return the entity when searched by ID
+        when(metaRepo.findById(Long.valueOf(id))).thenReturn(Optional.of(entity));
 
-        // Verify that the exception message matches
-        assertTrue(exception.getMessage().contains("Test Exception"));
+        // When: Calling delete method
+        assertDoesNotThrow(() -> archivalApiMetadataService.deleteArchivalMetadataMapping(id, deletionMetadata));
+
+        // Then: Verify that deleteById was called
+        verify(metaRepo, times(1)).deleteById(Long.valueOf(id));
     }
 }

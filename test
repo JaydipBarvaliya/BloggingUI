@@ -11,23 +11,60 @@ class ArchivalApiMetadataDelegateImplTest {
     private BesigOpsApiUtil besigopsapiUtil;
 
     @Test
-    void testSearchArchivalMetadataMapping_ExceptionThrown() {
+    void testUpdateArchivalMetadataMapping_ExceptionThrown() {
         // Given
-        String mapType = "testMapType";
-        HttpHeaders httpHeaders = new HttpHeaders();
+        String id = "testId";
+        ArchivalMetadataMappingObj archivalMetadataMappingObj = new ArchivalMetadataMappingObj();
 
-        // Mock the behavior to throw an exception
+        // Mock the service to throw an exception
         doThrow(new RuntimeException("Test Exception"))
             .when(archivalApiMetadataService)
-            .getArchivalMetadataMappingList(mapType);
+            .updateArchivalMetadataMapping(eq(id), eq(archivalMetadataMappingObj));
 
         // When & Then
         SharedServiceLayerException exception = assertThrows(
             SharedServiceLayerException.class, 
-            () -> archivalApiMetadataDelegate.searchArchivalMetadataMapping(mapType)
+            () -> archivalApiMetadataDelegate.updateArchivalMetadataMapping(id, archivalMetadataMappingObj)
         );
 
-        // Assert exception message
+        // Assert that the exception message contains "Test Exception"
+        assertTrue(exception.getMessage().contains("Test Exception"));
+    }
+}
+
+
+
+
+@ExtendWith(MockitoExtension.class)
+class ArchivalApiMetadataDelegateImplTest {
+
+    @InjectMocks
+    private ArchivalApiMetadataDelegateImpl archivalApiMetadataDelegate;
+
+    @Mock
+    private ArchivalApiMetadataService archivalApiMetadataService;
+
+    @Mock
+    private BesigOpsApiUtil besigopsapiUtil;
+
+    @Test
+    void testDeleteArchivalMetadataMapping_ExceptionThrown() {
+        // Given
+        String id = "testId";
+        ArchivalMetadataMappingObj archivalMetadataMappingObj = new ArchivalMetadataMappingObj();
+
+        // Mock the service to throw an exception
+        doThrow(new RuntimeException("Test Exception"))
+            .when(archivalApiMetadataService)
+            .deleteArchivalMetadataMapping(eq(id), eq(archivalMetadataMappingObj));
+
+        // When & Then
+        SharedServiceLayerException exception = assertThrows(
+            SharedServiceLayerException.class, 
+            () -> archivalApiMetadataDelegate.deleteArchivalMetadataMapping(id, archivalMetadataMappingObj)
+        );
+
+        // Assert that the exception message contains "Test Exception"
         assertTrue(exception.getMessage().contains("Test Exception"));
     }
 }

@@ -1,14 +1,48 @@
-@Test
-void testGetArchivalMetadataMapping_ExceptionThrown() {
-    String id = "1";
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-    // Mock to throw an exception from archivalApiMetadataService
-    when(archivalApiMetadataService.getArchivalMetadataMapping(id))
-            .thenThrow(new RuntimeException("Test Exception"));
+import com.td.besig.opsapi.util.SharedServiceLayerException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
 
-    Exception exception = assertThrows(SharedServiceLayerException.class, () -> {
-        delegate.getArchivalMetadataMapping(id);
-    });
+import java.util.List;
 
-    assertTrue(exception.getMessage().contains("Test Exception"));
+class ArchivalApiMetadataDelegateImplTest {
+
+    @Mock
+    private BesigOpsApiUtil besigopsapiUtil;
+
+    @Mock
+    private ArchivalApiMetadataService archivalApiMetadataService;
+
+    @InjectMocks
+    private ArchivalApiMetadataDelegateImpl delegate;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void testCreateArchivalMetadataMapping_ExceptionThrown() {
+        // Given
+        ArchivalMetadataMappingObj archivalMetadataMappingObj = new ArchivalMetadataMappingObj();
+
+        // Mock besigopsapiUtil.validateTokenAndClientId to throw an exception
+        doThrow(new RuntimeException("Test Exception"))
+                .when(besigopsapiUtil).validateTokenAndClientId(any());
+
+        // When & Then
+        SharedServiceLayerException exception = assertThrows(
+                SharedServiceLayerException.class,
+                () -> delegate.createArchivalMetadataMapping(archivalMetadataMappingObj)
+        );
+
+        // Verify that the exception message matches
+        assertTrue(exception.getMessage().contains("Test Exception"));
+    }
 }

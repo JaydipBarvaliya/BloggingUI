@@ -1,0 +1,69 @@
+@ExtendWith(MockitoExtension.class)
+class ArchivalApiMetadataServiceTest {
+
+    @InjectMocks
+    private ArchivalApiMetadataService archivalApiMetadataService;
+
+    @Mock
+    private ArchivalApiMetadataRepository metaRepo;
+
+    @Mock
+    private ArchMetadataObjToMapper mapper; // Mock the mapper
+
+    @Test
+    void createArchivalMetadataMapping_ShouldThrowException_WhenInputIsNull() {
+        Exception exception = assertThrows(IllegalArgumentException.class, 
+            () -> archivalApiMetadataService.createArchivalMetadataMapping(null));
+
+        assertEquals("ArchivalMetadataMappingObj cannot be null", exception.getMessage());
+    }
+
+    @Test
+    void createArchivalMetadataMapping_ShouldReturnDto_WhenSuccessful() {
+        // Arrange: Mock input and expected output
+        ArchivalMetadataMappingObj inputObj = new ArchivalMetadataMappingObj();
+        inputObj.setMapType("TestType");
+        inputObj.setArcKey("TestKey");
+
+        ArchMetadataMappingDto dto = new ArchMetadataMappingDto();
+        ArchMetadataMapping entity = new ArchMetadataMapping();
+        entity.setMapType("TestType");
+        entity.setArcKey("TestKey");
+
+        ArchivalMetadataMappingObj expectedDto = new ArchivalMetadataMappingObj();
+        expectedDto.setMapType("TestType");
+        expectedDto.setArcKey("TestKey");
+
+        // Mock behavior
+        when(mapper.configToDto(inputObj)).thenReturn(dto);
+        when(metaRepo.saveAndFlush(any(ArchMetadataMapping.class))).thenReturn(entity);
+        when(mapper.entityToDto(entity)).thenReturn(expectedDto);
+
+        // Act
+        ArchivalMetadataMappingObj result = archivalApiMetadataService.createArchivalMetadataMapping(inputObj);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("TestType", result.getMapType());
+        assertEquals("TestKey", result.getArcKey());
+    }
+
+    @Test
+    void createArchivalMetadataMapping_ShouldThrowException_WhenDatabaseFails() {
+        // Arrange
+        ArchivalMetadataMappingObj inputObj = new ArchivalMetadataMappingObj();
+        inputObj.setMapType("TestType");
+
+        ArchMetadataMappingDto dto = new ArchMetadataMappingDto();
+
+        when(mapper.configToDto(inputObj)).thenReturn(dto);
+        when(metaRepo.saveAndFlush(any(ArchMetadataMapping.class)))
+            .thenThrow(new RuntimeException("Database Error"));
+
+        // Act & Assert
+        Exception exception = assertThrows(RuntimeException.class, 
+            () -> archivalApiMetadataService.createArchivalMetadataMapping(inputObj));
+
+        assertEquals("Failed to create archival metadata mapping", exception.getMessage());
+    }
+}

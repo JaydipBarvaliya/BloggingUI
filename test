@@ -1,49 +1,8 @@
-@ExtendWith(MockitoExtension.class)
-class ArchivalApiMetadataServiceTest {
-
-    @InjectMocks
-    private ArchivalApiMetadataService archivalApiMetadataService;
-
-    @Mock
-    private ArchivalApiMetadataRepository metaRepo;
-
-    @Mock
-    private ArchMetadataObjToMapper mapper; // Mock the mapper
-
-    /**
-     * Test case to cover IllegalArgumentException when input is null.
-     */
-    @Test
-    void createArchivalMetadataMapping_ShouldThrowIllegalArgumentException_WhenInputIsNull() {
-        // Act & Assert
-        Exception exception = assertThrows(IllegalArgumentException.class, 
-            () -> archivalApiMetadataService.createArchivalMetadataMapping(null));
-
-        assertEquals("ArchivalMetadataMappingObj cannot be null", exception.getMessage());
-    }
-
-    /**
-     * Test case to cover exception when save operation fails.
-     */
-    @Test
-    void createArchivalMetadataMapping_ShouldThrowRuntimeException_WhenDatabaseFails() {
-        // Arrange
-        ArchivalMetadataMappingObj inputObj = new ArchivalMetadataMappingObj();
-        inputObj.setMapType("TestType");
-
-        ArchMetadataMappingDto dto = new ArchMetadataMappingDto();
-
-        // Mock behavior: Conversion to DTO works fine
-        when(mapper.configToDto(inputObj)).thenReturn(dto);
-
-        // Mock behavior: Database save operation throws an exception
-        when(metaRepo.saveAndFlush(any(ArchMetadataMapping.class)))
-            .thenThrow(new RuntimeException("Database Error"));
-
-        // Act & Assert
-        Exception exception = assertThrows(RuntimeException.class, 
-            () -> archivalApiMetadataService.createArchivalMetadataMapping(inputObj));
-
-        assertEquals("Failed to create archival metadata mapping", exception.getMessage());
-    }
+private HttpHeaders createBasicHeaders() {
+    HttpHeaders httpHeaders = new HttpHeaders();
+    this.getRequest().ifPresent(req -> {
+        httpHeaders.set(HttpHeaderConstants.AUTHORIZATION, req.getHeader(HttpHeaderConstants.AUTHORIZATION));
+        httpHeaders.set(HttpHeaderConstants.CONTENT_TYPE, req.getHeader(HttpHeaderConstants.CONTENT_TYPE));
+    });
+    return httpHeaders;
 }

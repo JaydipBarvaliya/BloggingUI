@@ -1,8 +1,155 @@
-private HttpHeaders createBasicHeaders() {
-    HttpHeaders httpHeaders = new HttpHeaders();
-    this.getRequest().ifPresent(req -> {
-        httpHeaders.set(HttpHeaderConstants.AUTHORIZATION, req.getHeader(HttpHeaderConstants.AUTHORIZATION));
-        httpHeaders.set(HttpHeaderConstants.CONTENT_TYPE, req.getHeader(HttpHeaderConstants.CONTENT_TYPE));
-    });
-    return httpHeaders;
+package com.td.besig.opsapi.service;
+
+import com.td.besig.openapi.model.ArchivalMetadataMappingObj;
+import com.td.besig.opsapi.dao.ArchivalApiMetadataRepository;
+import com.td.besig.opsapi.dto.ArchMetadataMappingDto;
+import com.td.besig.opsapi.mapper.ArchMetadataObjToDtoMapper;
+import com.td.besig.opsapi.mapper.EntityToDTOMapper;
+import com.td.besig.opsapi.model.ArchMetadataMapping;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+/**
+ * Service class for managing Archival Metadata Mapping.
+ * This class provides methods to create, retrieve, update, and delete archival metadata mappings.
+ */
+@Component
+@Slf4j
+@AllArgsConstructor
+public class ArchivalApiMetadataService {
+
+    private final ArchivalApiMetadataRepository metaRepo;
+
+    /**
+     * Creates a new archival metadata mapping.
+     *
+     * @param archivalMetadataMappingObj The archival metadata mapping object to create.
+     * @return The created ArchivalMetadataMappingObj.
+     * @throws IllegalArgumentException if the input object is null.
+     * @throws RuntimeException         if there is an error while saving the mapping.
+     */
+    public ArchivalMetadataMappingObj createArchivalMetadataMapping(ArchivalMetadataMappingObj archivalMetadataMappingObj) {
+        if (Objects.isNull(archivalMetadataMappingObj)) {
+            throw new IllegalArgumentException("ArchivalMetadataMappingObj cannot be null");
+        }
+        try {
+            ArchMetadataMappingDto dto = ArchMetadataObjToDtoMapper.MAPPER.configToDto(archivalMetadataMappingObj);
+            ArchMetadataMapping res = this.metaRepo.saveAndFlush(dtoToEntity(dto));
+            return entityToDto(res);
+        } catch (Exception e) {
+            log.error("Error occurred while creating archivalMetadataMappingObj: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create archival metadata mapping", e);
+        }
+    }
+
+    /**
+     * Retrieves a list of archival metadata mappings based on the given map type.
+     *
+     * @param mapType The type of mapping to filter by.
+     * @return A list of matching ArchivalMetadataMappingObj.
+     */
+    public List<ArchivalMetadataMappingObj> getArchivalMetadataMappingList(String mapType) {
+        List<ArchMetadataMapping> configs = this.metaRepo.findByMapType(mapType);
+        List<ArchivalMetadataMappingObj> listOfMetas = new ArrayList<>();
+        configs.forEach(metas -> {
+            ArchivalMetadataMappingObj archivalMetadataMappingObj = this.entityToDto(metas);
+            listOfMetas.add(archivalMetadataMappingObj);
+        });
+        return listOfMetas;
+    }
+
+    /**
+     * Retrieves a single archival metadata mapping by its ID.
+     *
+     * @param id The ID of the archival metadata mapping.
+     * @return The ArchivalMetadataMappingObj if found, otherwise null.
+     */
+    public ArchivalMetadataMappingObj getArchivalMetadataMapping(String id) {
+        Optional<ArchMetadataMapping> metadataMapping = this.metaRepo.findById(Long.valueOf(id));
+        return metadataMapping.map(this::entityToDto).orElse(null);
+    }
+
+    /**
+     * Updates an existing archival metadata mapping.
+     *
+     * @param id              The ID of the metadata mapping to update.
+     * @param updatedMetadata The updated metadata object.
+     * @throws Exception If the ID does not exist in the database.
+     */
+    public void updateArchivalMetadataMapping(String id, ArchivalMetadataMappingObj updatedMetadata) throws Exception {
+        Optional<ArchMetadataMapping> entity = this.metaRepo.findById(Long.valueOf(id));
+        if (entity.isPresent()) {
+            ArchMetadataMapping existingEntity = entity.get();
+            existingEntity.setMapType(updatedMetadata.getMapType());
+            existingEntity.setArcKey(updatedMetadata.getArcKey());
+            existingEntity.setArcValue(updatedMetadata.getArcValue());
+            existingEntity.setArcDescription(updatedMetadata.getArcDescription());
+
+            this.metaRepo.saveAndFlush(existingEntity);
+        } else {
+            log.error("Please provide valid configuration data to update");
+            throw new Exception("Please provide valid configuration data to update");
+        }
+    }
+
+    /**
+     * Deletes an archival metadata mapping if the provided details match the existing record.
+     *
+     * @param id               The ID of the metadata mapping to delete.
+     * @param deletionMetadata The metadata object for verification before deletion.
+     * @throws Exception If the ID does not exist or if there is a data mismatch.
+     */
+    public void deleteArchivalMetadataMapping(String id, ArchivalMetadataMappingObj deletionMetadata) throws Exception {
+        Optional<ArchMetadataMapping> entity = this.metaRepo.findById(Long.valueOf(id));
+        if (entity.isEmpty()) {
+            log.error("Data not available to delete for id {}", id);
+            throw new Exception(MessageFormat.format("Data not available to delete for id= {0}", id));
+        } else if (Objects.equals(entity.get().getMapType(), deletionMetadata.getMapType()) &&
+                   Objects.equals(entity.get().getArcKey(), deletionMetadata.getArcKey()) &&
+                   Objects.equals(entity.get().getArcDescription(), deletionMetadata.getArcDescription()) &&
+                   Objects.equals(entity.get().getArcValue(), deletionMetadata.getArcValue())) {
+            this.metaRepo.deleteById(Long.valueOf(id));
+            log.debug("Record deleted successfully for id {}", id);
+        } else {
+            log.error("Data available but mismatch.");
+            throw new Exception("Data available but mismatch.");
+        }
+    }
+
+    /**
+     * Converts a DTO object to an entity object.
+     *
+     * @param archMetadataMappingDto The DTO object.
+     * @return The corresponding entity object.
+     */
+    ArchMetadataMapping dtoToEntity(ArchMetadataMappingDto archMetadataMappingDto) {
+        ArchMetadataMapping archMapping = new ArchMetadataMapping();
+        if (archMetadataMappingDto != null) {
+            archMapping = EntityToDTOMapper.INSTANCE.toEntity(archMetadataMappingDto);
+        }
+        return archMapping;
+    }
+
+    /**
+     * Converts an entity object to a DTO object.
+     *
+     * @param archMetadataMapping The entity object.
+     * @return The corresponding DTO object.
+     */
+    ArchivalMetadataMappingObj entityToDto(ArchMetadataMapping archMetadataMapping) {
+        if (Objects.nonNull(archMetadataMapping)) {
+            ArchMetadataMappingDto dto = EntityToDTOMapper.INSTANCE.toDto(archMetadataMapping);
+            ArchivalMetadataMappingObj archivalMetadataMappingObj = ArchMetadataObjToDtoMapper.MAPPER.dtoToConfig(dto);
+            archivalMetadataMappingObj.setId((int) dto.getId());
+            return archivalMetadataMappingObj;
+        }
+        return null;
+    }
 }

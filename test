@@ -1,59 +1,143 @@
-package com.td.besig.opsapi.dto;
+package com.td.besig.opsapi.service;
 
+import com.td.besig.openapi.model.PurgeConfigurationObj;
+import com.td.besig.opsapi.dao.ArchivalApiPurgeConfigRepository;
+import com.td.besig.opsapi.dto.ArchPurgeConfigurationDto;
+import com.td.besig.opsapi.model.ArchPurgeConfiguration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-class ArchPurgeConfigurationDtoTest {
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
-    @Test
-    void testNoArgsConstructor() {
-        ArchPurgeConfigurationDto dto = new ArchPurgeConfigurationDto();
-        assertThat(dto).isNotNull();
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class ArchivalApiPurgeConfigServiceTest {
+
+    @Mock
+    private ArchivalApiPurgeConfigRepository purgeRepo;
+
+    @InjectMocks
+    private ArchivalApiPurgeConfigService service;
+
+    private ArchPurgeConfiguration entity;
+    private ArchPurgeConfigurationDto dto;
+    private PurgeConfigurationObj configObj;
+
+    @BeforeEach
+    void setUp() {
+        entity = new ArchPurgeConfiguration();
+        entity.setId(1L);
+        entity.setPurgeTableName("testTable");
+        entity.setPurgeColumnName("testColumn");
+        entity.setTableType("testType");
+        entity.setPurgeMessage("testMessage");
+        entity.setRetentionMonths(12);
+
+        dto = new ArchPurgeConfigurationDto(1L, "testTable", "testColumn", "testType", "testMessage", 12);
+
+        configObj = new PurgeConfigurationObj();
+        configObj.setId(1);
+        configObj.setPurgeTableName("testTable");
+        configObj.setPurgeColumnName("testColumn");
+        configObj.setTableType("testType");
+        configObj.setPurgeMessage("testMessage");
+        configObj.setRetentionMonths(12);
     }
 
+    // ✅ Test Creating Purge Config - Success
     @Test
-    void testAllArgsConstructorAndGetters() {
-        ArchPurgeConfigurationDto dto = new ArchPurgeConfigurationDto(
-                1L, 
-                "testTable", 
-                "purgeColumn", 
-                "tableType", 
-                "purgeMessage", 
-                12
-        );
+    void testCreateConfiguration_Success() {
+        when(purgeRepo.saveAndFlush(any())).thenReturn(entity);
 
-        assertThat(dto.getId()).isEqualTo(1L);
-        assertThat(dto.getPurgeTableName()).isEqualTo("testTable");
-        assertThat(dto.getPurgeColumnName()).isEqualTo("purgeColumn");
-        assertThat(dto.getTableType()).isEqualTo("tableType");
-        assertThat(dto.getPurgeMessage()).isEqualTo("purgeMessage");
-        assertThat(dto.getRetentionMonths()).isEqualTo(12);
+        PurgeConfigurationObj result = service.createConfiguration(configObj);
+
+        assertNotNull(result);
+        assertEquals("testTable", result.getPurgeTableName());
+        verify(purgeRepo, times(1)).saveAndFlush(any());
     }
 
+    // ❌ Test Creating Purge Config - Null Input
     @Test
-    void testSetters() {
-        ArchPurgeConfigurationDto dto = new ArchPurgeConfigurationDto();
-        dto.setId(2L);
-        dto.setPurgeTableName("newTable");
-        dto.setPurgeColumnName("newColumn");
-        dto.setTableType("newType");
-        dto.setPurgeMessage("newMessage");
-        dto.setRetentionMonths(24);
-
-        assertThat(dto.getId()).isEqualTo(2L);
-        assertThat(dto.getPurgeTableName()).isEqualTo("newTable");
-        assertThat(dto.getPurgeColumnName()).isEqualTo("newColumn");
-        assertThat(dto.getTableType()).isEqualTo("newType");
-        assertThat(dto.getPurgeMessage()).isEqualTo("newMessage");
-        assertThat(dto.getRetentionMonths()).isEqualTo(24);
+    void testCreateConfiguration_NullInput() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> service.createConfiguration(null));
+        assertEquals("PurgeConfigurationObj cannot be null", exception.getMessage());
     }
 
+    // ❌ Test Creating Purge Config - Exception Handling
     @Test
-    void testEqualsAndHashCode() {
-        ArchPurgeConfigurationDto dto1 = new ArchPurgeConfigurationDto(1L, "table", "column", "type", "message", 12);
-        ArchPurgeConfigurationDto dto2 = new ArchPurgeConfigurationDto(1L, "table", "column", "type", "message", 12);
+    void testCreateConfiguration_Exception() {
+        when(purgeRepo.saveAndFlush(any())).thenThrow(new RuntimeException("Database error"));
 
-        assertThat(dto1).isEqualTo(dto2);
-        assertThat(dto1.hashCode()).isEqualTo(dto2.hashCode());
+        Exception exception = assertThrows(RuntimeException.class, () -> service.createConfiguration(configObj));
+        assertTrue(exception.getMessage().contains("Failed to create purge configuration"));
     }
-}
+
+    // ✅ Test Searching Purge Config - Success
+    @Test
+    void testSearchPurgeConfig_Success() {
+        when(purgeRepo.findByPurgeTableName("testTable")).thenReturn(Collections.singletonList(entity));
+
+        List<PurgeConfigurationObj> results = service.searchPurgeConfig("testTable");
+
+        assertNotNull(results);
+        assertEquals(1, results.size());
+        assertEquals("testTable", results.get(0).getPurgeTableName());
+    }
+
+    // ✅ Test Searching Purge Config - No Results
+    @Test
+    void testSearchPurgeConfig_NoResults() {
+        when(purgeRepo.findByPurgeTableName("unknownTable")).thenReturn(Collections.emptyList());
+
+        List<PurgeConfigurationObj> results = service.searchPurgeConfig("unknownTable");
+
+        assertNotNull(results);
+        assertEquals(0, results.size());
+    }
+
+    // ✅ Test Getting Purge Config - Success
+    @Test
+    void testGetPurgeConfig_Success() {
+        when(purgeRepo.findById(1L)).thenReturn(Optional.of(entity));
+
+        PurgeConfigurationObj result = service.getPurgeConfig("1");
+
+        assertNotNull(result);
+        assertEquals("testTable", result.getPurgeTableName());
+    }
+
+    // ✅ Test Getting Purge Config - Not Found
+    @Test
+    void testGetPurgeConfig_NotFound() {
+        when(purgeRepo.findById(1L)).thenReturn(Optional.empty());
+
+        PurgeConfigurationObj result = service.getPurgeConfig("1");
+
+        assertNull(result);
+    }
+
+    // ✅ Test Updating Purge Config - Success
+    @Test
+    void testUpdatePurgeConfig_Success() throws Exception {
+        when(purgeRepo.findById(1L)).thenReturn(Optional.of(entity));
+
+        service.updatePurgeConfig("1", configObj);
+
+        verify(purgeRepo, times(1)).saveAndFlush(any());
+    }
+
+    // ❌ Test Updating Purge Config - Not Found
+    @Test
+    void testUpdatePurgeConfig_NotFound() {
+        when(purgeRepo.findById(1L)).thenReturn(Optional.empty());
+
+        Exception exception = assertThrows(Exception.class, () -> service.updatePurgeConfig("1", config

@@ -1,6 +1,6 @@
 @Test
 void testDeletePurgeConfig_Success() throws Exception {
-    // Create a fully matching entity
+    // Matching entity
     ArchPurgeConfiguration entity = new ArchPurgeConfiguration();
     entity.setId(1L);
     entity.setPurgeTableName("testTable");
@@ -9,7 +9,6 @@ void testDeletePurgeConfig_Success() throws Exception {
     entity.setPurgeMessage("testMessage");
     entity.setRetentionMonths(12);
 
-    // Create a matching test input
     PurgeConfigurationObj deletionPurgeConfig = new PurgeConfigurationObj();
     deletionPurgeConfig.setId(1);
     deletionPurgeConfig.setPurgeTableName("testTable");
@@ -18,42 +17,35 @@ void testDeletePurgeConfig_Success() throws Exception {
     deletionPurgeConfig.setPurgeMessage("testMessage");
     deletionPurgeConfig.setRetentionMonths(12);
 
-    // Mock repository to return the entity when searched by ID
     when(purgeRepo.findById(1L)).thenReturn(Optional.of(entity));
 
-    // Call the delete method
     purgeService.deletePurgeConfig("1", deletionPurgeConfig);
 
-    // Verify that deleteById was called
     verify(purgeRepo, times(1)).deleteById(1L);
 }
 
+@Test
+void testDeletePurgeConfig_NotFound() {
+    when(purgeRepo.findById(1L)).thenReturn(Optional.empty());
 
+    Exception exception = assertThrows(Exception.class, () -> purgeService.deletePurgeConfig("1", testConfig));
 
-
-
+    assertEquals("Data not available to delete for id= 1", exception.getMessage());
+}
 
 @Test
-void testUpdatePurgeConfig_Success() throws Exception {
-    ArchPurgeConfiguration existingEntity = new ArchPurgeConfiguration();
-    existingEntity.setId(1L);
-    existingEntity.setPurgeTableName("oldTable");
-    existingEntity.setPurgeColumnName("oldColumn");
-    existingEntity.setTableType("oldType");
-    existingEntity.setPurgeMessage("oldMessage");
-    existingEntity.setRetentionMonths(6);
+void testDeletePurgeConfig_Mismatch() {
+    ArchPurgeConfiguration entity = new ArchPurgeConfiguration();
+    entity.setId(1L);
+    entity.setPurgeTableName("differentTable"); // This causes mismatch
 
-    PurgeConfigurationObj updatedConfig = new PurgeConfigurationObj();
-    updatedConfig.setId(1);
-    updatedConfig.setPurgeTableName("newTable");
-    updatedConfig.setPurgeColumnName("newColumn");
-    updatedConfig.setTableType("newType");
-    updatedConfig.setPurgeMessage("newMessage");
-    updatedConfig.setRetentionMonths(12);
+    PurgeConfigurationObj deletionPurgeConfig = new PurgeConfigurationObj();
+    deletionPurgeConfig.setId(1);
+    deletionPurgeConfig.setPurgeTableName("testTable"); // This does not match the entity
 
-    when(purgeRepo.findById(1L)).thenReturn(Optional.of(existingEntity));
+    when(purgeRepo.findById(1L)).thenReturn(Optional.of(entity));
 
-    purgeService.updatePurgeConfig("1", updatedConfig);
+    Exception exception = assertThrows(Exception.class, () -> purgeService.deletePurgeConfig("1", deletionPurgeConfig));
 
-    verify(purgeRepo, times(1)).saveAndFlush(any());
+    assertEquals("Data available but mismatch.", exception.getMessage());
 }

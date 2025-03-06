@@ -1,30 +1,59 @@
-@Test
-void testGetPurgeConfig_Exception() {
-    when(purgeService.getPurgeConfig(any())).thenThrow(new RuntimeException("Database error"));
+package com.td.besig.opsapi.dto;
 
-    Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.getPurgeConfig("123"));
+import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
-    assertTrue(exception.getMessage().contains("Database error"));
-}
+class ArchPurgeConfigurationDtoTest {
 
+    @Test
+    void testNoArgsConstructor() {
+        ArchPurgeConfigurationDto dto = new ArchPurgeConfigurationDto();
+        assertThat(dto).isNotNull();
+    }
 
+    @Test
+    void testAllArgsConstructorAndGetters() {
+        ArchPurgeConfigurationDto dto = new ArchPurgeConfigurationDto(
+                1L, 
+                "testTable", 
+                "purgeColumn", 
+                "tableType", 
+                "purgeMessage", 
+                12
+        );
 
-@Test
-void testUpdatePurgeConfig_Exception() {
-    doThrow(new RuntimeException("Update failed")).when(purgeService).updatePurgeConfig(any(), any());
+        assertThat(dto.getId()).isEqualTo(1L);
+        assertThat(dto.getPurgeTableName()).isEqualTo("testTable");
+        assertThat(dto.getPurgeColumnName()).isEqualTo("purgeColumn");
+        assertThat(dto.getTableType()).isEqualTo("tableType");
+        assertThat(dto.getPurgeMessage()).isEqualTo("purgeMessage");
+        assertThat(dto.getRetentionMonths()).isEqualTo(12);
+    }
 
-    Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.updatePurgeConfig("123", testConfig));
+    @Test
+    void testSetters() {
+        ArchPurgeConfigurationDto dto = new ArchPurgeConfigurationDto();
+        dto.setId(2L);
+        dto.setPurgeTableName("newTable");
+        dto.setPurgeColumnName("newColumn");
+        dto.setTableType("newType");
+        dto.setPurgeMessage("newMessage");
+        dto.setRetentionMonths(24);
 
-    assertTrue(exception.getMessage().contains("Update failed"));
-}
+        assertThat(dto.getId()).isEqualTo(2L);
+        assertThat(dto.getPurgeTableName()).isEqualTo("newTable");
+        assertThat(dto.getPurgeColumnName()).isEqualTo("newColumn");
+        assertThat(dto.getTableType()).isEqualTo("newType");
+        assertThat(dto.getPurgeMessage()).isEqualTo("newMessage");
+        assertThat(dto.getRetentionMonths()).isEqualTo(24);
+    }
 
+    @Test
+    void testEqualsAndHashCode() {
+        ArchPurgeConfigurationDto dto1 = new ArchPurgeConfigurationDto(1L, "table", "column", "type", "message", 12);
+        ArchPurgeConfigurationDto dto2 = new ArchPurgeConfigurationDto(1L, "table", "column", "type", "message", 12);
 
-
-@Test
-void testDeletePurgeConfig_Exception() {
-    doThrow(new RuntimeException("Deletion error")).when(purgeService).deletePurgeConfig(any(), any());
-
-    Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.deletePurgeConfig("123", testConfig));
-
-    assertTrue(exception.getMessage().contains("Deletion error"));
+        assertThat(dto1).isEqualTo(dto2);
+        assertThat(dto1.hashCode()).isEqualTo(dto2.hashCode());
+    }
 }

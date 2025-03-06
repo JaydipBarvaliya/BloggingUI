@@ -46,6 +46,7 @@ class ArchivalApiPurgeConfigDelegateImplTest {
         testConfig.setId("123");
     }
 
+    // ✅ Test Create Purge Config - Success
     @Test
     void testCreatePurgeConfig_Success() {
         when(purgeService.createConfiguration(any())).thenReturn(testConfig);
@@ -60,6 +61,7 @@ class ArchivalApiPurgeConfigDelegateImplTest {
         verify(purgeService, times(1)).createConfiguration(any());
     }
 
+    // ❌ Test Create Purge Config - Exception Handling
     @Test
     void testCreatePurgeConfig_Exception() {
         when(purgeService.createConfiguration(any())).thenThrow(new RuntimeException("Error occurred"));
@@ -69,6 +71,7 @@ class ArchivalApiPurgeConfigDelegateImplTest {
         assertTrue(exception.getMessage().contains("Error occurred"));
     }
 
+    // ✅ Test Search Purge Config - Success
     @Test
     void testSearchPurgeConfig_Success() {
         when(purgeService.searchPurgeConfig("testTable")).thenReturn(Collections.singletonList(testConfig));
@@ -80,6 +83,17 @@ class ArchivalApiPurgeConfigDelegateImplTest {
         assertEquals(1, response.getBody().getCount());
     }
 
+    // ❌ Test Search Purge Config - Exception Handling
+    @Test
+    void testSearchPurgeConfig_Exception() {
+        when(purgeService.searchPurgeConfig(any())).thenThrow(new RuntimeException("Search error"));
+
+        Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.searchPurgeConfig("testTable"));
+
+        assertTrue(exception.getMessage().contains("Search error"));
+    }
+
+    // ✅ Test Get Purge Config - Success
     @Test
     void testGetPurgeConfig_Success() {
         when(purgeService.getPurgeConfig("123")).thenReturn(testConfig);
@@ -91,6 +105,7 @@ class ArchivalApiPurgeConfigDelegateImplTest {
         assertEquals("123", response.getBody().getId());
     }
 
+    // ❌ Test Get Purge Config - Not Found
     @Test
     void testGetPurgeConfig_NotFound() {
         when(purgeService.getPurgeConfig("123")).thenReturn(null);
@@ -100,6 +115,17 @@ class ArchivalApiPurgeConfigDelegateImplTest {
         assertEquals(NOT_FOUND, response.getStatusCode());
     }
 
+    // ❌ Test Get Purge Config - Exception Handling
+    @Test
+    void testGetPurgeConfig_Exception() {
+        when(purgeService.getPurgeConfig(any())).thenThrow(new RuntimeException("Database error"));
+
+        Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.getPurgeConfig("123"));
+
+        assertTrue(exception.getMessage().contains("Database error"));
+    }
+
+    // ✅ Test Update Purge Config - Success
     @Test
     void testUpdatePurgeConfig_Success() {
         doNothing().when(purgeService).updatePurgeConfig(eq("123"), any());
@@ -110,6 +136,17 @@ class ArchivalApiPurgeConfigDelegateImplTest {
         verify(purgeService, times(1)).updatePurgeConfig(eq("123"), any());
     }
 
+    // ❌ Test Update Purge Config - Exception Handling
+    @Test
+    void testUpdatePurgeConfig_Exception() {
+        doThrow(new RuntimeException("Update failed")).when(purgeService).updatePurgeConfig(any(), any());
+
+        Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.updatePurgeConfig("123", testConfig));
+
+        assertTrue(exception.getMessage().contains("Update failed"));
+    }
+
+    // ✅ Test Delete Purge Config - Success
     @Test
     void testDeletePurgeConfig_Success() {
         doNothing().when(purgeService).deletePurgeConfig(eq("123"), any());
@@ -118,5 +155,15 @@ class ArchivalApiPurgeConfigDelegateImplTest {
 
         assertEquals(OK, response.getStatusCode());
         verify(purgeService, times(1)).deletePurgeConfig(eq("123"), any());
+    }
+
+    // ❌ Test Delete Purge Config - Exception Handling
+    @Test
+    void testDeletePurgeConfig_Exception() {
+        doThrow(new RuntimeException("Deletion error")).when(purgeService).deletePurgeConfig(any(), any());
+
+        Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.deletePurgeConfig("123", testConfig));
+
+        assertTrue(exception.getMessage().contains("Deletion error"));
     }
 }

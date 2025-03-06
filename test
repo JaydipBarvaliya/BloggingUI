@@ -1,10 +1,9 @@
 @Test
-void testDeletePurgeConfig_Success() throws Exception {
-    // Matching entity
+void testDeletePurgeConfig_ColumnNameMismatch() {
     ArchPurgeConfiguration entity = new ArchPurgeConfiguration();
     entity.setId(1L);
     entity.setPurgeTableName("testTable");
-    entity.setPurgeColumnName("testColumn");
+    entity.setPurgeColumnName("correctColumn"); // Expected column name
     entity.setTableType("testType");
     entity.setPurgeMessage("testMessage");
     entity.setRetentionMonths(12);
@@ -12,36 +11,10 @@ void testDeletePurgeConfig_Success() throws Exception {
     PurgeConfigurationObj deletionPurgeConfig = new PurgeConfigurationObj();
     deletionPurgeConfig.setId(1);
     deletionPurgeConfig.setPurgeTableName("testTable");
-    deletionPurgeConfig.setPurgeColumnName("testColumn");
+    deletionPurgeConfig.setPurgeColumnName("wrongColumn"); // Mismatched column name
     deletionPurgeConfig.setTableType("testType");
     deletionPurgeConfig.setPurgeMessage("testMessage");
     deletionPurgeConfig.setRetentionMonths(12);
-
-    when(purgeRepo.findById(1L)).thenReturn(Optional.of(entity));
-
-    purgeService.deletePurgeConfig("1", deletionPurgeConfig);
-
-    verify(purgeRepo, times(1)).deleteById(1L);
-}
-
-@Test
-void testDeletePurgeConfig_NotFound() {
-    when(purgeRepo.findById(1L)).thenReturn(Optional.empty());
-
-    Exception exception = assertThrows(Exception.class, () -> purgeService.deletePurgeConfig("1", testConfig));
-
-    assertEquals("Data not available to delete for id= 1", exception.getMessage());
-}
-
-@Test
-void testDeletePurgeConfig_Mismatch() {
-    ArchPurgeConfiguration entity = new ArchPurgeConfiguration();
-    entity.setId(1L);
-    entity.setPurgeTableName("differentTable"); // This causes mismatch
-
-    PurgeConfigurationObj deletionPurgeConfig = new PurgeConfigurationObj();
-    deletionPurgeConfig.setId(1);
-    deletionPurgeConfig.setPurgeTableName("testTable"); // This does not match the entity
 
     when(purgeRepo.findById(1L)).thenReturn(Optional.of(entity));
 

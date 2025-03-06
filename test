@@ -1,24 +1,38 @@
-@Test
-void testDeletePurgeConfig_ColumnNameMismatch() {
-    ArchPurgeConfiguration entity = new ArchPurgeConfiguration();
-    entity.setId(1L);
-    entity.setPurgeTableName("testTable");
-    entity.setPurgeColumnName("correctColumn"); // Expected column name
-    entity.setTableType("testType");
-    entity.setPurgeMessage("testMessage");
-    entity.setRetentionMonths(12);
+package com.td.besig.opsapi.service;
 
-    PurgeConfigurationObj deletionPurgeConfig = new PurgeConfigurationObj();
-    deletionPurgeConfig.setId(1);
-    deletionPurgeConfig.setPurgeTableName("testTable");
-    deletionPurgeConfig.setPurgeColumnName("wrongColumn"); // Mismatched column name
-    deletionPurgeConfig.setTableType("testType");
-    deletionPurgeConfig.setPurgeMessage("testMessage");
-    deletionPurgeConfig.setRetentionMonths(12);
+import com.td.besig.opsapi.dto.ArchPurgeConfigurationDto;
+import com.td.besig.opsapi.mapper.EntityToDTOMapper;
+import com.td.besig.opsapi.model.ArchPurgeConfiguration;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-    when(purgeRepo.findById(1L)).thenReturn(Optional.of(entity));
+class ArchivalApiPurgeConfigServiceTest {
 
-    Exception exception = assertThrows(Exception.class, () -> purgeService.deletePurgeConfig("1", deletionPurgeConfig));
+    private final ArchivalApiPurgeConfigService purgeService = new ArchivalApiPurgeConfigService(null);
 
-    assertEquals("Data available but mismatch.", exception.getMessage());
+    @Test
+    void testDtoToEntity_NullInput() {
+        ArchPurgeConfiguration result = purgeService.dtoToEntity(null);
+
+        assertNotNull(result);
+        assertTrue(result instanceof ArchPurgeConfiguration);
+    }
+
+    @Test
+    void testDtoToEntity_ValidInput() {
+        // Mock DTO
+        ArchPurgeConfigurationDto dto = new ArchPurgeConfigurationDto();
+        dto.setId(1L);
+        dto.setPurgeTableName("testTable");
+
+        // Spy on the mapper
+        EntityToDTOMapper mapperSpy = spy(EntityToDTOMapper.INSTANCE);
+        doReturn(new ArchPurgeConfiguration()).when(mapperSpy).toEntity(dto);
+
+        ArchPurgeConfiguration result = purgeService.dtoToEntity(dto);
+
+        assertNotNull(result);
+        verify(mapperSpy, times(1)).toEntity(dto);
+    }
 }

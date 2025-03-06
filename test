@@ -1,8 +1,10 @@
 package com.td.besig.opsapi.service;
 
 import com.td.besig.opsapi.dto.ArchPurgeConfigurationDto;
+import com.td.besig.opsapi.mapper.ArchPurgeConfigObjToDtoMapper;
 import com.td.besig.opsapi.mapper.EntityToDTOMapper;
 import com.td.besig.opsapi.model.ArchPurgeConfiguration;
+import com.td.besig.openapi.model.PurgeConfigurationObj;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -11,28 +13,57 @@ class ArchivalApiPurgeConfigServiceTest {
 
     private final ArchivalApiPurgeConfigService purgeService = new ArchivalApiPurgeConfigService(null);
 
+    // ✅ Test dtoToEntity with null input (Covers: return new entity)
     @Test
     void testDtoToEntity_NullInput() {
         ArchPurgeConfiguration result = purgeService.dtoToEntity(null);
-
         assertNotNull(result);
         assertTrue(result instanceof ArchPurgeConfiguration);
     }
 
+    // ✅ Test dtoToEntity with valid input (Covers: EntityToDTOMapper.INSTANCE.toEntity(purgeDTO))
     @Test
     void testDtoToEntity_ValidInput() {
-        // Mock DTO
         ArchPurgeConfigurationDto dto = new ArchPurgeConfigurationDto();
         dto.setId(1L);
         dto.setPurgeTableName("testTable");
 
-        // Spy on the mapper
         EntityToDTOMapper mapperSpy = spy(EntityToDTOMapper.INSTANCE);
         doReturn(new ArchPurgeConfiguration()).when(mapperSpy).toEntity(dto);
 
         ArchPurgeConfiguration result = purgeService.dtoToEntity(dto);
-
         assertNotNull(result);
         verify(mapperSpy, times(1)).toEntity(dto);
+    }
+
+    // ✅ Test entityToDto with null input (Covers: return null)
+    @Test
+    void testEntityToDto_NullInput() {
+        PurgeConfigurationObj result = purgeService.entityToDto(null);
+        assertNull(result);
+    }
+
+    // ✅ Test entityToDto with valid input (Covers: full object conversion)
+    @Test
+    void testEntityToDto_ValidInput() {
+        ArchPurgeConfiguration entity = new ArchPurgeConfiguration();
+        entity.setId(1L);
+        entity.setPurgeTableName("testTable");
+
+        EntityToDTOMapper mapperSpy = spy(EntityToDTOMapper.INSTANCE);
+        ArchPurgeConfigurationDto mockDto = new ArchPurgeConfigurationDto();
+        mockDto.setId(1L);
+        when(mapperSpy.toDto(entity)).thenReturn(mockDto);
+
+        ArchPurgeConfigObjToDtoMapper objMapperSpy = spy(ArchPurgeConfigObjToDtoMapper.MAPPER);
+        PurgeConfigurationObj mockConfigObj = new PurgeConfigurationObj();
+        when(objMapperSpy.dtoToConfig(mockDto)).thenReturn(mockConfigObj);
+
+        PurgeConfigurationObj result = purgeService.entityToDto(entity);
+
+        assertNotNull(result);
+        assertEquals(1, result.getId());
+        verify(mapperSpy, times(1)).toDto(entity);
+        verify(objMapperSpy, times(1)).dtoToConfig(mockDto);
     }
 }

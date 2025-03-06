@@ -1,11 +1,30 @@
 @Test
-void testSearchPurgeConfig_Exception() {
-    // Simulate an exception in the service layer
-    when(purgeService.searchPurgeConfig(any())).thenThrow(new RuntimeException("Search error"));
+void testGetPurgeConfig_Exception() {
+    when(purgeService.getPurgeConfig(any())).thenThrow(new RuntimeException("Database error"));
 
-    // Verify that the exception is handled properly
-    Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.searchPurgeConfig("testTable"));
+    Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.getPurgeConfig("123"));
 
-    // Ensure the exception message contains the expected error text
-    assertTrue(exception.getMessage().contains("Search error"));
+    assertTrue(exception.getMessage().contains("Database error"));
+}
+
+
+
+@Test
+void testUpdatePurgeConfig_Exception() {
+    doThrow(new RuntimeException("Update failed")).when(purgeService).updatePurgeConfig(any(), any());
+
+    Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.updatePurgeConfig("123", testConfig));
+
+    assertTrue(exception.getMessage().contains("Update failed"));
+}
+
+
+
+@Test
+void testDeletePurgeConfig_Exception() {
+    doThrow(new RuntimeException("Deletion error")).when(purgeService).deletePurgeConfig(any(), any());
+
+    Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.deletePurgeConfig("123", testConfig));
+
+    assertTrue(exception.getMessage().contains("Deletion error"));
 }

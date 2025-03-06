@@ -1,155 +1,122 @@
-package com.td.besig.opsapi.service;
+package com.td.besig.opsapi.delegate;
 
-import com.td.besig.openapi.model.ArchivalMetadataMappingObj;
-import com.td.besig.opsapi.dao.ArchivalApiMetadataRepository;
-import com.td.besig.opsapi.dto.ArchMetadataMappingDto;
-import com.td.besig.opsapi.mapper.ArchMetadataObjToDtoMapper;
-import com.td.besig.opsapi.mapper.EntityToDTOMapper;
-import com.td.besig.opsapi.model.ArchMetadataMapping;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import com.td.besig.openapi.model.PurgeConfigurationObj;
+import com.td.besig.openapi.model.SearchPurgeConfig200Response;
+import com.td.besig.opsapi.service.ArchivalApiPurgeConfigService;
+import com.td.besig.opsapi.util.BesigopsapiUtil;
+import com.td.esig.common.util.SharedServiceLayerException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.context.request.NativeWebRequest;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
-/**
- * Service class for managing Archival Metadata Mapping.
- * This class provides methods to create, retrieve, update, and delete archival metadata mappings.
- */
-@Component
-@Slf4j
-@AllArgsConstructor
-public class ArchivalApiMetadataService {
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.http.HttpStatus.*;
 
-    private final ArchivalApiMetadataRepository metaRepo;
+@ExtendWith(MockitoExtension.class)
+class ArchivalApiPurgeConfigDelegateImplTest {
 
-    /**
-     * Creates a new archival metadata mapping.
-     *
-     * @param archivalMetadataMappingObj The archival metadata mapping object to create.
-     * @return The created ArchivalMetadataMappingObj.
-     * @throws IllegalArgumentException if the input object is null.
-     * @throws RuntimeException         if there is an error while saving the mapping.
-     */
-    public ArchivalMetadataMappingObj createArchivalMetadataMapping(ArchivalMetadataMappingObj archivalMetadataMappingObj) {
-        if (Objects.isNull(archivalMetadataMappingObj)) {
-            throw new IllegalArgumentException("ArchivalMetadataMappingObj cannot be null");
-        }
-        try {
-            ArchMetadataMappingDto dto = ArchMetadataObjToDtoMapper.MAPPER.configToDto(archivalMetadataMappingObj);
-            ArchMetadataMapping res = this.metaRepo.saveAndFlush(dtoToEntity(dto));
-            return entityToDto(res);
-        } catch (Exception e) {
-            log.error("Error occurred while creating archivalMetadataMappingObj: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to create archival metadata mapping", e);
-        }
+    @Mock
+    private ArchivalApiPurgeConfigService purgeService;
+
+    @Mock
+    private BesigopsapiUtil besigopsapiUtil;
+
+    @Mock
+    private NativeWebRequest request;
+
+    @InjectMocks
+    private ArchivalApiPurgeConfigDelegateImpl delegate;
+
+    private PurgeConfigurationObj testConfig;
+
+    @BeforeEach
+    void setUp() {
+        testConfig = new PurgeConfigurationObj();
+        testConfig.setId("123");
     }
 
-    /**
-     * Retrieves a list of archival metadata mappings based on the given map type.
-     *
-     * @param mapType The type of mapping to filter by.
-     * @return A list of matching ArchivalMetadataMappingObj.
-     */
-    public List<ArchivalMetadataMappingObj> getArchivalMetadataMappingList(String mapType) {
-        List<ArchMetadataMapping> configs = this.metaRepo.findByMapType(mapType);
-        List<ArchivalMetadataMappingObj> listOfMetas = new ArrayList<>();
-        configs.forEach(metas -> {
-            ArchivalMetadataMappingObj archivalMetadataMappingObj = this.entityToDto(metas);
-            listOfMetas.add(archivalMetadataMappingObj);
-        });
-        return listOfMetas;
+    @Test
+    void testCreatePurgeConfig_Success() {
+        when(purgeService.createConfiguration(any())).thenReturn(testConfig);
+
+        ResponseEntity<List<PurgeConfigurationObj>> response = delegate.createPurgeConfig(testConfig);
+
+        assertNotNull(response);
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(1, response.getBody().size());
+        assertEquals("123", response.getBody().get(0).getId());
+
+        verify(purgeService, times(1)).createConfiguration(any());
     }
 
-    /**
-     * Retrieves a single archival metadata mapping by its ID.
-     *
-     * @param id The ID of the archival metadata mapping.
-     * @return The ArchivalMetadataMappingObj if found, otherwise null.
-     */
-    public ArchivalMetadataMappingObj getArchivalMetadataMapping(String id) {
-        Optional<ArchMetadataMapping> metadataMapping = this.metaRepo.findById(Long.valueOf(id));
-        return metadataMapping.map(this::entityToDto).orElse(null);
+    @Test
+    void testCreatePurgeConfig_Exception() {
+        when(purgeService.createConfiguration(any())).thenThrow(new RuntimeException("Error occurred"));
+
+        Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.createPurgeConfig(testConfig));
+
+        assertTrue(exception.getMessage().contains("Error occurred"));
     }
 
-    /**
-     * Updates an existing archival metadata mapping.
-     *
-     * @param id              The ID of the metadata mapping to update.
-     * @param updatedMetadata The updated metadata object.
-     * @throws Exception If the ID does not exist in the database.
-     */
-    public void updateArchivalMetadataMapping(String id, ArchivalMetadataMappingObj updatedMetadata) throws Exception {
-        Optional<ArchMetadataMapping> entity = this.metaRepo.findById(Long.valueOf(id));
-        if (entity.isPresent()) {
-            ArchMetadataMapping existingEntity = entity.get();
-            existingEntity.setMapType(updatedMetadata.getMapType());
-            existingEntity.setArcKey(updatedMetadata.getArcKey());
-            existingEntity.setArcValue(updatedMetadata.getArcValue());
-            existingEntity.setArcDescription(updatedMetadata.getArcDescription());
+    @Test
+    void testSearchPurgeConfig_Success() {
+        when(purgeService.searchPurgeConfig("testTable")).thenReturn(Collections.singletonList(testConfig));
 
-            this.metaRepo.saveAndFlush(existingEntity);
-        } else {
-            log.error("Please provide valid configuration data to update");
-            throw new Exception("Please provide valid configuration data to update");
-        }
+        ResponseEntity<SearchPurgeConfig200Response> response = delegate.searchPurgeConfig("testTable");
+
+        assertNotNull(response);
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(1, response.getBody().getCount());
     }
 
-    /**
-     * Deletes an archival metadata mapping if the provided details match the existing record.
-     *
-     * @param id               The ID of the metadata mapping to delete.
-     * @param deletionMetadata The metadata object for verification before deletion.
-     * @throws Exception If the ID does not exist or if there is a data mismatch.
-     */
-    public void deleteArchivalMetadataMapping(String id, ArchivalMetadataMappingObj deletionMetadata) throws Exception {
-        Optional<ArchMetadataMapping> entity = this.metaRepo.findById(Long.valueOf(id));
-        if (entity.isEmpty()) {
-            log.error("Data not available to delete for id {}", id);
-            throw new Exception(MessageFormat.format("Data not available to delete for id= {0}", id));
-        } else if (Objects.equals(entity.get().getMapType(), deletionMetadata.getMapType()) &&
-                   Objects.equals(entity.get().getArcKey(), deletionMetadata.getArcKey()) &&
-                   Objects.equals(entity.get().getArcDescription(), deletionMetadata.getArcDescription()) &&
-                   Objects.equals(entity.get().getArcValue(), deletionMetadata.getArcValue())) {
-            this.metaRepo.deleteById(Long.valueOf(id));
-            log.debug("Record deleted successfully for id {}", id);
-        } else {
-            log.error("Data available but mismatch.");
-            throw new Exception("Data available but mismatch.");
-        }
+    @Test
+    void testGetPurgeConfig_Success() {
+        when(purgeService.getPurgeConfig("123")).thenReturn(testConfig);
+
+        ResponseEntity<PurgeConfigurationObj> response = delegate.getPurgeConfig("123");
+
+        assertNotNull(response);
+        assertEquals(OK, response.getStatusCode());
+        assertEquals("123", response.getBody().getId());
     }
 
-    /**
-     * Converts a DTO object to an entity object.
-     *
-     * @param archMetadataMappingDto The DTO object.
-     * @return The corresponding entity object.
-     */
-    ArchMetadataMapping dtoToEntity(ArchMetadataMappingDto archMetadataMappingDto) {
-        ArchMetadataMapping archMapping = new ArchMetadataMapping();
-        if (archMetadataMappingDto != null) {
-            archMapping = EntityToDTOMapper.INSTANCE.toEntity(archMetadataMappingDto);
-        }
-        return archMapping;
+    @Test
+    void testGetPurgeConfig_NotFound() {
+        when(purgeService.getPurgeConfig("123")).thenReturn(null);
+
+        ResponseEntity<PurgeConfigurationObj> response = delegate.getPurgeConfig("123");
+
+        assertEquals(NOT_FOUND, response.getStatusCode());
     }
 
-    /**
-     * Converts an entity object to a DTO object.
-     *
-     * @param archMetadataMapping The entity object.
-     * @return The corresponding DTO object.
-     */
-    ArchivalMetadataMappingObj entityToDto(ArchMetadataMapping archMetadataMapping) {
-        if (Objects.nonNull(archMetadataMapping)) {
-            ArchMetadataMappingDto dto = EntityToDTOMapper.INSTANCE.toDto(archMetadataMapping);
-            ArchivalMetadataMappingObj archivalMetadataMappingObj = ArchMetadataObjToDtoMapper.MAPPER.dtoToConfig(dto);
-            archivalMetadataMappingObj.setId((int) dto.getId());
-            return archivalMetadataMappingObj;
-        }
-        return null;
+    @Test
+    void testUpdatePurgeConfig_Success() {
+        doNothing().when(purgeService).updatePurgeConfig(eq("123"), any());
+
+        ResponseEntity<Void> response = delegate.updatePurgeConfig("123", testConfig);
+
+        assertEquals(OK, response.getStatusCode());
+        verify(purgeService, times(1)).updatePurgeConfig(eq("123"), any());
+    }
+
+    @Test
+    void testDeletePurgeConfig_Success() {
+        doNothing().when(purgeService).deletePurgeConfig(eq("123"), any());
+
+        ResponseEntity<Void> response = delegate.deletePurgeConfig("123", testConfig);
+
+        assertEquals(OK, response.getStatusCode());
+        verify(purgeService, times(1)).deletePurgeConfig(eq("123"), any());
     }
 }

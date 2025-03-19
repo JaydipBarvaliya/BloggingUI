@@ -1,21 +1,32 @@
-import org.apache.commons.lang3.builder.EqualsBuilder;
+import java.text.MessageFormat;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Objects;
 
 public void deletePurgeConfig(String id, PurgeConfigurationObj deletionPurgeConfig) throws Exception {
     Optional<ArchPurgeConfiguration> entity = this.purgeRepo.findById(Long.valueOf(id));
 
     if (entity.isEmpty()) {
-        log.error("Data not available to delete for id={}", id);
-        throw new Exception("Data not available to delete for id=" + id);
+        log.error("Data not available to delete for id {}", id);
+        throw new Exception(MessageFormat.format("Data not available to delete for id={0}", id));
     }
 
     ArchPurgeConfiguration entityObj = entity.get();
 
-    // Compare objects while ignoring specific fields
-    boolean isEqual = EqualsBuilder.reflectionEquals(entityObj, deletionPurgeConfig, 
-        "id", "createdAt", "updatedAt"); // Fields to ignore
+    // Store fields to compare in a map
+    Map<String, Boolean> mismatches = Map.of(
+        "purgeTableName", Objects.equals(entityObj.getPurgeTableName(), deletionPurgeConfig.getPurgeTableName()),
+        "purgeColumnName", Objects.equals(entityObj.getPurgeColumnName(), deletionPurgeConfig.getPurgeColumnName()),
+        "tableType", Objects.equals(entityObj.getTableType(), deletionPurgeConfig.getTableType()),
+        "purgeMessage", Objects.equals(entityObj.getPurgeMessage(), deletionPurgeConfig.getPurgeMessage()),
+        "retentionMonths", Objects.equals(entityObj.getRetentionMonths(), deletionPurgeConfig.getRetentionMonths())
+    );
 
-    if (!isEqual) {
-        throw new Exception("Deletion failed: Data mismatch found!");
+    // Find the first mismatch and throw an exception
+    for (Map.Entry<String, Boolean> entry : mismatches.entrySet()) {
+        if (!entry.getValue()) {
+            throw new Exception("Deletion failed: Data mismatch in " + entry.getKey());
+        }
     }
 
     // Proceed with deletion

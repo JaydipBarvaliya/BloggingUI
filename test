@@ -1,33 +1,27 @@
-@Test
-void testEntityToDto_ValidInput() {
-    // Create a valid entity
-    ArchPurgeConfiguration entity = new ArchPurgeConfiguration();
-    entity.setId(1L);
-    entity.setPurgeTableName("testTable");
+import java.lang.reflect.Field;
 
-    // Create a mock DTO
-    ArchPurgeConfigurationDto mockDto = new ArchPurgeConfigurationDto();
-    mockDto.setId(1L);
+public void deletePurgeConfig(String id, PurgeConfigurationObj deletionPurgeConfig) throws Exception {
+    Optional<ArchPurgeConfiguration> entity = this.purgeRepo.findById(Long.valueOf(id));
 
-    // Spy on the actual mapper instance
-    EntityToDTOMapper mapperSpy = spy(EntityToDTOMapper.INSTANCE);
-    doReturn(mockDto).when(mapperSpy).toDto(any(ArchPurgeConfiguration.class));
+    if (entity.isEmpty()) {
+        log.error("Data not available to delete for id={}", id);
+        throw new Exception(MessageFormat.format("Data not available to delete for id={0}", id));
+    }
 
-    // Spy on the secondary object mapper
-    ArchPurgeConfigObjToDtoMapper objMapperSpy = spy(ArchPurgeConfigObjToDtoMapper.MAPPER);
-    PurgeConfigurationObj mockConfigObj = new PurgeConfigurationObj();
-    doReturn(mockConfigObj).when(objMapperSpy).dtoToConfig(any(ArchPurgeConfigurationDto.class));
+    ArchPurgeConfiguration entityObj = entity.get();
 
-    // Inject the spy using reflection (if needed)
-    ArchivalApiPurgeConfigService purgeServiceSpy = spy(new ArchivalApiPurgeConfigService(null));
-    doReturn(mockDto).when(mapperSpy).toDto(entity);
-    doReturn(mockConfigObj).when(objMapperSpy).dtoToConfig(mockDto);
+    // Compare all fields using reflection
+    for (Field field : ArchPurgeConfiguration.class.getDeclaredFields()) {
+        field.setAccessible(true); // Allow access to private fields
+        Object entityValue = field.get(entityObj);
+        Object configValue = field.get(deletionPurgeConfig);
 
-    // Call the method
-    PurgeConfigurationObj result = purgeServiceSpy.entityToDto(entity);
+        if (!Objects.equals(entityValue, configValue)) {
+            throw new Exception("Deletion failed: Data mismatch in " + field.getName());
+        }
+    }
 
-    // Assertions
-    assertNotNull(result);
-    verify(mapperSpy, times(1)).toDto(entity);
-    verify(objMapperSpy, times(1)).dtoToConfig(mockDto);
+    // Proceed with deletion
+    this.purgeRepo.deleteById(Long.valueOf(id));
+    log.debug("Record deleted successfully for id {}", id);
 }

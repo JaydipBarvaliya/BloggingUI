@@ -1,24 +1,21 @@
-import java.lang.reflect.Field;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 
 public void deletePurgeConfig(String id, PurgeConfigurationObj deletionPurgeConfig) throws Exception {
     Optional<ArchPurgeConfiguration> entity = this.purgeRepo.findById(Long.valueOf(id));
 
     if (entity.isEmpty()) {
         log.error("Data not available to delete for id={}", id);
-        throw new Exception(MessageFormat.format("Data not available to delete for id={0}", id));
+        throw new Exception("Data not available to delete for id=" + id);
     }
 
     ArchPurgeConfiguration entityObj = entity.get();
 
-    // Compare all fields using reflection
-    for (Field field : ArchPurgeConfiguration.class.getDeclaredFields()) {
-        field.setAccessible(true); // Allow access to private fields
-        Object entityValue = field.get(entityObj);
-        Object configValue = field.get(deletionPurgeConfig);
+    // Compare objects while ignoring specific fields
+    boolean isEqual = EqualsBuilder.reflectionEquals(entityObj, deletionPurgeConfig, 
+        "id", "createdAt", "updatedAt"); // Fields to ignore
 
-        if (!Objects.equals(entityValue, configValue)) {
-            throw new Exception("Deletion failed: Data mismatch in " + field.getName());
-        }
+    if (!isEqual) {
+        throw new Exception("Deletion failed: Data mismatch found!");
     }
 
     // Proceed with deletion

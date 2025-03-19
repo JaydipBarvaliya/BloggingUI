@@ -3,33 +3,33 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Objects;
 
-public void deletePurgeConfig(String id, PurgeConfigurationObj deletionPurgeConfig) throws Exception {
-    Optional<ArchPurgeConfiguration> entity = this.purgeRepo.findById(Long.valueOf(id));
+public void deleteArchivalMetadataMapping(String id, ArchivalMetadataMappingObj deletionMetadata) throws Exception {
+    Optional<ArchivalMetadataMapping> entity = this.metaRepo.findById(Long.valueOf(id));
 
     if (entity.isEmpty()) {
         log.error("Data not available to delete for id {}", id);
         throw new Exception(MessageFormat.format("Data not available to delete for id={0}", id));
     }
 
-    ArchPurgeConfiguration entityObj = entity.get();
+    ArchivalMetadataMapping entityObj = entity.get();
 
     // Store fields to compare in a map
     Map<String, Boolean> mismatches = Map.of(
-        "purgeTableName", Objects.equals(entityObj.getPurgeTableName(), deletionPurgeConfig.getPurgeTableName()),
-        "purgeColumnName", Objects.equals(entityObj.getPurgeColumnName(), deletionPurgeConfig.getPurgeColumnName()),
-        "tableType", Objects.equals(entityObj.getTableType(), deletionPurgeConfig.getTableType()),
-        "purgeMessage", Objects.equals(entityObj.getPurgeMessage(), deletionPurgeConfig.getPurgeMessage()),
-        "retentionMonths", Objects.equals(entityObj.getRetentionMonths(), deletionPurgeConfig.getRetentionMonths())
+        "mapType", Objects.equals(entityObj.getMapType(), deletionMetadata.getMapType()),
+        "arcKey", Objects.equals(entityObj.getArcKey(), deletionMetadata.getArcKey()),
+        "arcDescription", Objects.equals(entityObj.getArcDescription(), deletionMetadata.getArcDescription()),
+        "arcValue", Objects.equals(entityObj.getArcValue(), deletionMetadata.getArcValue())
     );
 
     // Find the first mismatch and throw an exception
     for (Map.Entry<String, Boolean> entry : mismatches.entrySet()) {
         if (!entry.getValue()) {
-            throw new Exception("Deletion failed: Data mismatch in " + entry.getKey());
+            log.error("Data available but mismatch in {}", entry.getKey());
+            throw new Exception("Data available but mismatch in " + entry.getKey());
         }
     }
 
     // Proceed with deletion
-    this.purgeRepo.deleteById(Long.valueOf(id));
+    this.metaRepo.deleteById(Long.valueOf(id));
     log.debug("Record deleted successfully for id {}", id);
 }

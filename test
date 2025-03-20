@@ -1,67 +1,14 @@
-package com.td.besig.opsapi.exception;
+public class PurgeConfigException extends RuntimeException {
+    private final HttpStatus status;
 
-import com.td.coreapi.common.status.*;
-import com.td.esig.common.util.LogSanitizeUtil;
-import com.td.esig.common.util.SharedServiceLayerException;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
-import java.util.Map;
-
-@ControllerAdvice
-public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
-
-  private static final Map<Class<? extends Exception>, HttpStatus> EXCEPTION_STATUS_MAP = Map.of(
-      PurgeConfigNotFoundException.class, HttpStatus.NOT_FOUND,
-      DataMismatchException.class, HttpStatus.BAD_REQUEST,
-      InvalidPurgeConfigException.class, HttpStatus.BAD_REQUEST,
-      PurgeConfigCreationException.class, HttpStatus.INTERNAL_SERVER_ERROR
-  );
-
-  @ExceptionHandler(SharedServiceLayerException.class)
-  @ResponseStatus(reason = "Internal Server Error")
-  public ResponseEntity<Object> handleSharedServiceLayerException(SharedServiceLayerException ex) {
-    logger.error("SharedService Exception raised by underlying API: " + ex);
-    int statusCode = getStatusCodeFromException(ex);
-    return buildErrorResponse(statusCode, ex.getMessage());
-  }
-
-  @ExceptionHandler(Exception.class)
-  public ResponseEntity<Object> handleGeneralException(Exception ex) {
-    logger.error("Exception raised by underlying API: " + LogSanitizeUtil.sanitizeLogObj(ex.getMessage()));
-    return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
-  }
-
-  @ExceptionHandler(RuntimeException.class)
-  public ResponseEntity<Object> handleCustomExceptions(RuntimeException ex) {
-    HttpStatus status = EXCEPTION_STATUS_MAP.getOrDefault(ex.getClass(), HttpStatus.INTERNAL_SERVER_ERROR);
-    logger.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
-    return buildErrorResponse(status.value(), ex.getMessage());
-  }
-
-  private int getStatusCodeFromException(SharedServiceLayerException ex) {
-    String strStatusCode = ex.getStatus().getServerStatusCode();
-    if (strStatusCode.isEmpty() || strStatusCode.contains("DAL-") || strStatusCode.contains("GENERAL-")) {
-      return HttpStatus.INTERNAL_SERVER_ERROR.value();
+    public PurgeConfigException(String message, HttpStatus status) {
+        super(message);
+        this.status = status;
     }
-    return Integer.parseInt(strStatusCode);
-  }
 
-  private ResponseEntity<Object> buildErrorResponse(int statusCode, String message) {
-    HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
-    AdditionalStatus additionalStatus = new AdditionalStatus(statusCode, AdditionalSeverity.Error);
-    additionalStatus.setServerStatusCode(httpStatus.getReasonPhrase());
-    additionalStatus.setStatusDesc(message);
-    Status apiStatus = new Status(httpStatus.name(), Severity.Error, additionalStatus);
-    ApiError apiError = new ApiError(apiStatus);
-    HttpHeaders headers = new HttpHeaders();
-    headers.set("Content-Type", "application/json");
-    return new ResponseEntity<>(apiError, headers, httpStatus);
-  }
+    public HttpStatus getStatus() {
+        return status;
+    }
 }
 
 
@@ -70,83 +17,97 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
 
 
+public PurgeConfigurationObj createConfiguration(PurgeConfigurationObj purgeConfigurationObj) {
+    if (Objects.isNull(purgeConfigurationObj)) {
+        log.error("Failed to create PurgeConfigurationObj: Input object is null");
+        throw new IllegalArgumentException("PurgeConfigurationObj cannot be null");
+    }
+    try {
+        ArchPurgeConfigurationDto dto = ArchPurgeConfigObjToDtoMapper.MAPPER.configToDto(purgeConfigurationObj);
+        ArchPurgeConfiguration res = this.purgeRepo.saveAndFlush(dtoToEntity(dto));
+        log.info("PurgeConfigurationObj created successfully with ID {}", res.getId());
+        return entityToDto(res);
+    } catch (Exception e) {
+        log.error("Error occurred while creating PurgeConfigurationObj: {}", e.getMessage(), e);
+        throw new PurgeConfigException("Failed to create purge configuration", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+
+public void updatePurgeConfig(String id, PurgeConfigurationObj updatedPurgeConfig) {
+    Optional<ArchPurgeConfiguration> entity = this.purgeRepo.findById(Long.valueOf(id));
+    if (entity.isEmpty()) {
+        log.error("Configuration data not found for update: ID {}", id);
+        throw new NoSuchElementException("Configuration data not found for ID: " + id);
+    }
+
+    ArchPurgeConfiguration existingEntity = entity.get();
+    existingEntity.setPurgeTableName(updatedPurgeConfig.getPurgeTableName());
+    existingEntity.setPurgeColumnName(updatedPurgeConfig.getPurgeColumnName());
+    existingEntity.setTableType(updatedPurgeConfig.getTableType());
+    existingEntity.setPurgeMessage(updatedPurgeConfig.getPurgeMessage());
+    existingEntity.setRetentionMonths(updatedPurgeConfig.getRetentionMonths());
+
+    this.purgeRepo.saveAndFlush(existingEntity);
+}
+
+public void deletePurgeConfig(String id, PurgeConfigurationObj deletionPurgeConfig) {
+    Optional<ArchPurgeConfiguration> entity = this.purgeRepo.findById(Long.valueOf(id));
+
+    if (entity.isEmpty()) {
+        log.error("Data not available to delete for id {}", id);
+        throw new NoSuchElementException("Data not available to delete for id=" + id);
+    }
+
+    Map<String, Boolean> mismatches = getMismatches(deletionPurgeConfig, entity);
+    for (Map.Entry<String, Boolean> entry : mismatches.entrySet()) {
+        if (!entry.getValue()) {
+            log.error("Deletion failed: Data mismatch in {}", entry.getKey());
+            throw new IllegalStateException("Deletion failed: Data mismatch in " + entry.getKey());
+        }
+    }
+
+    this.purgeRepo.deleteById(Long.valueOf(id));
+    log.info("Record deleted successfully for id {}", id);
+}
 
 
 
 
-
-
-package com.td.besig.opsapi.exception;
-
-import com.td.coreapi.common.status.*;
-import com.td.esig.common.util.LogSanitizeUtil;
-import com.td.esig.common.util.SharedServiceLayerException;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    @ResponseStatus(reason = "Internal Server Error")
-    @ExceptionHandler({SharedServiceLayerException.class})
-    public ResponseEntity<Object> handleSharedServiceLayerException(SharedServiceLayerException ex) {
-        logger.error("SharedService Exception raised by underlying API: " + ex);
-        return buildResponseEntity(getStatusCodeFromException(ex), ex.getMessage());
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
-    private int getStatusCodeFromException(SharedServiceLayerException ex) {
-        String strStatusCode = ex.getStatus().getServerStatusCode();
-        return (strStatusCode.isEmpty() || strStatusCode.contains("DAL-") || strStatusCode.contains("GENERAL-")) 
-                ? HttpStatus.INTERNAL_SERVER_ERROR.value() 
-                : Integer.parseInt(strStatusCode);
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<Object> handleNoSuchElementException(NoSuchElementException ex) {
+        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    @ExceptionHandler({Exception.class})
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Object> handleIllegalStateException(IllegalStateException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(PurgeConfigException.class)
+    public ResponseEntity<Object> handlePurgeConfigException(PurgeConfigException ex) {
+        return buildErrorResponse(ex.getStatus(), ex.getMessage());
+    }
+
+    @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleGeneralException(Exception ex) {
-        logger.error("Exception raised by underlying API: " + LogSanitizeUtil.sanitizeLogObj(ex.getMessage()));
-        return buildResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
     }
 
-    /**
-     * Generic exception handler for all custom runtime exceptions.
-     */
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Object> handleCustomRuntimeExceptions(RuntimeException ex) {
-        logger.error("Exception: " + ex.getMessage());
-        
-        HttpStatus status;
-        if (ex instanceof PurgeConfigNotFoundException) {
-            status = HttpStatus.NOT_FOUND;
-        } else if (ex instanceof DataMismatchException || ex instanceof InvalidPurgeConfigException) {
-            status = HttpStatus.BAD_REQUEST;
-        } else if (ex instanceof PurgeConfigCreationException) {
-            status = HttpStatus.INTERNAL_SERVER_ERROR;
-        } else {
-            status = HttpStatus.INTERNAL_SERVER_ERROR; // Default fallback
-        }
-
-        return buildResponseEntity(status.value(), ex.getMessage());
-    }
-
-    /**
-     * Utility method to build a standard API response for exceptions.
-     */
-    private ResponseEntity<Object> buildResponseEntity(int statusCode, String message) {
-        HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
-        AdditionalStatus additionalStatus = new AdditionalStatus(statusCode, AdditionalSeverity.Error);
-        additionalStatus.setServerStatusCode(httpStatus.getReasonPhrase());
+    private ResponseEntity<Object> buildErrorResponse(HttpStatus status, String message) {
+        AdditionalStatus additionalStatus = new AdditionalStatus(status.value(), AdditionalSeverity.Error);
+        additionalStatus.setServerStatusCode(status.getReasonPhrase());
         additionalStatus.setStatusDesc(message);
-        Status apiStatus = new Status(httpStatus.name(), Severity.Error, additionalStatus);
+        Status apiStatus = new Status(status.name(), Severity.Error, additionalStatus);
         ApiError apiError = new ApiError(apiStatus);
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Content-Type", "application/json");
-        return new ResponseEntity<>(apiError, headers, httpStatus);
+        return new ResponseEntity<>(apiError, new HttpHeaders(), status);
     }
 }

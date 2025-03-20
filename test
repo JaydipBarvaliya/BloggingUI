@@ -1,35 +1,58 @@
-import java.text.MessageFormat;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Objects;
+public void updatePurgeConfig(String id, PurgeConfigurationObj updatedPurgeConfig) {
+    Optional<ArchPurgeConfiguration> entity = this.purgeRepo.findById(Long.valueOf(id));
+    if (entity.isPresent()) {
+        ArchPurgeConfiguration existingEntity = entity.get();
+        existingEntity.setPurgeTableName(updatedPurgeConfig.getPurgeTableName());
+        existingEntity.setPurgeColumnName(updatedPurgeConfig.getPurgeColumnName());
+        existingEntity.setTableType(updatedPurgeConfig.getTableType());
+        existingEntity.setPurgeMessage(updatedPurgeConfig.getPurgeMessage());
+        existingEntity.setRetentionMonths(updatedPurgeConfig.getRetentionMonths());
 
-public void deleteArchivalMetadataMapping(String id, ArchivalMetadataMappingObj deletionMetadata) throws Exception {
-    Optional<ArchivalMetadataMapping> entity = this.metaRepo.findById(Long.valueOf(id));
-
-    if (entity.isEmpty()) {
-        log.error("Data not available to delete for id {}", id);
-        throw new Exception(MessageFormat.format("Data not available to delete for id={0}", id));
+        this.purgeRepo.saveAndFlush(existingEntity);
+    } else {
+        log.error("Configuration data not found for update: ID {}", id);
+        throw new PurgeConfigNotFoundException("Configuration data not found for ID: " + id);
     }
+}
 
-    ArchivalMetadataMapping entityObj = entity.get();
 
-    // Store fields to compare in a map
-    Map<String, Boolean> mismatches = Map.of(
-        "mapType", Objects.equals(entityObj.getMapType(), deletionMetadata.getMapType()),
-        "arcKey", Objects.equals(entityObj.getArcKey(), deletionMetadata.getArcKey()),
-        "arcDescription", Objects.equals(entityObj.getArcDescription(), deletionMetadata.getArcDescription()),
-        "arcValue", Objects.equals(entityObj.getArcValue(), deletionMetadata.getArcValue())
-    );
 
-    // Find the first mismatch and throw an exception
-    for (Map.Entry<String, Boolean> entry : mismatches.entrySet()) {
-        if (!entry.getValue()) {
-            log.error("Data available but mismatch in {}", entry.getKey());
-            throw new Exception("Data available but mismatch in " + entry.getKey());
-        }
+
+public class PurgeConfigNotFoundException extends RuntimeException {
+    public PurgeConfigNotFoundException(String message) {
+        super(message);
     }
+}
 
-    // Proceed with deletion
-    this.metaRepo.deleteById(Long.valueOf(id));
-    log.debug("Record deleted successfully for id {}", id);
+public class DataMismatchException extends RuntimeException {
+    public DataMismatchException(String message) {
+        super(message);
+    }
+}
+
+
+
+
+@ExceptionHandler(PurgeConfigNotFoundException.class)
+public ResponseEntity<Object> handlePurgeConfigNotFoundException(PurgeConfigNotFoundException ex) {
+    logger.error("Purge Config Not Found: " + ex.getMessage());
+    HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+    AdditionalStatus additionalStatus = new AdditionalStatus(httpStatus.value(), AdditionalSeverity.Error);
+    additionalStatus.setServerStatusCode(httpStatus.getReasonPhrase());
+    additionalStatus.setStatusDesc(ex.getMessage());
+    Status apiStatus = new Status(httpStatus.name(), Severity.Error, additionalStatus);
+    ApiError apiError = new ApiError(apiStatus);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), httpStatus);
+}
+
+@ExceptionHandler(DataMismatchException.class)
+public ResponseEntity<Object> handleDataMismatchException(DataMismatchException ex) {
+    logger.error("Data mismatch error: " + ex.getMessage());
+    HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+    AdditionalStatus additionalStatus = new AdditionalStatus(httpStatus.value(), AdditionalSeverity.Error);
+    additionalStatus.setServerStatusCode(httpStatus.getReasonPhrase());
+    additionalStatus.setStatusDesc(ex.getMessage());
+    Status apiStatus = new Status(httpStatus.name(), Severity.Error, additionalStatus);
+    ApiError apiError = new ApiError(apiStatus);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), httpStatus);
 }

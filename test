@@ -1,20 +1,62 @@
-public void deletePurgeConfig(String id, PurgeConfigurationObj deletionPurgeConfig) {
-    Optional<ArchPurgeConfiguration> entity = this.purgeRepo.findById(Long.valueOf(id));
-
-    if (entity.isEmpty()) {
-        log.error("Data not available to delete for id {}", id);
-        throw new PurgeConfigNotFoundException("Data not available to delete for id=" + id);
+public PurgeConfigurationObj createConfiguration(PurgeConfigurationObj purgeConfigurationObj) {
+    if (Objects.isNull(purgeConfigurationObj)) {
+        log.error("Failed to create PurgeConfigurationObj: Input object is null");
+        throw new InvalidPurgeConfigException("PurgeConfigurationObj cannot be null");
     }
 
-    Map<String, Boolean> mismatches = getMismatches(deletionPurgeConfig, entity);
-
-    for (Map.Entry<String, Boolean> entry : mismatches.entrySet()) {
-        if (!entry.getValue()) {
-            log.error("Deletion failed: Data mismatch in {}", entry.getKey());
-            throw new DataMismatchException("Deletion failed: Data mismatch in " + entry.getKey());
-        }
+    try {
+        ArchPurgeConfigurationDto dto = ArchPurgeConfigObjToDtoMapper.MAPPER.configToDto(purgeConfigurationObj);
+        ArchPurgeConfiguration res = this.purgeRepo.saveAndFlush(dtoToEntity(dto));
+        log.info("PurgeConfigurationObj created successfully with ID {}", res.getId());
+        return entityToDto(res);
+    } catch (Exception e) {
+        log.error("Error occurred while creating PurgeConfigurationObj: {}", e.getMessage(), e);
+        throw new PurgeConfigCreationException("Failed to create purge configuration", e);
     }
-
-    this.purgeRepo.deleteById(Long.valueOf(id));
-    log.info("Record deleted successfully for id {}", id);
 }
+
+
+
+
+
+public class InvalidPurgeConfigException extends RuntimeException {
+    public InvalidPurgeConfigException(String message) {
+        super(message);
+    }
+}
+
+public class PurgeConfigCreationException extends RuntimeException {
+    public PurgeConfigCreationException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+
+
+
+@ExceptionHandler(InvalidPurgeConfigException.class)
+public ResponseEntity<Object> handleInvalidPurgeConfigException(InvalidPurgeConfigException ex) {
+    logger.error("Invalid Purge Configuration: " + ex.getMessage());
+    HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
+    AdditionalStatus additionalStatus = new AdditionalStatus(httpStatus.value(), AdditionalSeverity.Error);
+    additionalStatus.setServerStatusCode(httpStatus.getReasonPhrase());
+    additionalStatus.setStatusDesc(ex.getMessage());
+    Status apiStatus = new Status(httpStatus.name(), Severity.Error, additionalStatus);
+    ApiError apiError = new ApiError(apiStatus);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), httpStatus);
+}
+
+@ExceptionHandler(PurgeConfigCreationException.class)
+public ResponseEntity<Object> handlePurgeConfigCreationException(PurgeConfigCreationException ex) {
+    logger.error("Error creating Purge Configuration: " + ex.getMessage());
+    HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
+    AdditionalStatus additionalStatus = new AdditionalStatus(httpStatus.value(), AdditionalSeverity.Error);
+    additionalStatus.setServerStatusCode(httpStatus.getReasonPhrase());
+    additionalStatus.setStatusDesc(ex.getMessage());
+    Status apiStatus = new Status(httpStatus.name(), Severity.Error, additionalStatus);
+    ApiError apiError = new ApiError(apiStatus);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), httpStatus);
+}
+
+
+

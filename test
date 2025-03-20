@@ -1,58 +1,20 @@
-public void updatePurgeConfig(String id, PurgeConfigurationObj updatedPurgeConfig) {
+public void deletePurgeConfig(String id, PurgeConfigurationObj deletionPurgeConfig) {
     Optional<ArchPurgeConfiguration> entity = this.purgeRepo.findById(Long.valueOf(id));
-    if (entity.isPresent()) {
-        ArchPurgeConfiguration existingEntity = entity.get();
-        existingEntity.setPurgeTableName(updatedPurgeConfig.getPurgeTableName());
-        existingEntity.setPurgeColumnName(updatedPurgeConfig.getPurgeColumnName());
-        existingEntity.setTableType(updatedPurgeConfig.getTableType());
-        existingEntity.setPurgeMessage(updatedPurgeConfig.getPurgeMessage());
-        existingEntity.setRetentionMonths(updatedPurgeConfig.getRetentionMonths());
 
-        this.purgeRepo.saveAndFlush(existingEntity);
-    } else {
-        log.error("Configuration data not found for update: ID {}", id);
-        throw new PurgeConfigNotFoundException("Configuration data not found for ID: " + id);
+    if (entity.isEmpty()) {
+        log.error("Data not available to delete for id {}", id);
+        throw new PurgeConfigNotFoundException("Data not available to delete for id=" + id);
     }
-}
 
+    Map<String, Boolean> mismatches = getMismatches(deletionPurgeConfig, entity);
 
-
-
-public class PurgeConfigNotFoundException extends RuntimeException {
-    public PurgeConfigNotFoundException(String message) {
-        super(message);
+    for (Map.Entry<String, Boolean> entry : mismatches.entrySet()) {
+        if (!entry.getValue()) {
+            log.error("Deletion failed: Data mismatch in {}", entry.getKey());
+            throw new DataMismatchException("Deletion failed: Data mismatch in " + entry.getKey());
+        }
     }
-}
 
-public class DataMismatchException extends RuntimeException {
-    public DataMismatchException(String message) {
-        super(message);
-    }
-}
-
-
-
-
-@ExceptionHandler(PurgeConfigNotFoundException.class)
-public ResponseEntity<Object> handlePurgeConfigNotFoundException(PurgeConfigNotFoundException ex) {
-    logger.error("Purge Config Not Found: " + ex.getMessage());
-    HttpStatus httpStatus = HttpStatus.NOT_FOUND;
-    AdditionalStatus additionalStatus = new AdditionalStatus(httpStatus.value(), AdditionalSeverity.Error);
-    additionalStatus.setServerStatusCode(httpStatus.getReasonPhrase());
-    additionalStatus.setStatusDesc(ex.getMessage());
-    Status apiStatus = new Status(httpStatus.name(), Severity.Error, additionalStatus);
-    ApiError apiError = new ApiError(apiStatus);
-    return new ResponseEntity<>(apiError, new HttpHeaders(), httpStatus);
-}
-
-@ExceptionHandler(DataMismatchException.class)
-public ResponseEntity<Object> handleDataMismatchException(DataMismatchException ex) {
-    logger.error("Data mismatch error: " + ex.getMessage());
-    HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
-    AdditionalStatus additionalStatus = new AdditionalStatus(httpStatus.value(), AdditionalSeverity.Error);
-    additionalStatus.setServerStatusCode(httpStatus.getReasonPhrase());
-    additionalStatus.setStatusDesc(ex.getMessage());
-    Status apiStatus = new Status(httpStatus.name(), Severity.Error, additionalStatus);
-    ApiError apiError = new ApiError(apiStatus);
-    return new ResponseEntity<>(apiError, new HttpHeaders(), httpStatus);
+    this.purgeRepo.deleteById(Long.valueOf(id));
+    log.info("Record deleted successfully for id {}", id);
 }

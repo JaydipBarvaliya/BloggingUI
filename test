@@ -1,113 +1,56 @@
-public class PurgeConfigException extends RuntimeException {
-    private final HttpStatus status;
-
-    public PurgeConfigException(String message, HttpStatus status) {
-        super(message);
-        this.status = status;
-    }
-
-    public HttpStatus getStatus() {
-        return status;
-    }
-}
-
-
-
-
-
-
-
-public PurgeConfigurationObj createConfiguration(PurgeConfigurationObj purgeConfigurationObj) {
-    if (Objects.isNull(purgeConfigurationObj)) {
-        log.error("Failed to create PurgeConfigurationObj: Input object is null");
-        throw new IllegalArgumentException("PurgeConfigurationObj cannot be null");
-    }
-    try {
-        ArchPurgeConfigurationDto dto = ArchPurgeConfigObjToDtoMapper.MAPPER.configToDto(purgeConfigurationObj);
-        ArchPurgeConfiguration res = this.purgeRepo.saveAndFlush(dtoToEntity(dto));
-        log.info("PurgeConfigurationObj created successfully with ID {}", res.getId());
-        return entityToDto(res);
-    } catch (Exception e) {
-        log.error("Error occurred while creating PurgeConfigurationObj: {}", e.getMessage(), e);
-        throw new PurgeConfigException("Failed to create purge configuration", HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-}
-
-public void updatePurgeConfig(String id, PurgeConfigurationObj updatedPurgeConfig) {
-    Optional<ArchPurgeConfiguration> entity = this.purgeRepo.findById(Long.valueOf(id));
-    if (entity.isEmpty()) {
-        log.error("Configuration data not found for update: ID {}", id);
-        throw new NoSuchElementException("Configuration data not found for ID: " + id);
-    }
-
-    ArchPurgeConfiguration existingEntity = entity.get();
-    existingEntity.setPurgeTableName(updatedPurgeConfig.getPurgeTableName());
-    existingEntity.setPurgeColumnName(updatedPurgeConfig.getPurgeColumnName());
-    existingEntity.setTableType(updatedPurgeConfig.getTableType());
-    existingEntity.setPurgeMessage(updatedPurgeConfig.getPurgeMessage());
-    existingEntity.setRetentionMonths(updatedPurgeConfig.getRetentionMonths());
-
-    this.purgeRepo.saveAndFlush(existingEntity);
-}
-
-public void deletePurgeConfig(String id, PurgeConfigurationObj deletionPurgeConfig) {
-    Optional<ArchPurgeConfiguration> entity = this.purgeRepo.findById(Long.valueOf(id));
-
-    if (entity.isEmpty()) {
-        log.error("Data not available to delete for id {}", id);
-        throw new NoSuchElementException("Data not available to delete for id=" + id);
-    }
-
-    Map<String, Boolean> mismatches = getMismatches(deletionPurgeConfig, entity);
-    for (Map.Entry<String, Boolean> entry : mismatches.entrySet()) {
-        if (!entry.getValue()) {
-            log.error("Deletion failed: Data mismatch in {}", entry.getKey());
-            throw new IllegalStateException("Deletion failed: Data mismatch in " + entry.getKey());
-        }
-    }
-
-    this.purgeRepo.deleteById(Long.valueOf(id));
-    log.info("Record deleted successfully for id {}", id);
-}
-
-
-
-
-
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
+  @ExceptionHandler(SharedServiceLayerException.class)
+  public ResponseEntity<Object> handleSharedServiceLayerException(SharedServiceLayerException ex) {
+    logger.error("SharedService Exception raised by underlying API: {}", ex.getMessage(), ex);
+    int statusCode = extractStatusCode(ex);
+    return buildErrorResponse(HttpStatus.valueOf(statusCode), ex.getMessage());
+  }
 
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<Object> handleNoSuchElementException(NoSuchElementException ex) {
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+  private int extractStatusCode(SharedServiceLayerException ex) {
+    try {
+      String strStatusCode = ex.getStatus().getServerStatusCode();
+      return (strStatusCode.isEmpty() || strStatusCode.contains("DAL-") || strStatusCode.contains("GENERAL-")) 
+             ? HttpStatus.INTERNAL_SERVER_ERROR.value() 
+             : Integer.parseInt(strStatusCode);
+    } catch (Exception e) {
+      logger.warn("Failed to extract status code from SharedServiceLayerException, defaulting to 500", e);
+      return HttpStatus.INTERNAL_SERVER_ERROR.value();
     }
+  }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<Object> handleIllegalStateException(IllegalStateException ex) {
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
-    }
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex) {
+    return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+  }
 
-    @ExceptionHandler(PurgeConfigException.class)
-    public ResponseEntity<Object> handlePurgeConfigException(PurgeConfigException ex) {
-        return buildErrorResponse(ex.getStatus(), ex.getMessage());
-    }
+  @ExceptionHandler(NoSuchElementException.class)
+  public ResponseEntity<Object> handleNoSuchElementException(NoSuchElementException ex) {
+    return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+  }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Object> handleGeneralException(Exception ex) {
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
-    }
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<Object> handleIllegalStateException(IllegalStateException ex) {
+    return buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+  }
 
-    private ResponseEntity<Object> buildErrorResponse(HttpStatus status, String message) {
-        AdditionalStatus additionalStatus = new AdditionalStatus(status.value(), AdditionalSeverity.Error);
-        additionalStatus.setServerStatusCode(status.getReasonPhrase());
-        additionalStatus.setStatusDesc(message);
-        Status apiStatus = new Status(status.name(), Severity.Error, additionalStatus);
-        ApiError apiError = new ApiError(apiStatus);
-        return new ResponseEntity<>(apiError, new HttpHeaders(), status);
-    }
+  @ExceptionHandler(PurgeConfigException.class)
+  public ResponseEntity<Object> handlePurgeConfigException(PurgeConfigException ex) {
+    return buildErrorResponse(ex.getStatus(), ex.getMessage());
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<Object> handleGeneralException(Exception ex) {
+    return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
+  }
+
+  private ResponseEntity<Object> buildErrorResponse(HttpStatus status, String message) {
+    AdditionalStatus additionalStatus = new AdditionalStatus(status.value(), AdditionalSeverity.Error);
+    additionalStatus.setServerStatusCode(status.getReasonPhrase());
+    additionalStatus.setStatusDesc(message);
+    Status apiStatus = new Status(status.name(), Severity.Error, additionalStatus);
+    ApiError apiError = new ApiError(apiStatus);
+    return new ResponseEntity<>(apiError, new HttpHeaders(), status);
+  }
 }

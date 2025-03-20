@@ -1,62 +1,152 @@
-public PurgeConfigurationObj createConfiguration(PurgeConfigurationObj purgeConfigurationObj) {
-    if (Objects.isNull(purgeConfigurationObj)) {
-        log.error("Failed to create PurgeConfigurationObj: Input object is null");
-        throw new InvalidPurgeConfigException("PurgeConfigurationObj cannot be null");
+package com.td.besig.opsapi.exception;
+
+import com.td.coreapi.common.status.*;
+import com.td.esig.common.util.LogSanitizeUtil;
+import com.td.esig.common.util.SharedServiceLayerException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+import java.util.Map;
+
+@ControllerAdvice
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+  private static final Map<Class<? extends Exception>, HttpStatus> EXCEPTION_STATUS_MAP = Map.of(
+      PurgeConfigNotFoundException.class, HttpStatus.NOT_FOUND,
+      DataMismatchException.class, HttpStatus.BAD_REQUEST,
+      InvalidPurgeConfigException.class, HttpStatus.BAD_REQUEST,
+      PurgeConfigCreationException.class, HttpStatus.INTERNAL_SERVER_ERROR
+  );
+
+  @ExceptionHandler(SharedServiceLayerException.class)
+  @ResponseStatus(reason = "Internal Server Error")
+  public ResponseEntity<Object> handleSharedServiceLayerException(SharedServiceLayerException ex) {
+    logger.error("SharedService Exception raised by underlying API: " + ex);
+    int statusCode = getStatusCodeFromException(ex);
+    return buildErrorResponse(statusCode, ex.getMessage());
+  }
+
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<Object> handleGeneralException(Exception ex) {
+    logger.error("Exception raised by underlying API: " + LogSanitizeUtil.sanitizeLogObj(ex.getMessage()));
+    return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
+  }
+
+  @ExceptionHandler(RuntimeException.class)
+  public ResponseEntity<Object> handleCustomExceptions(RuntimeException ex) {
+    HttpStatus status = EXCEPTION_STATUS_MAP.getOrDefault(ex.getClass(), HttpStatus.INTERNAL_SERVER_ERROR);
+    logger.error("{}: {}", ex.getClass().getSimpleName(), ex.getMessage());
+    return buildErrorResponse(status.value(), ex.getMessage());
+  }
+
+  private int getStatusCodeFromException(SharedServiceLayerException ex) {
+    String strStatusCode = ex.getStatus().getServerStatusCode();
+    if (strStatusCode.isEmpty() || strStatusCode.contains("DAL-") || strStatusCode.contains("GENERAL-")) {
+      return HttpStatus.INTERNAL_SERVER_ERROR.value();
     }
+    return Integer.parseInt(strStatusCode);
+  }
 
-    try {
-        ArchPurgeConfigurationDto dto = ArchPurgeConfigObjToDtoMapper.MAPPER.configToDto(purgeConfigurationObj);
-        ArchPurgeConfiguration res = this.purgeRepo.saveAndFlush(dtoToEntity(dto));
-        log.info("PurgeConfigurationObj created successfully with ID {}", res.getId());
-        return entityToDto(res);
-    } catch (Exception e) {
-        log.error("Error occurred while creating PurgeConfigurationObj: {}", e.getMessage(), e);
-        throw new PurgeConfigCreationException("Failed to create purge configuration", e);
-    }
-}
-
-
-
-
-
-public class InvalidPurgeConfigException extends RuntimeException {
-    public InvalidPurgeConfigException(String message) {
-        super(message);
-    }
-}
-
-public class PurgeConfigCreationException extends RuntimeException {
-    public PurgeConfigCreationException(String message, Throwable cause) {
-        super(message, cause);
-    }
-}
-
-
-
-
-@ExceptionHandler(InvalidPurgeConfigException.class)
-public ResponseEntity<Object> handleInvalidPurgeConfigException(InvalidPurgeConfigException ex) {
-    logger.error("Invalid Purge Configuration: " + ex.getMessage());
-    HttpStatus httpStatus = HttpStatus.BAD_REQUEST;
-    AdditionalStatus additionalStatus = new AdditionalStatus(httpStatus.value(), AdditionalSeverity.Error);
+  private ResponseEntity<Object> buildErrorResponse(int statusCode, String message) {
+    HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
+    AdditionalStatus additionalStatus = new AdditionalStatus(statusCode, AdditionalSeverity.Error);
     additionalStatus.setServerStatusCode(httpStatus.getReasonPhrase());
-    additionalStatus.setStatusDesc(ex.getMessage());
+    additionalStatus.setStatusDesc(message);
     Status apiStatus = new Status(httpStatus.name(), Severity.Error, additionalStatus);
     ApiError apiError = new ApiError(apiStatus);
-    return new ResponseEntity<>(apiError, new HttpHeaders(), httpStatus);
-}
-
-@ExceptionHandler(PurgeConfigCreationException.class)
-public ResponseEntity<Object> handlePurgeConfigCreationException(PurgeConfigCreationException ex) {
-    logger.error("Error creating Purge Configuration: " + ex.getMessage());
-    HttpStatus httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
-    AdditionalStatus additionalStatus = new AdditionalStatus(httpStatus.value(), AdditionalSeverity.Error);
-    additionalStatus.setServerStatusCode(httpStatus.getReasonPhrase());
-    additionalStatus.setStatusDesc(ex.getMessage());
-    Status apiStatus = new Status(httpStatus.name(), Severity.Error, additionalStatus);
-    ApiError apiError = new ApiError(apiStatus);
-    return new ResponseEntity<>(apiError, new HttpHeaders(), httpStatus);
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("Content-Type", "application/json");
+    return new ResponseEntity<>(apiError, headers, httpStatus);
+  }
 }
 
 
 
+
+
+
+
+
+
+
+
+
+
+package com.td.besig.opsapi.exception;
+
+import com.td.coreapi.common.status.*;
+import com.td.esig.common.util.LogSanitizeUtil;
+import com.td.esig.common.util.SharedServiceLayerException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
+
+@ControllerAdvice
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @ResponseStatus(reason = "Internal Server Error")
+    @ExceptionHandler({SharedServiceLayerException.class})
+    public ResponseEntity<Object> handleSharedServiceLayerException(SharedServiceLayerException ex) {
+        logger.error("SharedService Exception raised by underlying API: " + ex);
+        return buildResponseEntity(getStatusCodeFromException(ex), ex.getMessage());
+    }
+
+    private int getStatusCodeFromException(SharedServiceLayerException ex) {
+        String strStatusCode = ex.getStatus().getServerStatusCode();
+        return (strStatusCode.isEmpty() || strStatusCode.contains("DAL-") || strStatusCode.contains("GENERAL-")) 
+                ? HttpStatus.INTERNAL_SERVER_ERROR.value() 
+                : Integer.parseInt(strStatusCode);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    @ExceptionHandler({Exception.class})
+    public ResponseEntity<Object> handleGeneralException(Exception ex) {
+        logger.error("Exception raised by underlying API: " + LogSanitizeUtil.sanitizeLogObj(ex.getMessage()));
+        return buildResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.getMessage());
+    }
+
+    /**
+     * Generic exception handler for all custom runtime exceptions.
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Object> handleCustomRuntimeExceptions(RuntimeException ex) {
+        logger.error("Exception: " + ex.getMessage());
+        
+        HttpStatus status;
+        if (ex instanceof PurgeConfigNotFoundException) {
+            status = HttpStatus.NOT_FOUND;
+        } else if (ex instanceof DataMismatchException || ex instanceof InvalidPurgeConfigException) {
+            status = HttpStatus.BAD_REQUEST;
+        } else if (ex instanceof PurgeConfigCreationException) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        } else {
+            status = HttpStatus.INTERNAL_SERVER_ERROR; // Default fallback
+        }
+
+        return buildResponseEntity(status.value(), ex.getMessage());
+    }
+
+    /**
+     * Utility method to build a standard API response for exceptions.
+     */
+    private ResponseEntity<Object> buildResponseEntity(int statusCode, String message) {
+        HttpStatus httpStatus = HttpStatus.valueOf(statusCode);
+        AdditionalStatus additionalStatus = new AdditionalStatus(statusCode, AdditionalSeverity.Error);
+        additionalStatus.setServerStatusCode(httpStatus.getReasonPhrase());
+        additionalStatus.setStatusDesc(message);
+        Status apiStatus = new Status(httpStatus.name(), Severity.Error, additionalStatus);
+        ApiError apiError = new ApiError(apiStatus);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Content-Type", "application/json");
+        return new ResponseEntity<>(apiError, headers, httpStatus);
+    }
+}

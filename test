@@ -7,7 +7,25 @@ import static org.junit.jupiter.api.Assertions.*;
 class PurgeConfigurationDtoTest {
 
     @Test
-    void testGetters() {
+    void testNoArgsConstructor() {
+        PurgeConfigurationDto dto = new PurgeConfigurationDto();
+        assertNotNull(dto);
+    }
+
+    @Test
+    void testAllArgsConstructorAndGetters() {
+        PurgeConfigurationDto dto = new PurgeConfigurationDto(1L, "testTable", "testColumn", "testType", "Test Message", 12);
+
+        assertEquals(1L, dto.getId());
+        assertEquals("testTable", dto.getPurgeTableName());
+        assertEquals("testColumn", dto.getPurgeColumnName());
+        assertEquals("testType", dto.getTableType());
+        assertEquals("Test Message", dto.getPurgeMessage());
+        assertEquals(12, dto.getRetentionMonths());
+    }
+
+    @Test
+    void testSetters() {
         PurgeConfigurationDto dto = new PurgeConfigurationDto();
         
         dto.setId(1L);
@@ -23,5 +41,17 @@ class PurgeConfigurationDtoTest {
         assertEquals("testType", dto.getTableType());
         assertEquals("Test Message", dto.getPurgeMessage());
         assertEquals(12, dto.getRetentionMonths());
+    }
+
+    @Test
+    void testEqualsAndHashCode() {
+        PurgeConfigurationDto dto1 = new PurgeConfigurationDto(1L, "testTable", "testColumn", "testType", "Test Message", 12);
+        PurgeConfigurationDto dto2 = new PurgeConfigurationDto(1L, "testTable", "testColumn", "testType", "Test Message", 12);
+        PurgeConfigurationDto dto3 = new PurgeConfigurationDto(2L, "differentTable", "differentColumn", "differentType", "Different Message", 6);
+
+        assertEquals(dto1, dto2); // Same values should be equal
+        assertNotEquals(dto1, dto3); // Different values should not be equal
+        assertEquals(dto1.hashCode(), dto2.hashCode()); // Same hash code for equal objects
+        assertNotEquals(dto1.hashCode(), dto3.hashCode()); // Different hash codes for different objects
     }
 }

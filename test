@@ -1,64 +1,200 @@
-package com.td.besig.opsapi.controller;
-
-import com.td.besig.opsapi.exception.GlobalExceptionHandler;
-import com.td.coreapi.common.status.ApiError;
-import com.td.esig.common.util.Severity;
+import com.td.besig.openapi.model.PurgeConfigurationObj;
+import com.td.besig.openapi.model.SearchPurgeConfig200Response;
+import com.td.besig.opsapi.constants.HttpHeadersConstants;
+import com.td.besig.opsapi.service.PurgeApiConfigService;
+import com.td.besig.opsapi.util.BesigopsapiUtil;
 import com.td.esig.common.util.SharedServiceLayerException;
-import com.td.esig.common.util.Status;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
-import org.springframework.http.HttpStatus;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.context.request.NativeWebRequest;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.http.HttpStatus.*;
 
-class GlobalExceptionHandlerTest {
+@ExtendWith(MockitoExtension.class)
+class PurgeApiConfigDelegateImplTest {
 
-    private GlobalExceptionHandler exceptionHandler;
+    @Mock
+    private PurgeApiConfigService purgeService;
+
+    @Mock
+    private BesigopsapiUtil besigopsapiUtil;
+
+    @Mock
+    private NativeWebRequest request;
+
+    @InjectMocks
+    private PurgeApiConfigDelegateImpl delegate;
+
+    private PurgeConfigurationObj testConfig;
 
     @BeforeEach
     void setUp() {
-        exceptionHandler = new GlobalExceptionHandler();
+        testConfig = new PurgeConfigurationObj();
+        testConfig.setId(123);
+
+        when(request.getHeader(HttpHeadersConstants.AUTHORIZATION_HEADER)).thenReturn("Bearer token");
+        when(request.getHeader(HttpHeadersConstants.CONTENT_TYPE_HEADER)).thenReturn("application/json");
     }
 
     @Test
-    void testHandleSharedServiceLayerException_ShouldReturnCorrectResponse() {
-        // Arrange
-        Status mockStatus = mock(Status.class);
-        when(mockStatus.getStatusCode()).thenReturn("400");
-        when(mockStatus.getSeverity()).thenReturn(Severity.Error);
+    void testCreatePurgeConfig_Success() {
+        when(purgeService.createConfiguration(any())).thenReturn(testConfig);
 
-        SharedServiceLayerException mockException = mock(SharedServiceLayerException.class);
-        when(mockException.getMessage()).thenReturn("Mock SharedServiceLayerException");
-        when(mockException.getStatus()).thenReturn(mockStatus);
+        ResponseEntity<List<PurgeConfigurationObj>> response = delegate.createPurgeConfig(testConfig);
 
-        // Act
-        ResponseEntity<Object> responseEntity = exceptionHandler.handleSharedServiceLayerException(mockException);
-
-        // Assert
-        assertNotNull(responseEntity);
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode()); // Expecting 400 Bad Request
-        assertTrue(responseEntity.getBody() instanceof ApiError);
-
-        ApiError apiError = (ApiError) responseEntity.getBody();
-        assertNotNull(apiError);
-        assertEquals("Error", apiError.getStatus().getSeverity().name());
+        assertNotNull(response);
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(1, Objects.requireNonNull(response.getBody()).size());
+        assertEquals(123, response.getBody().get(0).getId());
+        verify(purgeService, times(1)).createConfiguration(any());
     }
 
     @Test
-    void testHandleGeneralException_ShouldReturnInternalServerError() {
-        // Act
-        ResponseEntity<Object> responseEntity = exceptionHandler.handleGeneralException();
+    void testCreatePurgeConfig_IllegalArgumentException() {
+        when(purgeService.createConfiguration(any())).thenThrow(new IllegalArgumentException("Invalid input"));
 
-        // Assert
-        assertNotNull(responseEntity);
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
-        assertTrue(responseEntity.getBody() instanceof ApiError);
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> delegate.createPurgeConfig(testConfig));
+        assertEquals("Invalid input", ex.getMessage());
+    }
 
-        ApiError apiError = (ApiError) responseEntity.getBody();
-        assertNotNull(apiError);
-        assertEquals("Error", apiError.getStatus().getSeverity().name()); // Fix assertion
+    @Test
+    void testCreatePurgeConfig_IllegalStateException() {
+        when(purgeService.createConfiguration(any())).thenThrow(new IllegalStateException("Bad state"));
+
+        Exception ex = assertThrows(IllegalStateException.class, () -> delegate.createPurgeConfig(testConfig));
+        assertEquals("Bad state", ex.getMessage());
+    }
+
+    @Test
+    void testCreatePurgeConfig_SharedServiceLayerException() {
+        when(purgeService.createConfiguration(any())).thenThrow(new RuntimeException("Unexpected error"));
+
+        Exception ex = assertThrows(SharedServiceLayerException.class, () -> delegate.createPurgeConfig(testConfig));
+        assertTrue(ex.getMessage().contains("Unexpected error"));
+    }
+
+    @Test
+    void testSearchPurgeConfig_Success() {
+        when(purgeService.searchPurgeConfig("testTable")).thenReturn(Collections.singletonList(testConfig));
+
+        ResponseEntity<SearchPurgeConfig200Response> response = delegate.searchPurgeConfig("testTable");
+
+        assertNotNull(response);
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(1, Objects.requireNonNull(response.getBody()).getCount());
+    }
+
+    @Test
+    void testSearchPurgeConfig_Exception() {
+        when(purgeService.searchPurgeConfig(any())).thenThrow(new RuntimeException("Search error"));
+
+        Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.searchPurgeConfig("testTable"));
+        assertTrue(exception.getMessage().contains("Search error"));
+    }
+
+    @Test
+    void testGetPurgeConfig_Success() {
+        when(purgeService.getPurgeConfig("123")).thenReturn(testConfig);
+
+        ResponseEntity<PurgeConfigurationObj> response = delegate.getPurgeConfig("123");
+
+        assertNotNull(response);
+        assertEquals(OK, response.getStatusCode());
+        assertEquals(123, Objects.requireNonNull(response.getBody()).getId());
+    }
+
+    @Test
+    void testGetPurgeConfig_NotFound() {
+        when(purgeService.getPurgeConfig("123")).thenReturn(null);
+
+        ResponseEntity<PurgeConfigurationObj> response = delegate.getPurgeConfig("123");
+
+        assertEquals(NOT_FOUND, response.getStatusCode());
+    }
+
+    @Test
+    void testGetPurgeConfig_Exception() {
+        when(purgeService.getPurgeConfig(any())).thenThrow(new RuntimeException("DB error"));
+
+        Exception ex = assertThrows(SharedServiceLayerException.class, () -> delegate.getPurgeConfig("123"));
+        assertTrue(ex.getMessage().contains("DB error"));
+    }
+
+    @Test
+    void testUpdatePurgeConfig_Success() {
+        doNothing().when(purgeService).updatePurgeConfig(eq("123"), any());
+
+        ResponseEntity<Void> response = delegate.updatePurgeConfig("123", testConfig);
+
+        assertEquals(OK, response.getStatusCode());
+        verify(purgeService, times(1)).updatePurgeConfig(eq("123"), any());
+    }
+
+    @Test
+    void testUpdatePurgeConfig_NoSuchElementException() {
+        doThrow(new NoSuchElementException("No record")).when(purgeService).updatePurgeConfig(any(), any());
+
+        Exception ex = assertThrows(NoSuchElementException.class, () -> delegate.updatePurgeConfig("123", testConfig));
+        assertEquals("No record", ex.getMessage());
+    }
+
+    @Test
+    void testUpdatePurgeConfig_SharedServiceLayerException() {
+        doThrow(new RuntimeException("Update failed")).when(purgeService).updatePurgeConfig(any(), any());
+
+        Exception ex = assertThrows(SharedServiceLayerException.class, () -> delegate.updatePurgeConfig("123", testConfig));
+        assertTrue(ex.getMessage().contains("Update failed"));
+    }
+
+    @Test
+    void testDeletePurgeConfig_Success() {
+        doNothing().when(purgeService).deletePurgeConfig(eq("123"), any());
+
+        ResponseEntity<Void> response = delegate.deletePurgeConfig("123", testConfig);
+
+        assertEquals(OK, response.getStatusCode());
+        verify(purgeService, times(1)).deletePurgeConfig(eq("123"), any());
+    }
+
+    @Test
+    void testDeletePurgeConfig_NoSuchElementException() {
+        doThrow(new NoSuchElementException("Missing")).when(purgeService).deletePurgeConfig(any(), any());
+
+        Exception ex = assertThrows(NoSuchElementException.class, () -> delegate.deletePurgeConfig("123", testConfig));
+        assertEquals("Missing", ex.getMessage());
+    }
+
+    @Test
+    void testDeletePurgeConfig_IllegalStateException() {
+        doThrow(new IllegalStateException("Invalid state")).when(purgeService).deletePurgeConfig(any(), any());
+
+        Exception ex = assertThrows(IllegalStateException.class, () -> delegate.deletePurgeConfig("123", testConfig));
+        assertEquals("Invalid state", ex.getMessage());
+    }
+
+    @Test
+    void testDeletePurgeConfig_SharedServiceLayerException() {
+        doThrow(new RuntimeException("Unexpected")).when(purgeService).deletePurgeConfig(any(), any());
+
+        Exception ex = assertThrows(SharedServiceLayerException.class, () -> delegate.deletePurgeConfig("123", testConfig));
+        assertTrue(ex.getMessage().contains("Unexpected"));
+    }
+
+    @Test
+    void testGetRequest() {
+        assertTrue(delegate.getRequest().isPresent());
     }
 }

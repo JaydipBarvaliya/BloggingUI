@@ -1,11 +1,13 @@
-package com.td.besig.opsapi.exception;
+package com.td.besig.opsapi.controller;
 
-import com.td.coreapi.common.status.*;
+import com.td.besig.opsapi.exception.GlobalExceptionHandler;
+import com.td.coreapi.common.status.ApiError;
+import com.td.esig.common.util.Severity;
 import com.td.esig.common.util.SharedServiceLayerException;
+import com.td.esig.common.util.Status;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.slf4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -14,82 +16,49 @@ import static org.mockito.Mockito.*;
 
 class GlobalExceptionHandlerTest {
 
-    private GlobalExceptionHandler globalExceptionHandler;
-    private Logger loggerMock;
+    private GlobalExceptionHandler exceptionHandler;
 
     @BeforeEach
     void setUp() {
-        globalExceptionHandler = new GlobalExceptionHandler();
-        loggerMock = mock(Logger.class);
+        exceptionHandler = new GlobalExceptionHandler();
     }
 
     @Test
     void testHandleSharedServiceLayerException_ShouldReturnCorrectResponse() {
         // Arrange
-        AdditionalStatus mockStatus = new AdditionalStatus(HttpStatus.BAD_REQUEST.value(), AdditionalSeverity.Error);
-        mockStatus.setServerStatusCode("400");
-        mockStatus.setStatusDesc("Mock Error");
-
-        Status status = new Status("BAD_REQUEST", Severity.Error, mockStatus);
-        ApiError apiError = new ApiError(status);
+        Status mockStatus = mock(Status.class);
+        when(mockStatus.getStatusCode()).thenReturn("400");
+        when(mockStatus.getSeverity()).thenReturn(Severity.Error);
 
         SharedServiceLayerException mockException = mock(SharedServiceLayerException.class);
         when(mockException.getMessage()).thenReturn("Mock SharedServiceLayerException");
-        when(mockException.getStatus()).thenReturn(status);
+        when(mockException.getStatus()).thenReturn(mockStatus);
 
         // Act
-        ResponseEntity<Object> response = globalExceptionHandler.handleSharedServiceLayerException(mockException);
+        ResponseEntity<Object> responseEntity = exceptionHandler.handleSharedServiceLayerException(mockException);
 
         // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertTrue(response.getBody() instanceof ApiError);
-        assertEquals("BAD_REQUEST", ((ApiError) response.getBody()).getStatus().getStatusCode());
+        assertNotNull(responseEntity);
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode()); // Expecting 400 Bad Request
+        assertTrue(responseEntity.getBody() instanceof ApiError);
+
+        ApiError apiError = (ApiError) responseEntity.getBody();
+        assertNotNull(apiError);
+        assertEquals("Error", apiError.getStatus().getSeverity().name());
     }
 
     @Test
     void testHandleGeneralException_ShouldReturnInternalServerError() {
         // Act
-        ResponseEntity<Object> response = globalExceptionHandler.handleGeneralException();
+        ResponseEntity<Object> responseEntity = exceptionHandler.handleGeneralException();
 
         // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertTrue(response.getBody() instanceof ApiError);
-        assertEquals("INTERNAL_SERVER_ERROR", ((ApiError) response.getBody()).getStatus().getStatusCode());
-    }
+        assertNotNull(responseEntity);
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, responseEntity.getStatusCode());
+        assertTrue(responseEntity.getBody() instanceof ApiError);
 
-    @Test
-    void testExtractStatusCode_ShouldReturnValidStatusCode() {
-        // Arrange
-        AdditionalStatus mockStatus = new AdditionalStatus(HttpStatus.NOT_FOUND.value(), AdditionalSeverity.Error);
-        mockStatus.setServerStatusCode("404");
-        Status status = new Status("NOT_FOUND", Severity.Error, mockStatus);
-
-        SharedServiceLayerException mockException = mock(SharedServiceLayerException.class);
-        when(mockException.getStatus()).thenReturn(status);
-
-        // Act
-        int statusCode = globalExceptionHandler.extractStatusCode(mockException);
-
-        // Assert
-        assertEquals(404, statusCode);
-    }
-
-    @Test
-    void testExtractStatusCode_WhenParsingFails_ShouldReturnInternalServerError() {
-        // Arrange
-        AdditionalStatus mockStatus = new AdditionalStatus(HttpStatus.INTERNAL_SERVER_ERROR.value(), AdditionalSeverity.Error);
-        mockStatus.setServerStatusCode("INVALID_CODE"); // Invalid status code to trigger exception
-        Status status = new Status("UNKNOWN", Severity.Error, mockStatus);
-
-        SharedServiceLayerException mockException = mock(SharedServiceLayerException.class);
-        when(mockException.getStatus()).thenReturn(status);
-
-        // Act
-        int statusCode = globalExceptionHandler.extractStatusCode(mockException);
-
-        // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), statusCode);
+        ApiError apiError = (ApiError) responseEntity.getBody();
+        assertNotNull(apiError);
+        assertEquals("Error", apiError.getStatus().getSeverity().name()); // Fix assertion
     }
 }

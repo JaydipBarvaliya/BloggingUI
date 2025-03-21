@@ -1,262 +1,27 @@
-package com.td.besig.opsapi.delegate;
+package com.td.besig.opsapi.dto;
 
-import com.td.besig.openapi.model.ArchivalMetadataMappingObj;
-import com.td.besig.openapi.model.SearchArchivalMetadataMapping200Response;
-import com.td.besig.opsapi.service.ArchivalApiMetadataService;
-import com.td.besig.opsapi.util.BesigopsapiUtil;
-import com.td.esig.common.util.SharedServiceLayerException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.context.request.NativeWebRequest;
-
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.OK;
 
-class ArchivalApiMetadataDelegateImplTest {
-
-    @Mock
-    private ArchivalApiMetadataService metaService;
-
-    @Mock
-    private NativeWebRequest request;
-
-    @Mock
-    private BesigopsapiUtil besigopsapiUtil;
-
-    @InjectMocks
-    private ArchivalApiMetadataDelegateImpl delegate;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-        when(request.getHeader("Authorization")).thenReturn("Bearer token");
-        when(request.getHeader("Content-Type")).thenReturn("application/json");
-    }
+class PurgeConfigurationDtoTest {
 
     @Test
-    void testCreateArchivalMetadataMapping() {
-        ArchivalMetadataMappingObj inputObj = new ArchivalMetadataMappingObj("testMapType", "testArcKey", "testArcValue", "testArcDesc");
-        inputObj.setId(1);
-        inputObj.setMapType("TestType");
+    void testGetters() {
+        PurgeConfigurationDto dto = new PurgeConfigurationDto();
+        
+        dto.setId(1L);
+        dto.setPurgeTableName("testTable");
+        dto.setPurgeColumnName("testColumn");
+        dto.setTableType("testType");
+        dto.setPurgeMessage("Test Message");
+        dto.setRetentionMonths(12);
 
-        when(metaService.createArchivalMetadataMapping(any())).thenReturn(inputObj);
-
-        ResponseEntity<List<ArchivalMetadataMappingObj>> response = delegate.createArchivalMetadataMapping(inputObj);
-
-        assertEquals(OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().size());
-        assertEquals(1, response.getBody().get(0).getId());
-    }
-
-    @Test
-    void testCreateArchivalMetadataMapping_IllegalArgumentException() {
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj("test", "key", "value", "desc");
-        doThrow(new IllegalArgumentException("Illegal arg")).when(besigopsapiUtil).validateTokenAndClientId(any());
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> delegate.createArchivalMetadataMapping(obj));
-
-        assertEquals("Illegal arg", exception.getMessage());
-    }
-
-    @Test
-    void testCreateArchivalMetadataMapping_IllegalStateException() {
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj("test", "key", "value", "desc");
-        doThrow(new IllegalStateException("Illegal state")).when(besigopsapiUtil).validateTokenAndClientId(any());
-
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> delegate.createArchivalMetadataMapping(obj));
-
-        assertEquals("Illegal state", exception.getMessage());
-    }
-
-    @Test
-    void testCreateArchivalMetadataMapping_SharedServiceLayerException() {
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj("test", "key", "value", "desc");
-        doThrow(new RuntimeException("Unexpected error")).when(besigopsapiUtil).validateTokenAndClientId(any());
-
-        SharedServiceLayerException exception = assertThrows(SharedServiceLayerException.class,
-                () -> delegate.createArchivalMetadataMapping(obj));
-
-        assertTrue(exception.getMessage().contains("Unexpected error"));
-    }
-
-    @Test
-    void testSearchArchivalMetadataMapping() {
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj("testMapType", "testArcKey", "testArcValue", "testArcDesc");
-        obj.setId(1);
-        obj.setMapType("TestType");
-
-        when(metaService.getArchivalMetadataMappingList(any())).thenReturn(List.of(obj));
-
-        ResponseEntity<SearchArchivalMetadataMapping200Response> response = delegate.searchArchivalMetadataMapping("TestType");
-
-        assertEquals(OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().getCount());
-        assertEquals(1, response.getBody().getResults().get(0).getId());
-    }
-
-    @Test
-    void testSearchArchivalMetadataMapping_ExceptionThrown() {
-        String mapType = "testMapType";
-
-        doThrow(new RuntimeException("Test Exception")).when(metaService).getArchivalMetadataMappingList(mapType);
-
-        SharedServiceLayerException exception = assertThrows(
-                SharedServiceLayerException.class,
-                () -> delegate.searchArchivalMetadataMapping(mapType)
-        );
-
-        assertTrue(exception.getMessage().contains("Test Exception"));
-    }
-
-    @Test
-    void testGetArchivalMetadataMapping_Found() {
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj("testMapType", "testArcKey", "testArcValue", "testArcDesc");
-        obj.setId(1);
-
-        when(metaService.getArchivalMetadataMapping("1")).thenReturn(obj);
-        ResponseEntity<ArchivalMetadataMappingObj> response = delegate.getArchivalMetadataMapping("1");
-
-        assertEquals(OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(1, response.getBody().getId());
-    }
-
-    @Test
-    void testGetArchivalMetadataMapping_NotFound() {
-        when(metaService.getArchivalMetadataMapping("1")).thenReturn(null);
-        ResponseEntity<ArchivalMetadataMappingObj> response = delegate.getArchivalMetadataMapping("1");
-
-        assertEquals(NOT_FOUND, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-    @Test
-    void testGetArchivalMetadataMapping_ExceptionThrown() {
-        String id = "1";
-
-        when(metaService.getArchivalMetadataMapping(id))
-                .thenThrow(new RuntimeException("Test Exception"));
-
-        Exception exception = assertThrows(SharedServiceLayerException.class, () -> delegate.getArchivalMetadataMapping(id));
-
-        assertTrue(exception.getMessage().contains("Test Exception"));
-    }
-
-    @Test
-    void testUpdateArchivalMetadataMapping_Success() {
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj("testMapType", "testArcKey", "testArcValue", "testArcDesc");
-        obj.setId(1);
-
-        ResponseEntity<Void> response = delegate.updateArchivalMetadataMapping("1", obj);
-
-        assertEquals(OK, response.getStatusCode());
-    }
-
-    @Test
-    void testUpdateArchivalMetadataMapping_NoSuchElementException() {
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj("map", "key", "val", "desc");
-
-        doThrow(new NoSuchElementException("Not found"))
-                .when(metaService)
-                .updateArchivalMetadataMapping(anyString(), any());
-
-        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
-                () -> delegate.updateArchivalMetadataMapping("1", obj));
-
-        assertEquals("Not found", exception.getMessage());
-    }
-
-    @Test
-    void testUpdateArchivalMetadataMapping_SharedServiceLayerException() {
-        String id = "testId";
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj(id, "", "", "");
-
-        doThrow(new RuntimeException("Test Exception"))
-                .when(metaService)
-                .updateArchivalMetadataMapping(eq(id), eq(obj));
-
-        SharedServiceLayerException exception = assertThrows(
-                SharedServiceLayerException.class,
-                () -> delegate.updateArchivalMetadataMapping(id, obj)
-        );
-
-        assertTrue(exception.getMessage().contains("Test Exception"));
-    }
-
-    @Test
-    void testDeleteArchivalMetadataMapping_Success() {
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj("testMapType", "testArcKey", "testArcValue", "testArcDesc");
-        obj.setId(1);
-
-        ResponseEntity<Void> response = delegate.deleteArchivalMetadataMapping("1", obj);
-
-        assertEquals(OK, response.getStatusCode());
-    }
-
-    @Test
-    void testDeleteArchivalMetadataMapping_NoSuchElementException() {
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj("type", "key", "val", "desc");
-
-        doThrow(new NoSuchElementException("Delete not found"))
-                .when(metaService)
-                .deleteArchivalMetadataMapping(anyString(), any());
-
-        NoSuchElementException exception = assertThrows(NoSuchElementException.class,
-                () -> delegate.deleteArchivalMetadataMapping("1", obj));
-
-        assertEquals("Delete not found", exception.getMessage());
-    }
-
-    @Test
-    void testDeleteArchivalMetadataMapping_IllegalStateException() {
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj("type", "key", "val", "desc");
-
-        doThrow(new IllegalStateException("Invalid state"))
-                .when(metaService)
-                .deleteArchivalMetadataMapping(anyString(), any());
-
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> delegate.deleteArchivalMetadataMapping("1", obj));
-
-        assertEquals("Invalid state", exception.getMessage());
-    }
-
-    @Test
-    void testDeleteArchivalMetadataMapping_SharedServiceLayerException() {
-        String id = "testId";
-        ArchivalMetadataMappingObj obj = new ArchivalMetadataMappingObj(id, "", "", "");
-
-        doThrow(new RuntimeException("Test Exception"))
-                .when(metaService)
-                .deleteArchivalMetadataMapping(eq(id), eq(obj));
-
-        SharedServiceLayerException exception = assertThrows(
-                SharedServiceLayerException.class,
-                () -> delegate.deleteArchivalMetadataMapping(id, obj)
-        );
-
-        assertTrue(exception.getMessage().contains("Test Exception"));
-    }
-
-    @Test
-    void testGetRequest() {
-        Optional<NativeWebRequest> result = delegate.getRequest();
-
-        assertTrue(result.isPresent());
-        assertEquals(request, result.get());
+        assertEquals(1L, dto.getId());
+        assertEquals("testTable", dto.getPurgeTableName());
+        assertEquals("testColumn", dto.getPurgeColumnName());
+        assertEquals("testType", dto.getTableType());
+        assertEquals("Test Message", dto.getPurgeMessage());
+        assertEquals(12, dto.getRetentionMonths());
     }
 }

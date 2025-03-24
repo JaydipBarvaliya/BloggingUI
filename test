@@ -1,24 +1,40 @@
-import com.td.besig.opsapi.constants.HttpHeadersConstants;
+import com.td.besig.opsapi.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.util.NoSuchElementException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class HttpHeadersConstantsTest {
+class GlobalExceptionHandlerTest {
+
+    GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     @Test
-    void testConstants() {
-        assertEquals("Authorization", HttpHeadersConstants.AUTHORIZATION_HEADER);
-        assertEquals("Content-Type", HttpHeadersConstants.CONTENT_TYPE_HEADER);
+    void testHandleIllegalArgumentException() {
+        IllegalArgumentException ex = new IllegalArgumentException("Invalid argument!");
+        ResponseEntity<Object> response = handler.handleIllegalArgumentException(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertTrue(response.getBody().toString().contains("Invalid argument!"));
     }
 
     @Test
-    void testPrivateConstructor() throws Exception {
-        Constructor<HttpHeadersConstants> constructor =
-                HttpHeadersConstants.class.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        assertNotNull(constructor.newInstance());
+    void testHandleIllegalStateException() {
+        IllegalStateException ex = new IllegalStateException("Illegal state!");
+        ResponseEntity<Object> response = handler.handleIllegalStateException(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertTrue(response.getBody().toString().contains("Illegal state!"));
+    }
+
+    @Test
+    void testHandleNoSuchElementException() {
+        NoSuchElementException ex = new NoSuchElementException("Data not found!");
+        ResponseEntity<Object> response = handler.handleNoSuchElementException(ex);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertTrue(response.getBody().toString().contains("Data not found!"));
     }
 }

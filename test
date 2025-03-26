@@ -1,40 +1,12 @@
-import com.td.besig.opsapi.exception.GlobalExceptionHandler;
-import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+public void deleteClientApps(String id, ClientAppsObj clientAppsObj) {
+    ClientAppConfiguration entity = this.repo.findById(id)
+        .orElseThrow(() -> new NoSuchElementException("Data not available to delete for id: " + id));
 
-import java.util.NoSuchElementException;
-
-import static org.junit.jupiter.api.Assertions.*;
-
-class GlobalExceptionHandlerTest {
-
-    GlobalExceptionHandler handler = new GlobalExceptionHandler();
-
-    @Test
-    void testHandleIllegalArgumentException() {
-        IllegalArgumentException ex = new IllegalArgumentException("Invalid argument!");
-        ResponseEntity<Object> response = handler.handleIllegalArgumentException(ex);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Invalid argument!"));
+    if (!entity.getClientId().equals(clientAppsObj.getClientId())) {
+        log.error("Unauthorized attempt to delete config for id: {}", id);
+        throw new AccessDeniedException("Client ID mismatch. Deletion not allowed.");
     }
 
-    @Test
-    void testHandleIllegalStateException() {
-        IllegalStateException ex = new IllegalStateException("Illegal state!");
-        ResponseEntity<Object> response = handler.handleIllegalStateException(ex);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Illegal state!"));
-    }
-
-    @Test
-    void testHandleNoSuchElementException() {
-        NoSuchElementException ex = new NoSuchElementException("Data not found!");
-        ResponseEntity<Object> response = handler.handleNoSuchElementException(ex);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("Data not found!"));
-    }
+    this.repo.deleteById(id);
+    log.info("ClientApp Config for id {} deleted successfully", id);
 }

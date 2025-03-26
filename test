@@ -1,12 +1,7 @@
-public void deleteClientApps(String id, ClientAppsObj clientAppsObj) {
-    ClientAppConfiguration entity = this.repo.findById(id)
-        .orElseThrow(() -> new NoSuchElementException("Data not available to delete for id: " + id));
-
-    if (!entity.getClientId().equals(clientAppsObj.getClientId())) {
-        log.error("Unauthorized attempt to delete config for id: {}", id);
-        throw new AccessDeniedException("Client ID mismatch. Deletion not allowed.");
+Map<String, Boolean> mismatches = getMismatches(clientAppsObj, entity);
+for (Map.Entry<String, Boolean> entry : mismatches.entrySet()) {
+    if (Boolean.FALSE.equals(entry.getValue())) {
+        log.error("Deletion failed due to mismatch in field: {}", entry.getKey());
+        throw new AccessDeniedException("Mismatch in: " + entry.getKey());
     }
-
-    this.repo.deleteById(id);
-    log.info("ClientApp Config for id {} deleted successfully", id);
 }

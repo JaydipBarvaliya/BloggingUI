@@ -1,29 +1,43 @@
-public Map<String, Boolean> getMismatches(ClientAppsObj inputObj, ClientAppConfiguration entity) {
-    Map<String, Boolean> result = new HashMap<>();
+@ExtendWith(MockitoExtension.class)
+public class ClientAppsApiServiceTest {
 
-    if (inputObj == null || entity == null) {
-        result.put("NullCheck", false);
-        return result;
+    @InjectMocks
+    private ClientAppsApiService clientAppsApiService;
+
+    @Mock
+    private ClientAppConfigurationRepository repo;
+
+    @Mock
+    private ModelMapper mapper; // if you're using a mapper
+
+    @Test
+    void testGetClientAppConfigData_WhenConfigIsPresent() {
+        // Arrange
+        String id = "1";
+        ClientAppConfiguration config = new ClientAppConfiguration();
+        ClientAppsObj expectedDto = new ClientAppsObj();
+
+        when(repo.findById(Long.valueOf(id))).thenReturn(Optional.of(config));
+        when(clientAppsApiService.entityToDto(config)).thenReturn(expectedDto);
+
+        // Act
+        ClientAppsObj result = clientAppsApiService.getClientAppConfigData(id);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(expectedDto, result);
     }
 
-    result.put("clientId", Objects.equals(inputObj.getClientId(), entity.getClientId()));
-    result.put("lobId", Objects.equals(inputObj.getLobId(), entity.getLobId()));
-    // Add more fields as needed:
-    // result.put("appCode", Objects.equals(inputObj.getAppCode(), entity.getAppCode()));
-    // result.put("status", Objects.equals(inputObj.getStatus(), entity.getStatus()));
+    @Test
+    void testGetClientAppConfigData_WhenConfigIsNotPresent() {
+        // Arrange
+        String id = "1";
+        when(repo.findById(Long.valueOf(id))).thenReturn(Optional.empty());
 
-    return result;
-}
+        // Act
+        ClientAppsObj result = clientAppsApiService.getClientAppConfigData(id);
 
-
-Map<String, Boolean> mismatches = getMismatches(clientAppsObj, entity);
-
-for (Map.Entry<String, Boolean> entry : mismatches.entrySet()) {
-    if (Boolean.FALSE.equals(entry.getValue())) {
-        log.error("Unauthorized delete attempt: Mismatch in field {}", entry.getKey());
-        throw new IllegalStateException("Unauthorized delete: Mismatch in " + entry.getKey());
+        // Assert
+        assertNull(result);
     }
 }
-
-this.repo.deleteById(id);
-log.info("ClientApp Config for id {} deleted successfully", id);

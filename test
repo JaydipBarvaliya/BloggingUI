@@ -8,36 +8,32 @@ public class ClientAppsApiServiceTest {
     private ClientAppConfigurationRepository repo;
 
     @Mock
-    private ModelMapper mapper; // if you're using a mapper
+    private ClientAppConfigSpecifications specifications;
+
+    @Mock
+    private ClientAppConfiguration configEntity;
 
     @Test
-    void testGetClientAppConfigData_WhenConfigIsPresent() {
+    void testGetClientAppConfigList_WithData() {
         // Arrange
-        String id = "1";
-        ClientAppConfiguration config = new ClientAppConfiguration();
-        ClientAppsObj expectedDto = new ClientAppsObj();
+        String lobId = "101";
+        String clientId = "202";
+        Specification<ClientAppConfiguration> spec = (root, query, cb) -> null;
 
-        when(repo.findById(Long.valueOf(id))).thenReturn(Optional.of(config));
-        when(clientAppsApiService.entityToDto(config)).thenReturn(expectedDto);
+        ClientAppsObj dto = new ClientAppsObj();
+        List<ClientAppConfiguration> configList = List.of(configEntity);
+
+        // Mock dynamic query and repo
+        when(ClientAppConfigSpecifications.dynamicQuery(lobId, clientId)).thenReturn(spec);
+        when(repo.findAll(spec)).thenReturn(configList);
+        when(clientAppsApiService.entityToDto(configEntity)).thenReturn(dto);
 
         // Act
-        ClientAppsObj result = clientAppsApiService.getClientAppConfigData(id);
+        List<ClientAppsObj> result = clientAppsApiService.getClientAppConfigList(lobId, clientId);
 
         // Assert
         assertNotNull(result);
-        assertEquals(expectedDto, result);
-    }
-
-    @Test
-    void testGetClientAppConfigData_WhenConfigIsNotPresent() {
-        // Arrange
-        String id = "1";
-        when(repo.findById(Long.valueOf(id))).thenReturn(Optional.empty());
-
-        // Act
-        ClientAppsObj result = clientAppsApiService.getClientAppConfigData(id);
-
-        // Assert
-        assertNull(result);
+        assertEquals(1, result.size());
+        assertEquals(dto, result.get(0));
     }
 }

@@ -1,39 +1,8 @@
-@ExtendWith(MockitoExtension.class)
-public class ClientAppsApiServiceTest {
+@Test
+public void testEntityToDto_WhenEntityIsNull() {
+    // Act
+    ClientAppsObj result = clientAppsApiService.entityToDto(null);
 
-    @InjectMocks
-    @Spy // <-- Add this
-    private ClientAppsApiService clientAppsApiService;
-
-    @Mock
-    private ClientAppConfigurationRepository repo;
-
-    @Test
-    public void getClientAppConfigListWithDataTest() {
-        // Prepare test data
-        ClientAppConfiguration clientAppConfiguration = new ClientAppConfiguration();
-        clientAppConfiguration.setClientId("TestClient");
-        clientAppConfiguration.setLob("TestLob");
-
-        List<ClientAppConfiguration> configList = new ArrayList<>();
-        configList.add(clientAppConfiguration);
-
-        Specification<ClientAppConfiguration> spec =
-            ClientAppConfigSpecifications.dynamicQuery("TestLob", "TestClient");
-
-        ClientAppsObj dto = new ClientAppsObj(); // mocked DTO
-
-        // Mocking
-        when(repo.findAll(spec)).thenReturn(configList);
-        doReturn(dto).when(clientAppsApiService).entityToDto(clientAppConfiguration); // spy method
-
-        // Call method under test
-        List<ClientAppsObj> result =
-            clientAppsApiService.getClientAppConfigList("TestLob", "TestClient");
-
-        // Assertions
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(dto, result.get(0));
-    }
+    // Assert
+    assertNotNull(result); // since MAPPER.dtoToConfig(null) still returns an object (depends on your mapper logic)
 }

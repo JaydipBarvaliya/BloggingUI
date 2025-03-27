@@ -1,23 +1,39 @@
-@Test
-public void getClientAppConfigListTest() {
-    ClientAppConfiguration clientAppConfiguration = new ClientAppConfiguration();
-    clientAppConfiguration.setClientId("TestClient");
-    clientAppConfiguration.setLob("TestLob");
+@ExtendWith(MockitoExtension.class)
+public class ClientAppsApiServiceTest {
 
-    List<ClientAppConfiguration> configList = new ArrayList<>();
-    configList.add(clientAppConfiguration);
+    @InjectMocks
+    @Spy // <-- Add this
+    private ClientAppsApiService clientAppsApiService;
 
-    Specification<ClientAppConfiguration> spec = ClientAppConfigSpecifications.dynamicQuery("TestLob", "TestClient");
+    @Mock
+    private ClientAppConfigurationRepository repo;
 
-    ClientAppsObj dto = new ClientAppsObj(); // Mock DTO output
+    @Test
+    public void getClientAppConfigListWithDataTest() {
+        // Prepare test data
+        ClientAppConfiguration clientAppConfiguration = new ClientAppConfiguration();
+        clientAppConfiguration.setClientId("TestClient");
+        clientAppConfiguration.setLob("TestLob");
 
-    when(repo.findAll(spec)).thenReturn(configList);
-    when(clientAppsApiService.entityToDto(clientAppConfiguration)).thenReturn(dto); // mock entityToDto
+        List<ClientAppConfiguration> configList = new ArrayList<>();
+        configList.add(clientAppConfiguration);
 
-    List<ClientAppsObj> result = clientAppsApiService.getClientAppConfigList("TestLob", "TestClient");
+        Specification<ClientAppConfiguration> spec =
+            ClientAppConfigSpecifications.dynamicQuery("TestLob", "TestClient");
 
-    // Assertions to verify the method logic
-    assertNotNull(result);
-    assertEquals(1, result.size());
-    assertEquals(dto, result.get(0));
+        ClientAppsObj dto = new ClientAppsObj(); // mocked DTO
+
+        // Mocking
+        when(repo.findAll(spec)).thenReturn(configList);
+        doReturn(dto).when(clientAppsApiService).entityToDto(clientAppConfiguration); // spy method
+
+        // Call method under test
+        List<ClientAppsObj> result =
+            clientAppsApiService.getClientAppConfigList("TestLob", "TestClient");
+
+        // Assertions
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(dto, result.get(0));
+    }
 }

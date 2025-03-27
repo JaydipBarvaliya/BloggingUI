@@ -1,39 +1,23 @@
-@ExtendWith(MockitoExtension.class)
-public class ClientAppsApiServiceTest {
+@Test
+public void getClientAppConfigListTest() {
+    ClientAppConfiguration clientAppConfiguration = new ClientAppConfiguration();
+    clientAppConfiguration.setClientId("TestClient");
+    clientAppConfiguration.setLob("TestLob");
 
-    @InjectMocks
-    private ClientAppsApiService clientAppsApiService;
+    List<ClientAppConfiguration> configList = new ArrayList<>();
+    configList.add(clientAppConfiguration);
 
-    @Mock
-    private ClientAppConfigurationRepository repo;
+    Specification<ClientAppConfiguration> spec = ClientAppConfigSpecifications.dynamicQuery("TestLob", "TestClient");
 
-    @Mock
-    private ClientAppConfigSpecifications specifications;
+    ClientAppsObj dto = new ClientAppsObj(); // Mock DTO output
 
-    @Mock
-    private ClientAppConfiguration configEntity;
+    when(repo.findAll(spec)).thenReturn(configList);
+    when(clientAppsApiService.entityToDto(clientAppConfiguration)).thenReturn(dto); // mock entityToDto
 
-    @Test
-    void testGetClientAppConfigList_WithData() {
-        // Arrange
-        String lobId = "101";
-        String clientId = "202";
-        Specification<ClientAppConfiguration> spec = (root, query, cb) -> null;
+    List<ClientAppsObj> result = clientAppsApiService.getClientAppConfigList("TestLob", "TestClient");
 
-        ClientAppsObj dto = new ClientAppsObj();
-        List<ClientAppConfiguration> configList = List.of(configEntity);
-
-        // Mock dynamic query and repo
-        when(ClientAppConfigSpecifications.dynamicQuery(lobId, clientId)).thenReturn(spec);
-        when(repo.findAll(spec)).thenReturn(configList);
-        when(clientAppsApiService.entityToDto(configEntity)).thenReturn(dto);
-
-        // Act
-        List<ClientAppsObj> result = clientAppsApiService.getClientAppConfigList(lobId, clientId);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(dto, result.get(0));
-    }
+    // Assertions to verify the method logic
+    assertNotNull(result);
+    assertEquals(1, result.size());
+    assertEquals(dto, result.get(0));
 }

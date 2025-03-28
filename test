@@ -1,8 +1,12 @@
-@Test
-public void testEntityToDto_WhenEntityIsNull() {
-    // Act
-    ClientAppsObj result = clientAppsApiService.entityToDto(null);
-
-    // Assert
-    assertNotNull(result); // since MAPPER.dtoToConfig(null) still returns an object (depends on your mapper logic)
-}
+<dependency>
+  <groupId>org.junit.vintage</groupId>
+  <artifactId>junit-vintage-engine</artifactId>
+  <version>5.10.2</version>
+  <scope>test</scope>
+  <exclusions>
+    <exclusion>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+    </exclusion>
+  </exclusions>
+</dependency>

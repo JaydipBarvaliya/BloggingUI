@@ -1,12 +1,13 @@
-<dependency>
-  <groupId>org.junit.vintage</groupId>
-  <artifactId>junit-vintage-engine</artifactId>
-  <version>5.10.2</version>
-  <scope>test</scope>
-  <exclusions>
-    <exclusion>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-    </exclusion>
-  </exclusions>
-</dependency>
+public class RequestUtil {
+
+    private RequestUtil() {}
+
+    public static HttpHeaders createBasicHeaders(NativeWebRequest request) {
+        HttpHeaders headers = new HttpHeaders();
+        if (request != null) {
+            headers.set(HttpHeadersConstants.AUTHORIZATION_HEADER, request.getHeader(HttpHeadersConstants.AUTHORIZATION_HEADER));
+            headers.set(HttpHeadersConstants.CONTENT_TYPE_HEADER, request.getHeader(HttpHeadersConstants.CONTENT_TYPE_HEADER));
+        }
+        return headers;
+    }
+}

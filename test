@@ -1,13 +1,35 @@
-public class RequestUtil {
+public static int countPossibleWinners(List<Integer> initialRewards) {
+    int n = initialRewards.size();
+    int[] rewards = new int[n];
 
-    private RequestUtil() {}
-
-    public static HttpHeaders createBasicHeaders(NativeWebRequest request) {
-        HttpHeaders headers = new HttpHeaders();
-        if (request != null) {
-            headers.set(HttpHeadersConstants.AUTHORIZATION_HEADER, request.getHeader(HttpHeadersConstants.AUTHORIZATION_HEADER));
-            headers.set(HttpHeadersConstants.CONTENT_TYPE_HEADER, request.getHeader(HttpHeadersConstants.CONTENT_TYPE_HEADER));
-        }
-        return headers;
+    for (int i = 0; i < n; i++) {
+        rewards[i] = initialRewards.get(i);
     }
+
+    int count = 0;
+
+    for (int i = 0; i < n; i++) {
+        int totalIfIWin = rewards[i] + n;
+
+        // Build list of other players and calculate their best possible scores
+        List<Integer> others = new ArrayList<>();
+        for (int j = 0; j < n; j++) {
+            if (j != i) others.add(rewards[j]);
+        }
+
+        // Sort other rewards descending
+        others.sort(Collections.reverseOrder());
+
+        int maxOther = 0;
+        for (int k = 0; k < others.size(); k++) {
+            maxOther = Math.max(maxOther, others.get(k) + (n - (k + 1)));
+        }
+
+        // We allow ties for highest score
+        if (totalIfIWin >= maxOther) {
+            count++;
+        }
+    }
+
+    return count;
 }

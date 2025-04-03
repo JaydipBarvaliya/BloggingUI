@@ -10,27 +10,21 @@ public static int minRetailersToRelocate(List<Integer> regionStart, List<Integer
     // Sort by start time
     Arrays.sort(intervals, Comparator.comparingInt(a -> a[0]));
 
-    // Track max inclusive group
-    int maxGroup = 1;
+    // Min heap to store end times
+    PriorityQueue<Integer> minHeap = new PriorityQueue<>();
+    int maxInclusiveGroup = 0;
 
-    // Use a TreeMap to keep end frequencies for efficient window
-    TreeMap<Integer, Integer> endCounts = new TreeMap<>();
-    int left = 0;
+    for (int[] interval : intervals) {
+        int start = interval[0], end = interval[1];
 
-    for (int right = 0; right < n; right++) {
-        // Add current end to map
-        endCounts.put(intervals[right][1], endCounts.getOrDefault(intervals[right][1], 0) + 1);
-
-        // While intersection is invalid, move left pointer
-        while (intervals[right][0] > endCounts.firstKey()) {
-            int end = intervals[left][1];
-            endCounts.put(end, endCounts.get(end) - 1);
-            if (endCounts.get(end) == 0) endCounts.remove(end);
-            left++;
+        // Remove intervals that do not overlap
+        while (!minHeap.isEmpty() && minHeap.peek() < start) {
+            minHeap.poll();
         }
 
-        maxGroup = Math.max(maxGroup, right - left + 1);
+        minHeap.offer(end);
+        maxInclusiveGroup = Math.max(maxInclusiveGroup, minHeap.size());
     }
 
-    return n - maxGroup;
+    return n - maxInclusiveGroup;
 }

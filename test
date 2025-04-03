@@ -1,28 +1,31 @@
 public static int minRetailersToRelocate(List<Integer> regionStart, List<Integer> regionEnd) {
     int n = regionStart.size();
-    int minMoves = n;
+
+    // We'll track each region's start and end as separate "events"
+    // Start = +1, End = -1 (ending at regionEnd + 1 to include touching ranges)
+    List<int[]> events = new ArrayList<>();
 
     for (int i = 0; i < n; i++) {
-        int count = 0;
-        int curStart = regionStart.get(i);
-        int curEnd = regionEnd.get(i);
-
-        for (int j = 0; j < n; j++) {
-            if (i == j) continue;
-
-            int otherStart = regionStart.get(j);
-            int otherEnd = regionEnd.get(j);
-
-            // Check if current region intersects with this one
-            if (curStart <= otherEnd && curEnd >= otherStart) {
-                count++;
-            }
-        }
-
-        // +1 for the region itself
-        int inclusiveGroupSize = count + 1;
-        minMoves = Math.min(minMoves, n - inclusiveGroupSize);
+        events.add(new int[] { regionStart.get(i), 1 });           // region starts
+        events.add(new int[] { regionEnd.get(i) + 1, -1 });        // region ends (+1 for inclusivity)
     }
 
-    return minMoves;
+    // Sort events by position; if tie, end (-1) comes before start (+1)
+    events.sort((a, b) -> {
+        if (a[0] == b[0]) return Integer.compare(a[1], b[1]);
+        return Integer.compare(a[0], b[0]);
+    });
+
+    // We'll now sweep through the events and count active overlaps
+    int activeRegions = 0;
+    int maxOverlap = 0;
+
+    for (int[] event : events) {
+        activeRegions += event[1]; // +1 on start, -1 on end
+        maxOverlap = Math.max(maxOverlap, activeRegions);
+    }
+
+    // To make the set inclusive, we keep the max overlapping group
+    // The rest need to be relocated
+    return n - maxOverlap;
 }

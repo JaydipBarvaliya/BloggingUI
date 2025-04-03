@@ -1,15 +1,26 @@
-int count = 0;
+public static int minRetailersToRelocate(List<Integer> regionStart, List<Integer> regionEnd) {
+    int n = regionStart.size();
 
-for (int currentReward : initialRewards) {
-    // If this customer has the highest initial reward,
-    // then the best other total would come from the second highest
-    int bestOtherPossibleTotal = (currentReward == max1)
-        ? (max2 + n - 1)
-        : (max1 + n - 1);
+    // Step 1: Find the intersection range
+    int maxStart = Integer.MIN_VALUE;
+    int minEnd = Integer.MAX_VALUE;
 
-    // If this customer’s total (after winning) is at least as much as the best other total
-    int totalIfThisCustomerWins = currentReward + n;
-    if (totalIfThisCustomerWins >= bestOtherPossibleTotal) {
-        count++;
+    for (int i = 0; i < n; i++) {
+        maxStart = Math.max(maxStart, regionStart.get(i));
+        minEnd = Math.min(minEnd, regionEnd.get(i));
     }
+
+    // Step 2: Count how many retailers intersect with [maxStart, minEnd]
+    int inclusiveCount = 0;
+    for (int i = 0; i < n; i++) {
+        int start = regionStart.get(i);
+        int end = regionEnd.get(i);
+
+        if (start <= minEnd && end >= maxStart) {
+            inclusiveCount++;
+        }
+    }
+
+    // Step 3: Minimum retailers to relocate = total - inclusive ones
+    return n - inclusiveCount;
 }

@@ -1,25 +1,15 @@
-public static int countPossibleWinners(List<Integer> initialRewards) {
-    int n = initialRewards.size();
+int count = 0;
 
-    int max1 = Integer.MIN_VALUE, max2 = Integer.MIN_VALUE;
-    for (int reward : initialRewards) {
-        if (reward > max1) {
-            max2 = max1;
-            max1 = reward;
-        } else if (reward > max2) {
-            max2 = reward;
-        }
+for (int currentReward : initialRewards) {
+    // If this customer has the highest initial reward,
+    // then the best other total would come from the second highest
+    int bestOtherPossibleTotal = (currentReward == max1)
+        ? (max2 + n - 1)
+        : (max1 + n - 1);
+
+    // If this customer’s total (after winning) is at least as much as the best other total
+    int totalIfThisCustomerWins = currentReward + n;
+    if (totalIfThisCustomerWins >= bestOtherPossibleTotal) {
+        count++;
     }
-
-    // The best total any *other* player can get is max1 + (n - 1)
-    // If a player *is* max1, the next best total possible is max2 + (n - 1)
-    int count = 0;
-    for (int reward : initialRewards) {
-        int maxOtherTotal = (reward == max1) ? (max2 + n - 1) : (max1 + n - 1);
-        if (reward + n >= maxOtherTotal) {
-            count++;
-        }
-    }
-
-    return count;
 }

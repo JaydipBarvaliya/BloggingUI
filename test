@@ -1,56 +1,66 @@
 public static int minRetailersToRelocate(List<Integer> regionStart, List<Integer> regionEnd) {
     int n = regionStart.size();
-
-    int[] starts = new int[n];
-    int[] ends = new int[n];
+    int[] start = new int[n];
+    int[] end = new int[n];
 
     for (int i = 0; i < n; i++) {
-        starts[i] = regionStart.get(i);
-        ends[i] = regionEnd.get(i);
+        start[i] = regionStart.get(i);
+        end[i] = regionEnd.get(i);
     }
 
-    // Precompute prefix/suffix maxStart and minEnd
+    // Prefix and Suffix arrays for max(start) and min(end)
     int[] prefixMaxStart = new int[n];
-    int[] suffixMaxStart = new int[n];
     int[] prefixMinEnd = new int[n];
+    int[] suffixMaxStart = new int[n];
     int[] suffixMinEnd = new int[n];
 
-    prefixMaxStart[0] = starts[0];
-    prefixMinEnd[0] = ends[0];
+    prefixMaxStart[0] = start[0];
+    prefixMinEnd[0] = end[0];
     for (int i = 1; i < n; i++) {
-        prefixMaxStart[i] = Math.max(prefixMaxStart[i - 1], starts[i]);
-        prefixMinEnd[i] = Math.min(prefixMinEnd[i - 1], ends[i]);
+        prefixMaxStart[i] = Math.max(prefixMaxStart[i - 1], start[i]);
+        prefixMinEnd[i] = Math.min(prefixMinEnd[i - 1], end[i]);
     }
 
-    suffixMaxStart[n - 1] = starts[n - 1];
-    suffixMinEnd[n - 1] = ends[n - 1];
+    suffixMaxStart[n - 1] = start[n - 1];
+    suffixMinEnd[n - 1] = end[n - 1];
     for (int i = n - 2; i >= 0; i--) {
-        suffixMaxStart[i] = Math.max(suffixMaxStart[i + 1], starts[i]);
-        suffixMinEnd[i] = Math.min(suffixMinEnd[i + 1], ends[i]);
+        suffixMaxStart[i] = Math.max(suffixMaxStart[i + 1], start[i]);
+        suffixMinEnd[i] = Math.min(suffixMinEnd[i + 1], end[i]);
     }
 
     int maxInclusiveGroup = 0;
 
     for (int i = 0; i < n; i++) {
-        int maxStart = Integer.MIN_VALUE;
-        int minEnd = Integer.MAX_VALUE;
+        int maxStart = (i == 0) ? suffixMaxStart[1] :
+                       (i == n - 1) ? prefixMaxStart[n - 2] :
+                       Math.max(prefixMaxStart[i - 1], suffixMaxStart[i + 1]);
 
-        if (i > 0) {
-            maxStart = Math.max(maxStart, prefixMaxStart[i - 1]);
-            minEnd = Math.min(minEnd, prefixMinEnd[i - 1]);
-        }
+        int minEnd = (i == 0) ? suffixMinEnd[1] :
+                     (i == n - 1) ? prefixMinEnd[n - 2] :
+                     Math.min(prefixMinEnd[i - 1], suffixMinEnd[i + 1]);
 
-        if (i < n - 1) {
-            maxStart = Math.max(maxStart, suffixMaxStart[i + 1]);
-            minEnd = Math.min(minEnd, suffixMinEnd[i + 1]);
-        }
-
-        // Does region i intersect with intersection of all others?
-        if (starts[i] <= minEnd && ends[i] >= maxStart) {
+        // If this region intersects the intersection of all others
+        if (start[i] <= minEnd && end[i] >= maxStart) {
             maxInclusiveGroup = n;
             break;
         }
     }
 
-    return (maxInclusiveGroup == n) ? 0 : 1;
+    // If no such region found, try forming max intersection group via line sweep
+    if (maxInclusiveGroup != n) {
+        // fallback to brute-force only when needed
+        maxInclusiveGroup = 1;
+        for (int i = 0; i < n; i++) {
+            int count = 1;
+            for (int j = 0; j < n; j++) {
+                if (i == j) continue;
+                if (start[i] <= end[j] && end[i] >= start[j]) {
+                    count++;
+                }
+            }
+            maxInclusiveGroup = Math.max(maxInclusiveGroup, count);
+        }
+    }
+
+    return n - maxInclusiveGroup;
 }

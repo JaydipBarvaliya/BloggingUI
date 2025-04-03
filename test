@@ -1,34 +1,56 @@
 public static int minRetailersToRelocate(List<Integer> regionStart, List<Integer> regionEnd) {
     int n = regionStart.size();
-    int[][] intervals = new int[n][2];
+
+    int[] starts = new int[n];
+    int[] ends = new int[n];
 
     for (int i = 0; i < n; i++) {
-        intervals[i][0] = regionStart.get(i);
-        intervals[i][1] = regionEnd.get(i);
+        starts[i] = regionStart.get(i);
+        ends[i] = regionEnd.get(i);
     }
 
-    // Sort intervals by start time
-    Arrays.sort(intervals, Comparator.comparingInt(a -> a[0]));
+    // Precompute prefix/suffix maxStart and minEnd
+    int[] prefixMaxStart = new int[n];
+    int[] suffixMaxStart = new int[n];
+    int[] prefixMinEnd = new int[n];
+    int[] suffixMinEnd = new int[n];
 
-    // Min heap of end times
-    PriorityQueue<Integer> minHeap = new PriorityQueue<>();
-    int maxOverlap = 0;
+    prefixMaxStart[0] = starts[0];
+    prefixMinEnd[0] = ends[0];
+    for (int i = 1; i < n; i++) {
+        prefixMaxStart[i] = Math.max(prefixMaxStart[i - 1], starts[i]);
+        prefixMinEnd[i] = Math.min(prefixMinEnd[i - 1], ends[i]);
+    }
 
-    for (int[] interval : intervals) {
-        int start = interval[0];
-        int end = interval[1];
+    suffixMaxStart[n - 1] = starts[n - 1];
+    suffixMinEnd[n - 1] = ends[n - 1];
+    for (int i = n - 2; i >= 0; i--) {
+        suffixMaxStart[i] = Math.max(suffixMaxStart[i + 1], starts[i]);
+        suffixMinEnd[i] = Math.min(suffixMinEnd[i + 1], ends[i]);
+    }
 
-        // Remove regions that end before current starts (no overlap)
-        while (!minHeap.isEmpty() && minHeap.peek() < start) {
-            minHeap.poll();
+    int maxInclusiveGroup = 0;
+
+    for (int i = 0; i < n; i++) {
+        int maxStart = Integer.MIN_VALUE;
+        int minEnd = Integer.MAX_VALUE;
+
+        if (i > 0) {
+            maxStart = Math.max(maxStart, prefixMaxStart[i - 1]);
+            minEnd = Math.min(minEnd, prefixMinEnd[i - 1]);
         }
 
-        // Add current region
-        minHeap.offer(end);
+        if (i < n - 1) {
+            maxStart = Math.max(maxStart, suffixMaxStart[i + 1]);
+            minEnd = Math.min(minEnd, suffixMinEnd[i + 1]);
+        }
 
-        // Heap size is count of overlaps at this point
-        maxOverlap = Math.max(maxOverlap, minHeap.size());
+        // Does region i intersect with intersection of all others?
+        if (starts[i] <= minEnd && ends[i] >= maxStart) {
+            maxInclusiveGroup = n;
+            break;
+        }
     }
 
-    return n - maxOverlap;
+    return (maxInclusiveGroup == n) ? 0 : 1;
 }

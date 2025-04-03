@@ -1,32 +1,25 @@
 public static int countPossibleWinners(List<Integer> initialRewards) {
     int n = initialRewards.size();
     int[] rewards = new int[n];
-
     for (int i = 0; i < n; i++) {
         rewards[i] = initialRewards.get(i);
     }
 
+    // Step 1: Sort all rewards to simulate the best possible final scores for others
+    int[] sorted = rewards.clone();
+    Arrays.sort(sorted);
+
+    // Step 2: Compute the best total score a non-winner can get
+    // Give them tournament points from n-1 down to 1
+    int maxOtherTotal = 0;
+    for (int i = 0; i < n - 1; i++) {
+        maxOtherTotal = Math.max(maxOtherTotal, sorted[n - 1 - i] + (n - 1 - i));
+    }
+
+    // Step 3: Count winners
     int count = 0;
-
     for (int i = 0; i < n; i++) {
-        int totalIfIWin = rewards[i] + n;
-
-        // Build list of other players and calculate their best possible scores
-        List<Integer> others = new ArrayList<>();
-        for (int j = 0; j < n; j++) {
-            if (j != i) others.add(rewards[j]);
-        }
-
-        // Sort other rewards descending
-        others.sort(Collections.reverseOrder());
-
-        int maxOther = 0;
-        for (int k = 0; k < others.size(); k++) {
-            maxOther = Math.max(maxOther, others.get(k) + (n - (k + 1)));
-        }
-
-        // We allow ties for highest score
-        if (totalIfIWin >= maxOther) {
+        if (rewards[i] + n >= maxOtherTotal) {
             count++;
         }
     }

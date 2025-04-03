@@ -1,26 +1,28 @@
 public static int minRetailersToRelocate(List<Integer> regionStart, List<Integer> regionEnd) {
     int n = regionStart.size();
-
-    // Step 1: Find the intersection range
-    int maxStart = Integer.MIN_VALUE;
-    int minEnd = Integer.MAX_VALUE;
+    int minMoves = n;
 
     for (int i = 0; i < n; i++) {
-        maxStart = Math.max(maxStart, regionStart.get(i));
-        minEnd = Math.min(minEnd, regionEnd.get(i));
-    }
+        int count = 0;
+        int curStart = regionStart.get(i);
+        int curEnd = regionEnd.get(i);
 
-    // Step 2: Count how many retailers intersect with [maxStart, minEnd]
-    int inclusiveCount = 0;
-    for (int i = 0; i < n; i++) {
-        int start = regionStart.get(i);
-        int end = regionEnd.get(i);
+        for (int j = 0; j < n; j++) {
+            if (i == j) continue;
 
-        if (start <= minEnd && end >= maxStart) {
-            inclusiveCount++;
+            int otherStart = regionStart.get(j);
+            int otherEnd = regionEnd.get(j);
+
+            // Check if current region intersects with this one
+            if (curStart <= otherEnd && curEnd >= otherStart) {
+                count++;
+            }
         }
+
+        // +1 for the region itself
+        int inclusiveGroupSize = count + 1;
+        minMoves = Math.min(minMoves, n - inclusiveGroupSize);
     }
 
-    // Step 3: Minimum retailers to relocate = total - inclusive ones
-    return n - inclusiveCount;
+    return minMoves;
 }

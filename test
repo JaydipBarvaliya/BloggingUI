@@ -1,72 +1,116 @@
+
+package com.td.besig.opsapi.service;
+
+import com.td.besig.openapi.model.ArchivalStaticMetadataObj;
+import com.td.besig.opsapi.dao.ArchivalStaticMetadataLookupRepository;
+import com.td.besig.opsapi.mapper.ArchStaticMetadataLkpMapper;
+import com.td.besig.opsapi.mapper.EntityToDTOMapper;
+import com.td.besig.opsapi.model.ArchStaticMetadataLookup;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
 @ExtendWith(MockitoExtension.class)
-class ArchStaticMetadataServiceTest {
+public class ArchStaticMetadataServiceTest {
+
+    @Mock
+    private ArchivalStaticMetadataLookupRepository repo;
 
     @InjectMocks
     private ArchStaticMetadataService service;
 
-    @Mock
-    private ArchStaticMetadataRepository repo;
+    private ArchivalStaticMetadataObj metadataObj;
+    private ArchStaticMetadataLookup entity;
 
-    // Success case - all values match
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+
+        metadataObj = new ArchivalStaticMetadataObj();
+        metadataObj.setLobId("LOB123");
+        metadataObj.setLookupId("LKP123");
+        metadataObj.setLookupValue("VALUE1");
+        metadataObj.setStorageMetadataField("Field1");
+        metadataObj.setStorageFieldType("Type1");
+
+        entity = new ArchStaticMetadataLookup();
+        entity.setId(1L);
+        entity.setLob("LOB123");
+        entity.setLookupId("LKP123");
+        entity.setLookupValue("VALUE1");
+        entity.setArcStorageMetadataField("Field1");
+        entity.setArcStorageFieldType("Type1");
+    }
+
     @Test
-    void testDeleteArchivalStaticMetadata_success() {
-        String id = "1";
-        ArchStaticMetadataLookup entity = new ArchStaticMetadataLookup();
-        entity.setLob("LOB1");
-        entity.setLookupId("LOOKUP1");
-        entity.setArcStorageMetadataField("FieldA");
-        entity.setLookupValue("ValueX");
-        entity.setArcStorageFieldType("String");
+    public void testCreateArchivalStaticMetadata_success() {
+        when(repo.saveAndFlush(any())).thenReturn(entity);
+        ArchivalStaticMetadataObj result = service.createArchivalArchivalStaticMetadata(metadataObj);
+        assertNotNull(result);
+        assertEquals("LOB123", result.getLobId());
+    }
 
-        ArchivalStaticMetadataObj input = new ArchivalStaticMetadataObj();
-        input.setLobId("LOB1");
-        input.setLookupId("LOOKUP1");
-        input.setArcStorageMetadataField("FieldA");
-        input.setLookupValue("ValueX");
-        input.setArcStorageFieldType("String");
+    @Test
+    public void testCreateArchivalStaticMetadata_nullInput() {
+        assertThrows(IllegalArgumentException.class, () -> service.createArchivalArchivalStaticMetadata(null));
+    }
 
+    @Test
+    public void testDeleteArchivalStaticMetadata_success() {
         when(repo.findById(1L)).thenReturn(Optional.of(entity));
-
-        service.deleteArchivalStaticMetadata(id, input);
-
+        service.deleteArchivalStaticMetadata("1", metadataObj);
         verify(repo).deleteById(1L);
     }
 
-    // Record not found
     @Test
-    void testDeleteArchivalStaticMetadata_dataNotFound() {
-        String id = "2";
-        ArchivalStaticMetadataObj input = new ArchivalStaticMetadataObj();
-
-        when(repo.findById(2L)).thenReturn(Optional.empty());
-
-        assertThrows(NoSuchElementException.class, () -> 
-            service.deleteArchivalStaticMetadata(id, input)
-        );
+    public void testDeleteArchivalStaticMetadata_dataNotFound() {
+        when(repo.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(NoSuchElementException.class, () -> service.deleteArchivalStaticMetadata("1", metadataObj));
     }
 
-    // Mismatch found
     @Test
-    void testDeleteArchivalStaticMetadata_mismatchDetected() {
-        String id = "3";
-        ArchStaticMetadataLookup entity = new ArchStaticMetadataLookup();
-        entity.setLob("LOB1");
-        entity.setLookupId("LOOKUP1");
-        entity.setArcStorageMetadataField("FieldA");
-        entity.setLookupValue("WrongValue");
-        entity.setArcStorageFieldType("String");
+    public void testDeleteArchivalStaticMetadata_mismatch() {
+        entity.setLob("WRONG");
+        when(repo.findById(1L)).thenReturn(Optional.of(entity));
+        assertThrows(IllegalStateException.class, () -> service.deleteArchivalStaticMetadata("1", metadataObj));
+    }
 
-        ArchivalStaticMetadataObj input = new ArchivalStaticMetadataObj();
-        input.setLobId("LOB1");
-        input.setLookupId("LOOKUP1");
-        input.setArcStorageMetadataField("FieldA");
-        input.setLookupValue("ValueX"); // mismatch here
-        input.setArcStorageFieldType("String");
+    @Test
+    public void testGetArchivalStaticMetadata_found() {
+        when(repo.findById(1L)).thenReturn(Optional.of(entity));
+        ArchivalStaticMetadataObj result = service.getArchivalStaticMetadata("1");
+        assertNotNull(result);
+        assertEquals("LOB123", result.getLobId());
+    }
 
-        when(repo.findById(3L)).thenReturn(Optional.of(entity));
+    @Test
+    public void testGetArchivalStaticMetadata_notFound() {
+        when(repo.findById(1L)).thenReturn(Optional.empty());
+        assertNull(service.getArchivalStaticMetadata("1"));
+    }
 
-        assertThrows(IllegalStateException.class, () -> 
-            service.deleteArchivalStaticMetadata(id, input)
-        );
+    @Test
+    public void testUpdateConfig_success() throws Exception {
+        when(repo.findById(1L)).thenReturn(Optional.of(entity));
+        when(repo.saveAndFlush(any())).thenReturn(entity);
+        ArchStaticMetadataLookup result = service.updateConfig("1", metadataObj);
+        assertNotNull(result);
+        assertEquals("LOB123", result.getLob());
+    }
+
+    @Test
+    public void testUpdateConfig_notFound() {
+        when(repo.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(NoSuchElementException.class, () -> service.updateConfig("1", metadataObj));
     }
 }

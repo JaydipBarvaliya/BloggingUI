@@ -1,19 +1,20 @@
 @Test
-void testDeleteArchivalStorageMapping_success() {
-    String id = "1";
+public void getArchivalStorageMappingTest() {
+    String id = "20";
+    ArchStorageMapping obj = new ArchStorageMapping();
+    obj.setLob("TestLob");
+    obj.setId(Long.valueOf(id));
+    obj.setMetadataField("TestMetadata");
+    obj.setDocumentType("TestDocType");
+    obj.setMetadataScope(MetadataScopeEnum.DOCUMENT);
 
-    ArchivalStorageMappingObj input = new ArchivalStorageMappingObj(
-        "LOB123", "FILENET", null, null, MetadataScopeEnum.DOCUMENT, null
-    );
+    when(repo.findById(Long.valueOf(id))).thenReturn(Optional.of(obj));
 
-    ArchStorageMapping entity = new ArchStorageMapping();
-    entity.setLob("LOB123");
-    entity.setStorage("FILENET");
-    entity.setMetadataScope(MetadataScopeEnum.DOCUMENT); // **This is the missing line**
+    ArchivalStorageMappingObj result = archApiService.getArchivalStorageMapping(id);
 
-    when(repo.findById(1L)).thenReturn(Optional.of(entity));
-
-    archivalApiService.deleteArchivalStorageMapping(id, input);
-
-    verify(repo).deleteById(1L);
+    assertNotNull(result);
+    assertEquals("TestLob", result.getLobId());
+    assertEquals("TestMetadata", result.getStorageMetadataField());
+    assertEquals("TestDocType", result.getDocumentType());
+    assertEquals(MetadataScopeEnum.DOCUMENT, result.getMetadataScope());
 }

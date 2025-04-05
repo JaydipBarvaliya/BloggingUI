@@ -1,21 +1,29 @@
 @Test
-public void getArchivalStaticMetadata() {
-    String id = "20";
+public void getArchivalStaticMetadataListTest() {
     ArchStaticMetadataLookup obj = new ArchStaticMetadataLookup();
     obj.setLob("TestLob");
-    obj.setArcStorageMetadataField("TestMetadataField");
-    obj.setArcStorageFieldType("TestFieldType");
+    obj.setArcStorageMetadataField("TestStorageMetadataFld");
+    obj.setArcStorageFieldType("TestStorageFldType");
     obj.setLookupValue("TestLookupValue");
     obj.setLookupId("TestLkpId");
 
-    when(repo.findById(Long.valueOf(id))).thenReturn(Optional.of(obj));
+    List<ArchStaticMetadataLookup> configList = new ArrayList<>();
+    configList.add(obj);
 
-    ArchivalStaticMetadataObj result = archStaticMetadataService.getArchivalStaticMetadata(id);
+    Specification<ArchStaticMetadataLookup> spec = ArchStaticMetaDataSpec.dynamicQuery("testLob");
 
+    when(repo.findAll(spec)).thenReturn(configList);
+
+    List<ArchivalStaticMetadataObj> result = archStaticMetadataService.getArchivalStaticMetadataList("testLob");
+
+    // Assert that the conversion and values are preserved
     assertNotNull(result);
-    assertEquals("TestLob", result.getLobId());
-    assertEquals("TestMetadataField", result.getStorageMetadataField());
-    assertEquals("TestFieldType", result.getStorageFieldType());
-    assertEquals("TestLookupValue", result.getLookupValue());
-    assertEquals("TestLkpId", result.getLookupId());
+    assertEquals(1, result.size());
+
+    ArchivalStaticMetadataObj dto = result.get(0);
+    assertEquals("TestLob", dto.getLobId());
+    assertEquals("TestStorageMetadataFld", dto.getStorageMetadataField());
+    assertEquals("TestStorageFldType", dto.getStorageFieldType());
+    assertEquals("TestLookupValue", dto.getLookupValue());
+    assertEquals("TestLkpId", dto.getLookupId());
 }

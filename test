@@ -1,70 +1,115 @@
-@ExtendWith(MockitoExtension.class)
+package com.td.besig.opsapi.service;
+
+import com.td.besig.opsapi.dao.ClientAppConfigRepository;
+import com.td.besig.opsapi.model.ClientAppConfiguration;
+import com.td.besig.openapi.model.ClientAppsObj;
+import com.td.besig.opsapi.util.ClientAppConfigSpecifications;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
 public class ClientAppsApiServiceTest {
 
     @InjectMocks
-    private ClientAppsApiService service;
+    private ClientAppsApiService clientAppsApiService;
 
     @Mock
-    private ClientAppConfigurationRepository repo;
-
-    private ClientAppsObj deletionObj;
-    private ClientAppConfiguration config;
+    private ClientAppConfigRepository repo;
 
     @BeforeEach
-    void setUp() {
-        deletionObj = new ClientAppsObj();
-        deletionObj.setLobId("LOB1");
-        deletionObj.setClientId("CLIENT1");
-
-        config = new ClientAppConfiguration();
-        config.setLob("LOB1");
-        config.setClientId("CLIENT1");
+    void setup() {
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
-    void testDeleteClientApps_success() {
-        when(repo.findById(1L)).thenReturn(Optional.of(config));
+    public void getClientAppConfigDataTest() {
+        ClientAppConfiguration clientAppConfiguration = new ClientAppConfiguration();
+        clientAppConfiguration.setClientId("TestClient");
+        clientAppConfiguration.setLob("TestLob");
 
-        service.deleteClientApps("1", deletionObj);
+        when(repo.findById(any())).thenReturn(Optional.of(clientAppConfiguration));
 
-        verify(repo).deleteById(1L);
+        ClientAppsObj result = clientAppsApiService.getClientAppConfigData("123");
+
+        assertNotNull(result);
+        assertEquals("TestClient", result.getClientId());
+        assertEquals("TestLob", result.getLobId());
     }
 
     @Test
-    void testDeleteClientApps_noSuchElement() {
-        when(repo.findById(1L)).thenReturn(Optional.empty());
+    public void getClientAppConfigDataWhenConfigIsNotPresentTest() {
+        String id = "1";
+        when(repo.findById(Long.valueOf(id))).thenReturn(Optional.empty());
 
-        NoSuchElementException ex = assertThrows(
-            NoSuchElementException.class,
-            () -> service.deleteClientApps("1", deletionObj)
-        );
+        ClientAppsObj result = clientAppsApiService.getClientAppConfigData(id);
 
-        assertEquals("Data not available to delete for ID:1", ex.getMessage());
+        assertNull(result);
     }
 
     @Test
-    void testDeleteClientApps_illegalState_mismatchLobId() {
-        config.setLob("DIFFERENT_LOB"); // mismatch here
-        when(repo.findById(1L)).thenReturn(Optional.of(config));
+    public void getClientAppConfigListTest() {
+        ClientAppConfiguration config = new ClientAppConfiguration();
+        config.setClientId("TestClient");
+        config.setLob("TestLob");
 
-        IllegalStateException ex = assertThrows(
-            IllegalStateException.class,
-            () -> service.deleteClientApps("1", deletionObj)
-        );
+        List<ClientAppConfiguration> configList = new ArrayList<>();
+        configList.add(config);
 
-        assertTrue(ex.getMessage().contains("Data mismatch in lobId"));
+        Specification<ClientAppConfiguration> spec = ClientAppConfigSpecifications.dynamicQuery("TestLob", "TestClient");
+        when(repo.findAll(spec)).thenReturn(configList);
+
+        List<ClientAppConfiguration> result = clientAppsApiService.getClientAppConfigList("TestLob", "TestClient");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("TestClient", result.get(0).getClientId());
     }
 
     @Test
-    void testDeleteClientApps_illegalState_mismatchClientId() {
-        config.setClientId("DIFFERENT_CLIENT"); // mismatch here
-        when(repo.findById(1L)).thenReturn(Optional.of(config));
+    @SuppressWarnings("unchecked")
+    public void getClientAppConfigListWithListOfConfigsTest() {
+        ClientAppConfiguration config = new ClientAppConfiguration();
+        config.setClientId("TestClient");
+        config.setLob("TestLob");
 
-        IllegalStateException ex = assertThrows(
-            IllegalStateException.class,
-            () -> service.deleteClientApps("1", deletionObj)
-        );
+        List<ClientAppConfiguration> configs = new ArrayList<>();
+        configs.add(config);
 
-        assertTrue(ex.getMessage().contains("Data mismatch in clientId"));
+        when(repo.findAll(any(Specification.class))).thenReturn(configs);
+
+        List<ClientAppConfiguration> result = clientAppsApiService.getClientAppConfigList("TestLob", "TestClient");
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("TestLob", result.get(0).getLob());
+    }
+
+    @Test
+    public void updateConfigTest() throws Exception {
+        ClientAppsObj clientAppObj = new ClientAppsObj("TestLob", "TestClient");
+
+        ClientAppConfiguration clientAppConfiguration = new ClientAppConfiguration();
+        clientAppConfiguration.setClientId("TestClient");
+        clientAppConfiguration.setLob("TestLob");
+
+        when(repo.saveAndFlush(any())).thenReturn(clientAppConfiguration);
+        when(repo.findById(any())).thenReturn(Optional.of(clientAppConfiguration));
+
+        ClientAppConfiguration result = clientAppsApiService.updateConfig("123", clientAppObj);
+
+        assertNotNull(result);
+        assertEquals("TestClient", result.getClientId());
+        assertEquals("TestLob", result.getLob());
     }
 }

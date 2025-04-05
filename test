@@ -1,25 +1,21 @@
-<dependencies>
-    <!-- JUnit 5 API + Engine -->
-    <dependency>
-        <groupId>org.junit.jupiter</groupId>
-        <artifactId>junit-jupiter</artifactId>
-        <version>5.9.3</version>
-        <scope>test</scope>
-    </dependency>
+@Test
+public void getArchivalStaticMetadata() {
+    String id = "20";
+    ArchStaticMetadataLookup obj = new ArchStaticMetadataLookup();
+    obj.setLob("TestLob");
+    obj.setArcStorageMetadataField("TestMetadataField");
+    obj.setArcStorageFieldType("TestFieldType");
+    obj.setLookupValue("TestLookupValue");
+    obj.setLookupId("TestLkpId");
 
-    <!-- Mockito core -->
-    <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-core</artifactId>
-        <version>5.6.0</version>
-        <scope>test</scope>
-    </dependency>
+    when(repo.findById(Long.valueOf(id))).thenReturn(Optional.of(obj));
 
-    <!-- Mockito + JUnit 5 Integration -->
-    <dependency>
-        <groupId>org.mockito</groupId>
-        <artifactId>mockito-junit-jupiter</artifactId>
-        <version>5.6.0</version>
-        <scope>test</scope>
-    </dependency>
-</dependencies>
+    ArchivalStaticMetadataObj result = archStaticMetadataService.getArchivalStaticMetadata(id);
+
+    assertNotNull(result);
+    assertEquals("TestLob", result.getLobId());
+    assertEquals("TestMetadataField", result.getStorageMetadataField());
+    assertEquals("TestFieldType", result.getStorageFieldType());
+    assertEquals("TestLookupValue", result.getLookupValue());
+    assertEquals("TestLkpId", result.getLookupId());
+}

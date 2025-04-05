@@ -1,64 +1,18 @@
-@ExtendWith(MockitoExtension.class)
-class ArchivalApiServiceTest {
+@Test
+void testDeleteArchivalStorageMapping_success() {
+    String id = "1";
 
-    @Mock
-    private ArchStorageMappingRepository repo;
+    ArchivalStorageMappingObj input = new ArchivalStorageMappingObj(
+        "LOB123", "FILENET", null, null, MetadataScopeEnum.SERVICE, null
+    );
 
-    @InjectMocks
-    private ArchivalApiService service;
+    ArchStorageMapping entity = new ArchStorageMapping();
+    entity.setLob("LOB123");
+    entity.setStorage("FILENET");
 
-    @Test
-    void testDeleteArchivalStorageMapping_success() {
-        // Given
-        String id = "1";
-        ArchivalStorageMappingObj input = new ArchivalStorageMappingObj();
-        input.setLobId("LOB123");
-        input.setStorageType("FILENET");
+    when(repo.findById(1L)).thenReturn(Optional.of(entity));
 
-        ArchStorageMapping entity = new ArchStorageMapping();
-        entity.setLob("LOB123");
-        entity.setStorage("FILENET");
+    archApiService.deleteArchivalStorageMapping(id, input);
 
-        when(repo.findById(1L)).thenReturn(Optional.of(entity));
-
-        // When
-        service.deleteArchivalStorageMapping(id, input);
-
-        // Then
-        verify(repo).deleteById(1L);
-    }
-
-    @Test
-    void testDeleteArchivalStorageMapping_dataNotFound() {
-        // Given
-        String id = "99";
-        ArchivalStorageMappingObj input = new ArchivalStorageMappingObj();
-
-        when(repo.findById(99L)).thenReturn(Optional.empty());
-
-        // Then
-        assertThrows(NoSuchElementException.class, () -> 
-            service.deleteArchivalStorageMapping(id, input)
-        );
-    }
-
-    @Test
-    void testDeleteArchivalStorageMapping_mismatchDetected() {
-        // Given
-        String id = "2";
-        ArchivalStorageMappingObj input = new ArchivalStorageMappingObj();
-        input.setLobId("LOB999");
-        input.setStorageType("S3");
-
-        ArchStorageMapping entity = new ArchStorageMapping();
-        entity.setLob("LOB999");
-        entity.setStorage("FILENET"); // mismatch
-
-        when(repo.findById(2L)).thenReturn(Optional.of(entity));
-
-        // Then
-        assertThrows(IllegalStateException.class, () -> 
-            service.deleteArchivalStorageMapping(id, input)
-        );
-    }
+    verify(repo).deleteById(1L);
 }

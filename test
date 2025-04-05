@@ -1,12 +1,53 @@
-// Solution 2 (Attempted Optimization):
-// Idea: Instead of checking every region pair for overlap (O(n^2)),
-// we sort intervals by start time and use a min-heap to track ongoing overlaps.
-// At each step, we remove intervals from the heap that end before the current start.
-// The size of the heap represents the size of the current overlapping group.
-// We return n - maxOverlapGroupSize as the minimum number of retailers to relocate.
-//
-// Time Complexity: O(n log n) - due to sorting and heap operations
-// Space Complexity: O(n) - to store all interval end times in the heap
-//
-// Note: This logic correctly tracks max overlaps but fails for some edge cases
-// where overlapping at a single point doesn't guarantee full intersection with others.
+@ExtendWith(MockitoExtension.class)
+class ArchLobStorageMappingServiceTest {
+
+    @Mock
+    private ArchLobStorageConfigRepository repo; // replace with actual repo interface name
+
+    @InjectMocks
+    private ArchLobStorageMappingService service;
+
+    @Test
+    void testDeleteArchivalConfig_success() {
+        String id = "1";
+        ArchLobStorageConfig mockEntity = new ArchLobStorageConfig();
+        ArchivalStorageConfigObj inputObj = new ArchivalStorageConfigObj();
+
+        // Mock repository behavior
+        when(repo.findById(1L)).thenReturn(Optional.of(mockEntity));
+        // Mock getMismatches to return all TRUEs
+        Map<String, Boolean> mockMismatchMap = Map.of("field1", true, "field2", true);
+        Mockito.doReturn(mockMismatchMap).when(service).getMismatches(inputObj, Optional.of(mockEntity));
+
+        service.deleteArchivalConfig(id, inputObj);
+
+        verify(repo).deleteById(1L);
+    }
+
+    @Test
+    void testDeleteArchivalConfig_notFound() {
+        String id = "2";
+        ArchivalStorageConfigObj inputObj = new ArchivalStorageConfigObj();
+
+        when(repo.findById(2L)).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchElementException.class, () ->
+            service.deleteArchivalConfig(id, inputObj)
+        );
+    }
+
+    @Test
+    void testDeleteArchivalConfig_mismatchFound() {
+        String id = "3";
+        ArchLobStorageConfig mockEntity = new ArchLobStorageConfig();
+        ArchivalStorageConfigObj inputObj = new ArchivalStorageConfigObj();
+
+        when(repo.findById(3L)).thenReturn(Optional.of(mockEntity));
+        Map<String, Boolean> mockMismatchMap = Map.of("lobId", false);
+        Mockito.doReturn(mockMismatchMap).when(service).getMismatches(inputObj, Optional.of(mockEntity));
+
+        assertThrows(IllegalStateException.class, () ->
+            service.deleteArchivalConfig(id, inputObj)
+        );
+    }
+}

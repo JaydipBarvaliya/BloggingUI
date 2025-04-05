@@ -1,32 +1,26 @@
 @Test
-public void updateConfig() throws Exception {
-    String id = "20";
+public void createArchivalArchivalStaticMetadata() {
+    // Arrange
+    ArchivalStaticMetadataObj input = new ArchivalStaticMetadataObj();
+    input.setLobId("TestLob1");
+    input.setLookupId("TestLkpId1");
+    input.setLookupValue("TestLookupVal1");
+    input.setStorageMetadataField("TestFld1");
+    input.setStorageFieldType("Type1");
 
-    ArchivalStaticMetadataObj obj = new ArchivalStaticMetadataObj();
-    obj.setLobId("TestLob");
-    obj.setLookupId("TestLkpId");
-    obj.setLookupValue("TestLookupValue");
-    obj.setStorageMetadataField("TestStorageMetadataFld");
-    obj.setStorageFieldType("TestStorageFldType");
+    ArchStaticMetadataLookupDto dto = ArchStaticMetadataLkpMapper.MAPPER.configToDto(input);
+    ArchStaticMetadataLookup entity = EntityToDTOMapper.INSTANCE.toEntity(dto);
 
-    ArchStaticMetadataLookup config = new ArchStaticMetadataLookup();
-    config.setId(1L);
-    config.setLob("TestLob");
-    config.setLookupId("TestLkpId");
-    config.setLookupValue("TestLookupValue");
-    config.setArcStorageMetadataField("TestStorageMetadataFld");
-    config.setArcStorageFieldType("TestStorageFldType");
+    when(repo.saveAndFlush(any(ArchStaticMetadataLookup.class))).thenReturn(entity);
 
-    when(repo.findById(Long.valueOf(id))).thenReturn(Optional.of(config));
-    when(repo.saveAndFlush(any(ArchStaticMetadataLookup.class))).thenAnswer(i -> i.getArgument(0));
+    // Act
+    ArchivalStaticMetadataObj result = archStaticMetadataService.createArchivalArchivalStaticMetadata(input);
 
-    ArchStaticMetadataLookup result = archStaticMetadataService.updateConfig(id, obj);
-
-    // Assert the update logic
+    // Assert
     assertNotNull(result);
-    assertEquals("TestLob", result.getLob());
-    assertEquals("TestLkpId", result.getLookupId());
-    assertEquals("TestLookupValue", result.getLookupValue());
-    assertEquals("TestStorageMetadataFld", result.getArcStorageMetadataField());
-    assertEquals("TestStorageFldType", result.getArcStorageFieldType());
+    assertEquals("TestLob1", result.getLobId());
+    assertEquals("TestLkpId1", result.getLookupId());
+    assertEquals("TestLookupVal1", result.getLookupValue());
+    assertEquals("TestFld1", result.getStorageMetadataField());
+    assertEquals("Type1", result.getStorageFieldType());
 }

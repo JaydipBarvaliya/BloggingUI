@@ -1,29 +1,72 @@
-@Test
-public void updateConfigTest() throws Exception {
-    // Arrange
-    String id = "20";
+@ExtendWith(MockitoExtension.class)
+class ArchStaticMetadataServiceTest {
 
-    ArchivalStorageMappingObj obj = new ArchivalStorageMappingObj(
-        "TestLob", "TestDocType", "TestMetadataFld", null, MetadataScopeEnum.DOCUMENT, null
-    );
+    @InjectMocks
+    private ArchStaticMetadataService service;
 
-    ArchStorageMapping archStorageMapping = new ArchStorageMapping();
-    archStorageMapping.setId(20L);
-    archStorageMapping.setLob("OldLob");
-    archStorageMapping.setDocumentType("OldDocType");
-    archStorageMapping.setMetadataField("OldMetadata");
-    archStorageMapping.setMetadataScope(MetadataScopeEnum.SERVICE); // Old value
+    @Mock
+    private ArchStaticMetadataRepository repo;
 
-    when(repo.findById(Long.valueOf(id))).thenReturn(Optional.of(archStorageMapping));
-    when(repo.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+    // Success case - all values match
+    @Test
+    void testDeleteArchivalStaticMetadata_success() {
+        String id = "1";
+        ArchStaticMetadataLookup entity = new ArchStaticMetadataLookup();
+        entity.setLob("LOB1");
+        entity.setLookupId("LOOKUP1");
+        entity.setArcStorageMetadataField("FieldA");
+        entity.setLookupValue("ValueX");
+        entity.setArcStorageFieldType("String");
 
-    // Act
-    ArchStorageMapping result = archApiService.updateConfig(id, obj);
+        ArchivalStaticMetadataObj input = new ArchivalStaticMetadataObj();
+        input.setLobId("LOB1");
+        input.setLookupId("LOOKUP1");
+        input.setArcStorageMetadataField("FieldA");
+        input.setLookupValue("ValueX");
+        input.setArcStorageFieldType("String");
 
-    // Assert
-    assertNotNull(result);
-    assertEquals("TestLob", result.getLob());
-    assertEquals("TestDocType", result.getDocumentType());
-    assertEquals("TestMetadataFld", result.getMetadataField());
-    assertEquals(MetadataScopeEnum.DOCUMENT, result.getMetadataScope());
+        when(repo.findById(1L)).thenReturn(Optional.of(entity));
+
+        service.deleteArchivalStaticMetadata(id, input);
+
+        verify(repo).deleteById(1L);
+    }
+
+    // Record not found
+    @Test
+    void testDeleteArchivalStaticMetadata_dataNotFound() {
+        String id = "2";
+        ArchivalStaticMetadataObj input = new ArchivalStaticMetadataObj();
+
+        when(repo.findById(2L)).thenReturn(Optional.empty());
+
+        assertThrows(NoSuchElementException.class, () -> 
+            service.deleteArchivalStaticMetadata(id, input)
+        );
+    }
+
+    // Mismatch found
+    @Test
+    void testDeleteArchivalStaticMetadata_mismatchDetected() {
+        String id = "3";
+        ArchStaticMetadataLookup entity = new ArchStaticMetadataLookup();
+        entity.setLob("LOB1");
+        entity.setLookupId("LOOKUP1");
+        entity.setArcStorageMetadataField("FieldA");
+        entity.setLookupValue("WrongValue");
+        entity.setArcStorageFieldType("String");
+
+        ArchivalStaticMetadataObj input = new ArchivalStaticMetadataObj();
+        input.setLobId("LOB1");
+        input.setLookupId("LOOKUP1");
+        input.setArcStorageMetadataField("FieldA");
+        input.setLookupValue("ValueX"); // mismatch here
+        input.setArcStorageFieldType("String");
+
+        when(repo.findById(3L)).thenReturn(Optional.of(entity));
+
+        assertThrows(IllegalStateException.class, () -> 
+            service.deleteArchivalStaticMetadata(id, input)
+        );
+    }
 }

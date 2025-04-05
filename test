@@ -1,26 +1,70 @@
-@Test
-public void createArchivalArchivalStaticMetadata() {
-    // Arrange
-    ArchivalStaticMetadataObj input = new ArchivalStaticMetadataObj();
-    input.setLobId("TestLob1");
-    input.setLookupId("TestLkpId1");
-    input.setLookupValue("TestLookupVal1");
-    input.setStorageMetadataField("TestFld1");
-    input.setStorageFieldType("Type1");
+@ExtendWith(MockitoExtension.class)
+public class ClientAppsApiServiceTest {
 
-    ArchStaticMetadataLookupDto dto = ArchStaticMetadataLkpMapper.MAPPER.configToDto(input);
-    ArchStaticMetadataLookup entity = EntityToDTOMapper.INSTANCE.toEntity(dto);
+    @InjectMocks
+    private ClientAppsApiService service;
 
-    when(repo.saveAndFlush(any(ArchStaticMetadataLookup.class))).thenReturn(entity);
+    @Mock
+    private ClientAppConfigurationRepository repo;
 
-    // Act
-    ArchivalStaticMetadataObj result = archStaticMetadataService.createArchivalArchivalStaticMetadata(input);
+    private ClientAppsObj deletionObj;
+    private ClientAppConfiguration config;
 
-    // Assert
-    assertNotNull(result);
-    assertEquals("TestLob1", result.getLobId());
-    assertEquals("TestLkpId1", result.getLookupId());
-    assertEquals("TestLookupVal1", result.getLookupValue());
-    assertEquals("TestFld1", result.getStorageMetadataField());
-    assertEquals("Type1", result.getStorageFieldType());
+    @BeforeEach
+    void setUp() {
+        deletionObj = new ClientAppsObj();
+        deletionObj.setLobId("LOB1");
+        deletionObj.setClientId("CLIENT1");
+
+        config = new ClientAppConfiguration();
+        config.setLob("LOB1");
+        config.setClientId("CLIENT1");
+    }
+
+    @Test
+    void testDeleteClientApps_success() {
+        when(repo.findById(1L)).thenReturn(Optional.of(config));
+
+        service.deleteClientApps("1", deletionObj);
+
+        verify(repo).deleteById(1L);
+    }
+
+    @Test
+    void testDeleteClientApps_noSuchElement() {
+        when(repo.findById(1L)).thenReturn(Optional.empty());
+
+        NoSuchElementException ex = assertThrows(
+            NoSuchElementException.class,
+            () -> service.deleteClientApps("1", deletionObj)
+        );
+
+        assertEquals("Data not available to delete for ID:1", ex.getMessage());
+    }
+
+    @Test
+    void testDeleteClientApps_illegalState_mismatchLobId() {
+        config.setLob("DIFFERENT_LOB"); // mismatch here
+        when(repo.findById(1L)).thenReturn(Optional.of(config));
+
+        IllegalStateException ex = assertThrows(
+            IllegalStateException.class,
+            () -> service.deleteClientApps("1", deletionObj)
+        );
+
+        assertTrue(ex.getMessage().contains("Data mismatch in lobId"));
+    }
+
+    @Test
+    void testDeleteClientApps_illegalState_mismatchClientId() {
+        config.setClientId("DIFFERENT_CLIENT"); // mismatch here
+        when(repo.findById(1L)).thenReturn(Optional.of(config));
+
+        IllegalStateException ex = assertThrows(
+            IllegalStateException.class,
+            () -> service.deleteClientApps("1", deletionObj)
+        );
+
+        assertTrue(ex.getMessage().contains("Data mismatch in clientId"));
+    }
 }

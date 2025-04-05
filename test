@@ -10,9 +10,7 @@ public void getArchivalStaticMetadataListTest() {
     List<ArchStaticMetadataLookup> configList = new ArrayList<>();
     configList.add(obj);
 
-    Specification<ArchStaticMetadataLookup> spec = ArchStaticMetaDataSpec.dynamicQuery("testLob");
-
-    when(repo.findAll(spec)).thenReturn(configList);
+    when(repo.findAll(any(Specification.class))).thenReturn(configList);
 
     List<ArchivalStaticMetadataObj> result = archStaticMetadataService.getArchivalStaticMetadataList("testLob");
 

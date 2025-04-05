@@ -1,93 +1,53 @@
 @ExtendWith(MockitoExtension.class)
-class ArchLobStorageMappingServiceTest {
+class ArchivalFilenetConfigServiceTest {
 
     @Mock
-    private ArchivalLobStorageConfigRepository repo;
+    private FilenetConfigRepository filenetConfigRepository;
 
     @InjectMocks
-    private ArchLobStorageMappingService service;
+    private ArchivalFilenetConfigService service;
 
     @Test
-    void testCreateArchivalStorageConfig_success() {
-        String lobId = "lob1";
-        ArchLobStorageConfig savedEntity = new ArchLobStorageConfig();
-        savedEntity.setLob("lob1");
-        savedEntity.setStorage("FILENET");
-
-        when(repo.saveAndFlush(any())).thenReturn(savedEntity);
-
-        ArchivalStorageConfigObj result = service.createArchivalStorageConfig(lobId);
-
-        assertNotNull(result);
-        assertEquals("lob1", result.getLobId());
-        assertEquals("FILENET", result.getStorageType());
-    }
-
-    @Test
-    void testCreateArchivalStorageConfig_nullInput() {
-        assertThrows(IllegalArgumentException.class, () -> service.createArchivalStorageConfig(null));
-    }
-
-    @Test
-    void testCreateArchivalStorageConfig_runtimeFailure() {
-        when(repo.saveAndFlush(any())).thenThrow(new RuntimeException("DB failure"));
-
-        assertThrows(IllegalStateException.class, () -> service.createArchivalStorageConfig("lobX"));
-    }
-
-    @Test
-    void testDeleteArchivalConfig_success() {
-        ArchivalStorageConfigObj input = new ArchivalStorageConfigObj();
-        input.setLobId("lob1");
+    void testDeleteArchivalFileNetConfig_success() {
+        String id = "1";
+        ArchivalFileNetConfigObj input = new ArchivalFileNetConfigObj();
+        input.setLobId("LOB1");
         input.setStorageType("FILENET");
 
-        ArchLobStorageConfig entity = new ArchLobStorageConfig();
-        entity.setLob("lob1");
+        ArchFilenetConfig entity = new ArchFilenetConfig();
+        entity.setLob("LOB1");
         entity.setStorage("FILENET");
 
-        when(repo.findById(1L)).thenReturn(Optional.of(entity));
+        when(filenetConfigRepository.findById(1L)).thenReturn(Optional.of(entity));
 
-        service.deleteArchivalConfig("1", input);
+        service.deleteArchivalFileNetConfig(id, input);
 
-        verify(repo).deleteById(1L);
+        verify(filenetConfigRepository).deleteById(1L);
     }
 
     @Test
-    void testDeleteArchivalConfig_notFound() {
-        when(repo.findById(999L)).thenReturn(Optional.empty());
+    void testDeleteArchivalFileNetConfig_notFound() {
+        String id = "2";
+        ArchivalFileNetConfigObj input = new ArchivalFileNetConfigObj();
 
-        ArchivalStorageConfigObj obj = new ArchivalStorageConfigObj();
+        when(filenetConfigRepository.findById(2L)).thenReturn(Optional.empty());
 
-        assertThrows(NoSuchElementException.class, () -> service.deleteArchivalConfig("999", obj));
+        assertThrows(NoSuchElementException.class, () -> service.deleteArchivalFileNetConfig(id, input));
     }
 
     @Test
-    void testDeleteArchivalConfig_mismatch() {
-        ArchivalStorageConfigObj input = new ArchivalStorageConfigObj();
-        input.setLobId("lob1");
+    void testDeleteArchivalFileNetConfig_mismatch() {
+        String id = "3";
+        ArchivalFileNetConfigObj input = new ArchivalFileNetConfigObj();
+        input.setLobId("LOB1");
         input.setStorageType("S3");
 
-        ArchLobStorageConfig entity = new ArchLobStorageConfig();
-        entity.setLob("lob1");
+        ArchFilenetConfig entity = new ArchFilenetConfig();
+        entity.setLob("LOB1");
         entity.setStorage("FILENET");
 
-        when(repo.findById(3L)).thenReturn(Optional.of(entity));
+        when(filenetConfigRepository.findById(3L)).thenReturn(Optional.of(entity));
 
-        assertThrows(IllegalStateException.class, () -> service.deleteArchivalConfig("3", input));
-    }
-
-    @Test
-    void testGetArchivalStorageConfig_success() {
-        ArchLobStorageConfig entity = new ArchLobStorageConfig();
-        entity.setLob("lob1");
-        entity.setStorage("FILENET");
-
-        when(repo.findByLob("lob1")).thenReturn(entity);
-
-        ArchivalStorageConfigObj result = service.getArchivalStorageConfig("lob1");
-
-        assertNotNull(result);
-        assertEquals("lob1", result.getLobId());
-        assertEquals("FILENET", result.getStorageType());
+        assertThrows(IllegalStateException.class, () -> service.deleteArchivalFileNetConfig(id, input));
     }
 }

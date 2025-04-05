@@ -1,53 +1,64 @@
 @ExtendWith(MockitoExtension.class)
-class ArchivalFilenetConfigServiceTest {
+class ArchivalApiServiceTest {
 
     @Mock
-    private FilenetConfigRepository filenetConfigRepository;
+    private ArchStorageMappingRepository repo;
 
     @InjectMocks
-    private ArchivalFilenetConfigService service;
+    private ArchivalApiService service;
 
     @Test
-    void testDeleteArchivalFileNetConfig_success() {
+    void testDeleteArchivalStorageMapping_success() {
+        // Given
         String id = "1";
-        ArchivalFileNetConfigObj input = new ArchivalFileNetConfigObj();
-        input.setLobId("LOB1");
+        ArchivalStorageMappingObj input = new ArchivalStorageMappingObj();
+        input.setLobId("LOB123");
         input.setStorageType("FILENET");
 
-        ArchFilenetConfig entity = new ArchFilenetConfig();
-        entity.setLob("LOB1");
+        ArchStorageMapping entity = new ArchStorageMapping();
+        entity.setLob("LOB123");
         entity.setStorage("FILENET");
 
-        when(filenetConfigRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(repo.findById(1L)).thenReturn(Optional.of(entity));
 
-        service.deleteArchivalFileNetConfig(id, input);
+        // When
+        service.deleteArchivalStorageMapping(id, input);
 
-        verify(filenetConfigRepository).deleteById(1L);
+        // Then
+        verify(repo).deleteById(1L);
     }
 
     @Test
-    void testDeleteArchivalFileNetConfig_notFound() {
+    void testDeleteArchivalStorageMapping_dataNotFound() {
+        // Given
+        String id = "99";
+        ArchivalStorageMappingObj input = new ArchivalStorageMappingObj();
+
+        when(repo.findById(99L)).thenReturn(Optional.empty());
+
+        // Then
+        assertThrows(NoSuchElementException.class, () -> 
+            service.deleteArchivalStorageMapping(id, input)
+        );
+    }
+
+    @Test
+    void testDeleteArchivalStorageMapping_mismatchDetected() {
+        // Given
         String id = "2";
-        ArchivalFileNetConfigObj input = new ArchivalFileNetConfigObj();
-
-        when(filenetConfigRepository.findById(2L)).thenReturn(Optional.empty());
-
-        assertThrows(NoSuchElementException.class, () -> service.deleteArchivalFileNetConfig(id, input));
-    }
-
-    @Test
-    void testDeleteArchivalFileNetConfig_mismatch() {
-        String id = "3";
-        ArchivalFileNetConfigObj input = new ArchivalFileNetConfigObj();
-        input.setLobId("LOB1");
+        ArchivalStorageMappingObj input = new ArchivalStorageMappingObj();
+        input.setLobId("LOB999");
         input.setStorageType("S3");
 
-        ArchFilenetConfig entity = new ArchFilenetConfig();
-        entity.setLob("LOB1");
-        entity.setStorage("FILENET");
+        ArchStorageMapping entity = new ArchStorageMapping();
+        entity.setLob("LOB999");
+        entity.setStorage("FILENET"); // mismatch
 
-        when(filenetConfigRepository.findById(3L)).thenReturn(Optional.of(entity));
+        when(repo.findById(2L)).thenReturn(Optional.of(entity));
 
-        assertThrows(IllegalStateException.class, () -> service.deleteArchivalFileNetConfig(id, input));
+        // Then
+        assertThrows(IllegalStateException.class, () -> 
+            service.deleteArchivalStorageMapping(id, input)
+        );
     }
 }

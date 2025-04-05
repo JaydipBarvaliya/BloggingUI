@@ -1,20 +1,29 @@
 @Test
-public void getArchivalStorageMappingTest() {
+public void updateConfigTest() throws Exception {
+    // Arrange
     String id = "20";
-    ArchStorageMapping obj = new ArchStorageMapping();
-    obj.setLob("TestLob");
-    obj.setId(Long.valueOf(id));
-    obj.setMetadataField("TestMetadata");
-    obj.setDocumentType("TestDocType");
-    obj.setMetadataScope(MetadataScopeEnum.DOCUMENT);
 
-    when(repo.findById(Long.valueOf(id))).thenReturn(Optional.of(obj));
+    ArchivalStorageMappingObj obj = new ArchivalStorageMappingObj(
+        "TestLob", "TestDocType", "TestMetadataFld", null, MetadataScopeEnum.DOCUMENT, null
+    );
 
-    ArchivalStorageMappingObj result = archApiService.getArchivalStorageMapping(id);
+    ArchStorageMapping archStorageMapping = new ArchStorageMapping();
+    archStorageMapping.setId(20L);
+    archStorageMapping.setLob("OldLob");
+    archStorageMapping.setDocumentType("OldDocType");
+    archStorageMapping.setMetadataField("OldMetadata");
+    archStorageMapping.setMetadataScope(MetadataScopeEnum.SERVICE); // Old value
 
+    when(repo.findById(Long.valueOf(id))).thenReturn(Optional.of(archStorageMapping));
+    when(repo.saveAndFlush(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+    // Act
+    ArchStorageMapping result = archApiService.updateConfig(id, obj);
+
+    // Assert
     assertNotNull(result);
-    assertEquals("TestLob", result.getLobId());
-    assertEquals("TestMetadata", result.getStorageMetadataField());
+    assertEquals("TestLob", result.getLob());
     assertEquals("TestDocType", result.getDocumentType());
+    assertEquals("TestMetadataFld", result.getMetadataField());
     assertEquals(MetadataScopeEnum.DOCUMENT, result.getMetadataScope());
 }

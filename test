@@ -1,14 +1,6 @@
-@Test
-public void createNotifyEvent_ExceptionTest() {
-    @SuppressWarnings("unchecked")
-    Map<String, Object> requestBody = Mockito.mock(Map.class);
+doThrow(new Exception("Simulated")).when(besigopsapiUtil).validateTokenAndClientId(any());
 
-    Mockito.when(requestBody.toString()).thenThrow(new RuntimeException("Simulated exception"));
-
-    SharedServiceLayerException thrown = Assertions.assertThrows(
-        SharedServiceLayerException.class,
-        () -> notifyApiDelegate.createNotifyEvent(requestBody)
-    );
-
-    Assertions.assertTrue(thrown.getMessage().contains("Simulated exception"));
-}
+Exception thrown = Assertions.assertThrows(Exception.class, () ->
+    clientAppsApiDelegate.createClientApps(clientAppsObj)
+);
+Assertions.assertEquals("Simulated", thrown.getMessage());

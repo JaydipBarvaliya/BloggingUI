@@ -5,7 +5,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import java.util.NoSuchElementException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
@@ -27,45 +30,135 @@ public class ConfigurationApiDelegateImplTest {
     }
 
     @Test
-    public void createConfiguration_ShouldThrowIllegalArgumentException() {
-        ConfigurationObj configObj = new ConfigurationObj();
+    public void deleteConfiguration_ShouldThrowNoSuchElementException() {
+        String id = "config123";
+        ConfigurationObj configurationObj = new ConfigurationObj();
 
-        doThrow(new IllegalArgumentException("Invalid argument"))
-                .when(besigopsApiService).createConfig(any());
+        doThrow(new NoSuchElementException("Config not found"))
+                .when(besigopsApiService).deleteConfig(any(), any());
 
-        IllegalArgumentException thrown = Assertions.assertThrows(
-                IllegalArgumentException.class,
-                () -> configurationApiDelegate.createConfiguration(configObj)
+        NoSuchElementException thrown = Assertions.assertThrows(
+                NoSuchElementException.class,
+                () -> configurationApiDelegate.deleteConfiguration(id, configurationObj)
         );
 
-        Assertions.assertEquals("Invalid argument", thrown.getMessage());
+        Assertions.assertEquals("Config not found", thrown.getMessage());
     }
 
     @Test
-    public void createConfiguration_ShouldThrowIllegalStateException() {
-        ConfigurationObj configObj = new ConfigurationObj();
+    public void deleteConfiguration_ShouldThrowIllegalStateException() {
+        String id = "config123";
+        ConfigurationObj configurationObj = new ConfigurationObj();
 
         doThrow(new IllegalStateException("Invalid state"))
-                .when(besigopsApiService).createConfig(any());
+                .when(besigopsApiService).deleteConfig(any(), any());
 
         IllegalStateException thrown = Assertions.assertThrows(
                 IllegalStateException.class,
-                () -> configurationApiDelegate.createConfiguration(configObj)
+                () -> configurationApiDelegate.deleteConfiguration(id, configurationObj)
         );
 
         Assertions.assertEquals("Invalid state", thrown.getMessage());
     }
 
     @Test
-    public void createConfiguration_ShouldThrowSharedServiceLayerException() {
-        ConfigurationObj configObj = new ConfigurationObj();
+    public void deleteConfiguration_ShouldThrowSharedServiceLayerException() {
+        String id = "config123";
+        ConfigurationObj configurationObj = new ConfigurationObj();
 
         doThrow(new RuntimeException("Unexpected error"))
-                .when(besigopsApiService).createConfig(any());
+                .when(besigopsApiService).deleteConfig(any(), any());
 
         SharedServiceLayerException thrown = Assertions.assertThrows(
                 SharedServiceLayerException.class,
-                () -> configurationApiDelegate.createConfiguration(configObj)
+                () -> configurationApiDelegate.deleteConfiguration(id, configurationObj)
+        );
+
+        Assertions.assertTrue(thrown.getMessage().contains("Unexpected error"));
+    }
+}
+
+
+
+
+
+
+
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.util.NoSuchElementException;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+
+public class ConfigurationApiDelegateImplTest {
+
+    @InjectMocks
+    private ConfigurationApiDelegateImpl configurationApiDelegate;
+
+    @Mock
+    private ConfigurationOpsApiService besigopsApiService;
+
+    @Mock
+    private BesigopsapiUtil besigopsapiUtil;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void updateConfiguration_ShouldThrowNoSuchElementException() {
+        String id = "config123";
+        ConfigurationObj configObj = new ConfigurationObj();
+
+        doThrow(new NoSuchElementException("Config not found"))
+                .when(besigopsApiService).updateConfig(any(), any());
+
+        NoSuchElementException thrown = Assertions.assertThrows(
+                NoSuchElementException.class,
+                () -> configurationApiDelegate.updateConfiguration(id, configObj)
+        );
+
+        Assertions.assertEquals("Config not found", thrown.getMessage());
+    }
+
+    @Test
+    public void updateConfiguration_ShouldRethrowSharedServiceLayerException() {
+        String id = "config123";
+        ConfigurationObj configObj = new ConfigurationObj();
+
+        doThrow(new SharedServiceLayerException(new Status("500", Severity.Error)))
+                .when(besigopsApiService).updateConfig(any(), any());
+
+        SharedServiceLayerException thrown = Assertions.assertThrows(
+                SharedServiceLayerException.class,
+                () -> configurationApiDelegate.updateConfiguration(id, configObj)
+        );
+
+        Assertions.assertNotNull(thrown);
+    }
+
+    @Test
+    public void updateConfiguration_ShouldWrapGenericException() {
+        String id = "config123";
+        ConfigurationObj configObj = new ConfigurationObj();
+
+        doThrow(new RuntimeException("Unexpected error"))
+                .when(besigopsApiService).updateConfig(any(), any());
+
+        SharedServiceLayerException thrown = Assertions.assertThrows(
+                SharedServiceLayerException.class,
+                () -> configurationApiDelegate.updateConfiguration(id, configObj)
         );
 
         Assertions.assertTrue(thrown.getMessage().contains("Unexpected error"));

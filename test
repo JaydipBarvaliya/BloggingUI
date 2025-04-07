@@ -1,12 +1,63 @@
-@Test
-public void searchClientApps_BothClientIdAndLobIdNull_ShouldThrowException() {
-    String lobId = null;
-    String clientId = null;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
-    SharedServiceLayerException thrown = Assertions.assertThrows(
-        SharedServiceLayerException.class,
-        () -> clientAppsApiDelegate.searchClientApps(lobId, clientId)
-    );
+import java.util.NoSuchElementException;
 
-    Assertions.assertTrue(thrown.getMessage().contains("At least one of lobId or clientId is required"));
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+
+public class ClientAppsApiDelegateImplTest {
+
+    @InjectMocks
+    private ClientAppsApiDelegateImpl clientAppsApiDelegate;
+
+    @Mock
+    private BesigopsapiUtil besigopsapiUtil;
+
+    @Mock
+    private ClientAppsApiService clientAppsApiService;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void updateClientApps_ShouldThrowNoSuchElementException() {
+        String id = "client123";
+        ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
+
+        doThrow(new NoSuchElementException("Element not found"))
+                .when(clientAppsApiService).updateConfig(any(), any());
+
+        NoSuchElementException thrown = Assertions.assertThrows(
+                NoSuchElementException.class,
+                () -> clientAppsApiDelegate.updateClientApps(id, clientAppsObj)
+        );
+
+        Assertions.assertEquals("Element not found", thrown.getMessage());
+    }
+
+    @Test
+    public void updateClientApps_ShouldThrowSharedServiceLayerException() {
+        String id = "client123";
+        ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
+
+        doThrow(new RuntimeException("Unexpected failure"))
+                .when(clientAppsApiService).updateConfig(any(), any());
+
+        SharedServiceLayerException thrown = Assertions.assertThrows(
+                SharedServiceLayerException.class,
+                () -> clientAppsApiDelegate.updateClientApps(id, clientAppsObj)
+        );
+
+        Assertions.assertTrue(thrown.getMessage().contains("Unexpected failure"));
+    }
 }

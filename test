@@ -1,33 +1,80 @@
-@Test
-public void createClientApps_IllegalArgumentExceptionTest() {
-    ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 
-    // Mock service to throw IllegalArgumentException
-    Mockito.doThrow(new IllegalArgumentException("Invalid input"))
-           .when(clientAppsApiService).createClientApps(any());
+import java.util.NoSuchElementException;
 
-    IllegalArgumentException thrown = Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () -> clientAppsApiDelegate.createClientApps(clientAppsObj)
-    );
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 
-    Assertions.assertEquals("Invalid input", thrown.getMessage());
-}
+public class ClientAppsApiDelegateImplTest {
 
+    @InjectMocks
+    private ClientAppsApiDelegateImpl clientAppsApiDelegate;
 
+    @Mock
+    private BesigopsapiUtil besigopsapiUtil;
 
-@Test
-public void createClientApps_IllegalStateExceptionTest() {
-    ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
+    @Mock
+    private ClientAppsApiService clientAppsApiService;
 
-    // Mock service to throw IllegalStateException
-    Mockito.doThrow(new IllegalStateException("Invalid state"))
-           .when(clientAppsApiService).createClientApps(any());
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+    }
 
-    IllegalStateException thrown = Assertions.assertThrows(
-        IllegalStateException.class,
-        () -> clientAppsApiDelegate.createClientApps(clientAppsObj)
-    );
+    @Test
+    public void deleteClientApps_NoSuchElementExceptionTest() {
+        ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
+        String id = "client123";
 
-    Assertions.assertEquals("Invalid state", thrown.getMessage());
+        doThrow(new NoSuchElementException("Element not found"))
+                .when(clientAppsApiService).deleteClientApps(any(), any());
+
+        NoSuchElementException thrown = Assertions.assertThrows(
+                NoSuchElementException.class,
+                () -> clientAppsApiDelegate.deleteClientApps(id, clientAppsObj)
+        );
+
+        Assertions.assertEquals("Element not found", thrown.getMessage());
+    }
+
+    @Test
+    public void deleteClientApps_IllegalStateExceptionTest() {
+        ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
+        String id = "client123";
+
+        doThrow(new IllegalStateException("Invalid state"))
+                .when(clientAppsApiService).deleteClientApps(any(), any());
+
+        IllegalStateException thrown = Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> clientAppsApiDelegate.deleteClientApps(id, clientAppsObj)
+        );
+
+        Assertions.assertEquals("Invalid state", thrown.getMessage());
+    }
+
+    @Test
+    public void deleteClientApps_GenericExceptionTest() {
+        ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
+        String id = "client123";
+
+        doThrow(new RuntimeException("Unexpected failure"))
+                .when(clientAppsApiService).deleteClientApps(any(), any());
+
+        SharedServiceLayerException thrown = Assertions.assertThrows(
+                SharedServiceLayerException.class,
+                () -> clientAppsApiDelegate.deleteClientApps(id, clientAppsObj)
+        );
+
+        Assertions.assertTrue(thrown.getMessage().contains("Unexpected failure"));
+    }
 }

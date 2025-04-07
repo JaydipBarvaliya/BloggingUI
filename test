@@ -1,121 +1,105 @@
-@Test
-public void createNPID_ShouldThrowIllegalArgumentException() {
-    NPIDObj npidObj = new NPIDObj();
+import com.td.besig.opsapi.util.BesigopsapiUtil;
+import com.td.coreapi.common.security.AccessTokenClaims;
+import com.td.coreapi.common.security.OAuthValidator;
+import com.td.esig.common.util.SharedServiceLayerException;
+import com.td.esig.dal.service.ClientAppConfigurationService;
+import com.td.esig.dal.service.ConfigurationProperties;
+import org.junit.jupiter.api.*;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.context.request.NativeWebRequest;
 
-    doThrow(new IllegalArgumentException("Invalid input"))
-        .when(esignNpidOpsApiService).createNPIDEntry(any());
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-    IllegalArgumentException thrown = Assertions.assertThrows(
-        IllegalArgumentException.class,
-        () -> npidApiDelegate.createNPID(npidObj)
-    );
+public class BesigopsapiUtilTest {
 
-    Assertions.assertEquals("Invalid input", thrown.getMessage());
-}
+    private BesigopsapiUtil besigopsapiUtil;
 
-@Test
-public void createNPID_ShouldThrowIllegalStateException() {
-    NPIDObj npidObj = new NPIDObj();
+    private ClientAppConfigurationService clientAppConfigurationService;
+    private ConfigurationProperties configurationProperties;
 
-    doThrow(new IllegalStateException("Illegal state"))
-        .when(esignNpidOpsApiService).createNPIDEntry(any());
+    @BeforeEach
+    public void setup() {
+        clientAppConfigurationService = mock(ClientAppConfigurationService.class);
+        configurationProperties = mock(ConfigurationProperties.class);
 
-    IllegalStateException thrown = Assertions.assertThrows(
-        IllegalStateException.class,
-        () -> npidApiDelegate.createNPID(npidObj)
-    );
+        besigopsapiUtil = new BesigopsapiUtil();
+        besigopsapiUtil.clientAppConfigurationService = clientAppConfigurationService;
+        besigopsapiUtil.configurationProperties = configurationProperties;
+        besigopsapiUtil.jwtHeader = "Authorization";
+        besigopsapiUtil.basicHeader = "Basic";
+    }
 
-    Assertions.assertEquals("Illegal state", thrown.getMessage());
-}
+    @Test
+    public void validateTokenAndClientId_shouldPassValidation() throws SharedServiceLayerException {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer dummyToken");
 
-@Test
-public void createNPID_ShouldThrowSharedServiceLayerException() {
-    NPIDObj npidObj = new NPIDObj();
+        AccessTokenClaims mockClaims = mock(AccessTokenClaims.class);
+        when(mockClaims.getClientId()).thenReturn("OPS_API_CLIENT_ID");
 
-    doThrow(new RuntimeException("Unexpected"))
-        .when(esignNpidOpsApiService).createNPIDEntry(any());
+        try (MockedStatic<OAuthValidator> mocked = Mockito.mockStatic(OAuthValidator.class)) {
+            mocked.when(() -> OAuthValidator.getValidToken("dummyToken")).thenReturn(mockClaims);
+            when(configurationProperties.getConfigProperty("default", "OPS_API_CLIENT_ID")).thenReturn("OPS_API_CLIENT_ID");
 
-    SharedServiceLayerException thrown = Assertions.assertThrows(
-        SharedServiceLayerException.class,
-        () -> npidApiDelegate.createNPID(npidObj)
-    );
+            assertDoesNotThrow(() -> besigopsapiUtil.validateTokenAndClientId(headers));
+        }
+    }
 
-    Assertions.assertTrue(thrown.getMessage().contains("Unexpected"));
-}
+    @Test
+    public void validateTokenAndClientId_shouldSkipWhenTokenInvalidFormat() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Invalid token");
 
-@Test
-public void deleteNPID_ShouldThrowNoSuchElementException() {
-    String userId = "user123";
+        assertDoesNotThrow(() -> besigopsapiUtil.validateTokenAndClientId(headers));
+    }
 
-    doThrow(new NoSuchElementException("Not found"))
-        .when(esignNpidOpsApiService).deleteNPID(any());
+    @Test
+    public void validateTokenAndClientId_shouldHandleTokenDecodingFailure() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer invalidToken");
 
-    NoSuchElementException thrown = Assertions.assertThrows(
-        NoSuchElementException.class,
-        () -> npidApiDelegate.deleteNPID(userId)
-    );
+        try (MockedStatic<OAuthValidator> mocked = Mockito.mockStatic(OAuthValidator.class)) {
+            mocked.when(() -> OAuthValidator.getValidToken("invalidToken")).thenThrow(new RuntimeException("Decoding failed"));
+            assertDoesNotThrow(() -> besigopsapiUtil.validateTokenAndClientId(headers));
+        }
+    }
 
-    Assertions.assertEquals("Not found", thrown.getMessage());
-}
+    @Test
+    public void validateTokenAndClientId_shouldThrowWhenClientIdMismatch() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer realToken");
 
-@Test
-public void deleteNPID_ShouldThrowIllegalStateException() {
-    String userId = "user123";
+        AccessTokenClaims claims = mock(AccessTokenClaims.class);
+        when(claims.getClientId()).thenReturn("WrongClient");
 
-    doThrow(new IllegalStateException("Invalid state"))
-        .when(esignNpidOpsApiService).deleteNPID(any());
+        try (MockedStatic<OAuthValidator> mocked = Mockito.mockStatic(OAuthValidator.class)) {
+            mocked.when(() -> OAuthValidator.getValidToken("realToken")).thenReturn(claims);
+            when(configurationProperties.getConfigProperty("default", "OPS_API_CLIENT_ID")).thenReturn("OPS_API_CLIENT_ID");
 
-    IllegalStateException thrown = Assertions.assertThrows(
-        IllegalStateException.class,
-        () -> npidApiDelegate.deleteNPID(userId)
-    );
+            SharedServiceLayerException ex = assertThrows(SharedServiceLayerException.class,
+                    () -> besigopsapiUtil.validateTokenAndClientId(headers));
+            assertTrue(ex.getMessage().contains("ClientId is not Configured"));
+        }
+    }
 
-    Assertions.assertEquals("Invalid state", thrown.getMessage());
-}
+    @Test
+    public void createBasicHeaders_shouldReturnPopulatedHeaders() {
+        NativeWebRequest request = mock(NativeWebRequest.class);
+        when(request.getHeader("Authorization")).thenReturn("Bearer xyz");
+        when(request.getHeader("Content-Type")).thenReturn("application/json");
 
-@Test
-public void deleteNPID_ShouldThrowSharedServiceLayerException() {
-    String userId = "user123";
+        HttpHeaders headers = BesigopsapiUtil.createBasicHeaders(request);
 
-    doThrow(new RuntimeException("Unexpected"))
-        .when(esignNpidOpsApiService).deleteNPID(any());
+        assertEquals("Bearer xyz", headers.getFirst("Authorization"));
+        assertEquals("application/json", headers.getFirst("Content-Type"));
+    }
 
-    SharedServiceLayerException thrown = Assertions.assertThrows(
-        SharedServiceLayerException.class,
-        () -> npidApiDelegate.deleteNPID(userId)
-    );
-
-    Assertions.assertTrue(thrown.getMessage().contains("Unexpected"));
-}
-
-@Test
-public void updateNPID_ShouldThrowNoSuchElementException() {
-    String userId = "user123";
-    NPIDObj npidObj = new NPIDObj();
-
-    doThrow(new NoSuchElementException("Missing entry"))
-        .when(esignNpidOpsApiService).updateNPIDEntry(any(), any());
-
-    NoSuchElementException thrown = Assertions.assertThrows(
-        NoSuchElementException.class,
-        () -> npidApiDelegate.updateNPID(userId, npidObj)
-    );
-
-    Assertions.assertEquals("Missing entry", thrown.getMessage());
-}
-
-@Test
-public void updateNPID_ShouldThrowSharedServiceLayerException() {
-    String userId = "user123";
-    NPIDObj npidObj = new NPIDObj();
-
-    doThrow(new RuntimeException("Unexpected error"))
-        .when(esignNpidOpsApiService).updateNPIDEntry(any(), any());
-
-    SharedServiceLayerException thrown = Assertions.assertThrows(
-        SharedServiceLayerException.class,
-        () -> npidApiDelegate.updateNPID(userId, npidObj)
-    );
-
-    Assertions.assertTrue(thrown.getMessage().contains("Unexpected error"));
+    @Test
+    public void createBasicHeaders_shouldHandleNullRequest() {
+        HttpHeaders headers = BesigopsapiUtil.createBasicHeaders(null);
+        assertTrue(headers.isEmpty());
+    }
 }

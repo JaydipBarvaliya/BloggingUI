@@ -1,11 +1,12 @@
 @Test
-public void getClientApps_NotFoundTest() {
-    String id = "client123";
+public void searchClientApps_BothClientIdAndLobIdNull_ShouldThrowException() {
+    String lobId = null;
+    String clientId = null;
 
-    // Simulate service returning null
-    Mockito.when(clientAppsApiService.getClientAppConfigData(id)).thenReturn(null);
+    SharedServiceLayerException thrown = Assertions.assertThrows(
+        SharedServiceLayerException.class,
+        () -> clientAppsApiDelegate.searchClientApps(lobId, clientId)
+    );
 
-    ResponseEntity<ClientAppsObj> response = clientAppsApiDelegate.getClientApps(id);
-
-    Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+    Assertions.assertTrue(thrown.getMessage().contains("At least one of lobId or clientId is required"));
 }

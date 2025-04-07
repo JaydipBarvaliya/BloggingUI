@@ -1,14 +1,33 @@
 @Test
-public void createClientApps_ExceptionTest() {
+public void createClientApps_IllegalArgumentExceptionTest() {
     ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
 
-    // Simulate an exception in the utility class
-    doThrow(new RuntimeException("Simulated")).when(besigopsapiUtil).validateTokenAndClientId(any());
+    // Mock service to throw IllegalArgumentException
+    Mockito.doThrow(new IllegalArgumentException("Invalid input"))
+           .when(clientAppsApiService).createClientApps(any());
 
-    SharedServiceLayerException thrown = Assertions.assertThrows(
-        SharedServiceLayerException.class,
+    IllegalArgumentException thrown = Assertions.assertThrows(
+        IllegalArgumentException.class,
         () -> clientAppsApiDelegate.createClientApps(clientAppsObj)
     );
 
-    Assertions.assertTrue(thrown.getMessage().contains("Simulated"));
+    Assertions.assertEquals("Invalid input", thrown.getMessage());
+}
+
+
+
+@Test
+public void createClientApps_IllegalStateExceptionTest() {
+    ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
+
+    // Mock service to throw IllegalStateException
+    Mockito.doThrow(new IllegalStateException("Invalid state"))
+           .when(clientAppsApiService).createClientApps(any());
+
+    IllegalStateException thrown = Assertions.assertThrows(
+        IllegalStateException.class,
+        () -> clientAppsApiDelegate.createClientApps(clientAppsObj)
+    );
+
+    Assertions.assertEquals("Invalid state", thrown.getMessage());
 }

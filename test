@@ -1,6 +1,14 @@
-doThrow(new Exception("Simulated")).when(besigopsapiUtil).validateTokenAndClientId(any());
+@Test
+public void createClientApps_ExceptionTest() {
+    ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
 
-Exception thrown = Assertions.assertThrows(Exception.class, () ->
-    clientAppsApiDelegate.createClientApps(clientAppsObj)
-);
-Assertions.assertEquals("Simulated", thrown.getMessage());
+    // Simulate an exception in the utility class
+    doThrow(new RuntimeException("Simulated")).when(besigopsapiUtil).validateTokenAndClientId(any());
+
+    SharedServiceLayerException thrown = Assertions.assertThrows(
+        SharedServiceLayerException.class,
+        () -> clientAppsApiDelegate.createClientApps(clientAppsObj)
+    );
+
+    Assertions.assertTrue(thrown.getMessage().contains("Simulated"));
+}

@@ -1,115 +1,14 @@
-package com.td.besig.opsapi.service;
+@Test
+public void createNotifyEvent_ExceptionTest() {
+    Map<String, Object> requestBody = Mockito.mock(Map.class);
 
-import com.td.besig.opsapi.dao.ClientAppConfigRepository;
-import com.td.besig.opsapi.model.ClientAppConfiguration;
-import com.td.besig.openapi.model.ClientAppsObj;
-import com.td.besig.opsapi.util.ClientAppConfigSpecifications;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.data.jpa.domain.Specification;
+    // Simulate exception when calling toString()
+    Mockito.when(requestBody.toString()).thenThrow(new RuntimeException("Simulated exception"));
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+    SharedServiceLayerException thrown = Assertions.assertThrows(
+        SharedServiceLayerException.class,
+        () -> notifyApiDelegate.createNotifyEvent(requestBody)
+    );
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
-
-public class ClientAppsApiServiceTest {
-
-    @InjectMocks
-    private ClientAppsApiService clientAppsApiService;
-
-    @Mock
-    private ClientAppConfigRepository repo;
-
-    @BeforeEach
-    void setup() {
-        MockitoAnnotations.openMocks(this);
-    }
-
-    @Test
-    public void getClientAppConfigDataTest() {
-        ClientAppConfiguration clientAppConfiguration = new ClientAppConfiguration();
-        clientAppConfiguration.setClientId("TestClient");
-        clientAppConfiguration.setLob("TestLob");
-
-        when(repo.findById(any())).thenReturn(Optional.of(clientAppConfiguration));
-
-        ClientAppsObj result = clientAppsApiService.getClientAppConfigData("123");
-
-        assertNotNull(result);
-        assertEquals("TestClient", result.getClientId());
-        assertEquals("TestLob", result.getLobId());
-    }
-
-    @Test
-    public void getClientAppConfigDataWhenConfigIsNotPresentTest() {
-        String id = "1";
-        when(repo.findById(Long.valueOf(id))).thenReturn(Optional.empty());
-
-        ClientAppsObj result = clientAppsApiService.getClientAppConfigData(id);
-
-        assertNull(result);
-    }
-
-    @Test
-    public void getClientAppConfigListTest() {
-        ClientAppConfiguration config = new ClientAppConfiguration();
-        config.setClientId("TestClient");
-        config.setLob("TestLob");
-
-        List<ClientAppConfiguration> configList = new ArrayList<>();
-        configList.add(config);
-
-        Specification<ClientAppConfiguration> spec = ClientAppConfigSpecifications.dynamicQuery("TestLob", "TestClient");
-        when(repo.findAll(spec)).thenReturn(configList);
-
-        List<ClientAppConfiguration> result = clientAppsApiService.getClientAppConfigList("TestLob", "TestClient");
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("TestClient", result.get(0).getClientId());
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
-    public void getClientAppConfigListWithListOfConfigsTest() {
-        ClientAppConfiguration config = new ClientAppConfiguration();
-        config.setClientId("TestClient");
-        config.setLob("TestLob");
-
-        List<ClientAppConfiguration> configs = new ArrayList<>();
-        configs.add(config);
-
-        when(repo.findAll(any(Specification.class))).thenReturn(configs);
-
-        List<ClientAppConfiguration> result = clientAppsApiService.getClientAppConfigList("TestLob", "TestClient");
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("TestLob", result.get(0).getLob());
-    }
-
-    @Test
-    public void updateConfigTest() throws Exception {
-        ClientAppsObj clientAppObj = new ClientAppsObj("TestLob", "TestClient");
-
-        ClientAppConfiguration clientAppConfiguration = new ClientAppConfiguration();
-        clientAppConfiguration.setClientId("TestClient");
-        clientAppConfiguration.setLob("TestLob");
-
-        when(repo.saveAndFlush(any())).thenReturn(clientAppConfiguration);
-        when(repo.findById(any())).thenReturn(Optional.of(clientAppConfiguration));
-
-        ClientAppConfiguration result = clientAppsApiService.updateConfig("123", clientAppObj);
-
-        assertNotNull(result);
-        assertEquals("TestClient", result.getClientId());
-        assertEquals("TestLob", result.getLob());
-    }
+    Assertions.assertEquals("EXPECTED_STATUS", thrown.getStatus().getStatus()); // Replace with actual expected status string
 }

@@ -5,24 +5,21 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
-import java.util.NoSuchElementException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 
-public class ClientAppsApiDelegateImplTest {
+public class ConfigurationApiDelegateImplTest {
 
     @InjectMocks
-    private ClientAppsApiDelegateImpl clientAppsApiDelegate;
+    private ConfigurationApiDelegateImpl configurationApiDelegate;
+
+    @Mock
+    private ConfigurationOpsApiService besigopsApiService;
 
     @Mock
     private BesigopsapiUtil besigopsapiUtil;
-
-    @Mock
-    private ClientAppsApiService clientAppsApiService;
 
     @BeforeEach
     public void setup() {
@@ -30,34 +27,47 @@ public class ClientAppsApiDelegateImplTest {
     }
 
     @Test
-    public void updateClientApps_ShouldThrowNoSuchElementException() {
-        String id = "client123";
-        ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
+    public void createConfiguration_ShouldThrowIllegalArgumentException() {
+        ConfigurationObj configObj = new ConfigurationObj();
 
-        doThrow(new NoSuchElementException("Element not found"))
-                .when(clientAppsApiService).updateConfig(any(), any());
+        doThrow(new IllegalArgumentException("Invalid argument"))
+                .when(besigopsApiService).createConfig(any());
 
-        NoSuchElementException thrown = Assertions.assertThrows(
-                NoSuchElementException.class,
-                () -> clientAppsApiDelegate.updateClientApps(id, clientAppsObj)
+        IllegalArgumentException thrown = Assertions.assertThrows(
+                IllegalArgumentException.class,
+                () -> configurationApiDelegate.createConfiguration(configObj)
         );
 
-        Assertions.assertEquals("Element not found", thrown.getMessage());
+        Assertions.assertEquals("Invalid argument", thrown.getMessage());
     }
 
     @Test
-    public void updateClientApps_ShouldThrowSharedServiceLayerException() {
-        String id = "client123";
-        ClientAppsObj clientAppsObj = new ClientAppsObj("TestLob", "TestClient");
+    public void createConfiguration_ShouldThrowIllegalStateException() {
+        ConfigurationObj configObj = new ConfigurationObj();
 
-        doThrow(new RuntimeException("Unexpected failure"))
-                .when(clientAppsApiService).updateConfig(any(), any());
+        doThrow(new IllegalStateException("Invalid state"))
+                .when(besigopsApiService).createConfig(any());
+
+        IllegalStateException thrown = Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> configurationApiDelegate.createConfiguration(configObj)
+        );
+
+        Assertions.assertEquals("Invalid state", thrown.getMessage());
+    }
+
+    @Test
+    public void createConfiguration_ShouldThrowSharedServiceLayerException() {
+        ConfigurationObj configObj = new ConfigurationObj();
+
+        doThrow(new RuntimeException("Unexpected error"))
+                .when(besigopsApiService).createConfig(any());
 
         SharedServiceLayerException thrown = Assertions.assertThrows(
                 SharedServiceLayerException.class,
-                () -> clientAppsApiDelegate.updateClientApps(id, clientAppsObj)
+                () -> configurationApiDelegate.createConfiguration(configObj)
         );
 
-        Assertions.assertTrue(thrown.getMessage().contains("Unexpected failure"));
+        Assertions.assertTrue(thrown.getMessage().contains("Unexpected error"));
     }
 }

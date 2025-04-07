@@ -1,8 +1,8 @@
 @Test
 public void createNotifyEvent_ExceptionTest() {
+    @SuppressWarnings("unchecked")
     Map<String, Object> requestBody = Mockito.mock(Map.class);
 
-    // Simulate exception when calling toString()
     Mockito.when(requestBody.toString()).thenThrow(new RuntimeException("Simulated exception"));
 
     SharedServiceLayerException thrown = Assertions.assertThrows(
@@ -10,5 +10,5 @@ public void createNotifyEvent_ExceptionTest() {
         () -> notifyApiDelegate.createNotifyEvent(requestBody)
     );
 
-    Assertions.assertEquals("EXPECTED_STATUS", thrown.getStatus().getStatus()); // Replace with actual expected status string
+    Assertions.assertTrue(thrown.getMessage().contains("Simulated exception"));
 }

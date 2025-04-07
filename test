@@ -1,166 +1,121 @@
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+@Test
+public void createNPID_ShouldThrowIllegalArgumentException() {
+    NPIDObj npidObj = new NPIDObj();
 
-import java.util.NoSuchElementException;
+    doThrow(new IllegalArgumentException("Invalid input"))
+        .when(esignNpidOpsApiService).createNPIDEntry(any());
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
+    IllegalArgumentException thrown = Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> npidApiDelegate.createNPID(npidObj)
+    );
 
-public class ConfigurationApiDelegateImplTest {
-
-    @InjectMocks
-    private ConfigurationApiDelegateImpl configurationApiDelegate;
-
-    @Mock
-    private ConfigurationOpsApiService besigopsApiService;
-
-    @Mock
-    private BesigopsapiUtil besigopsapiUtil;
-
-    @BeforeEach
-    public void setup() {
-        MockitoAnnotations.openMocks(this);
-    }
-
-    @Test
-    public void deleteConfiguration_ShouldThrowNoSuchElementException() {
-        String id = "config123";
-        ConfigurationObj configurationObj = new ConfigurationObj();
-
-        doThrow(new NoSuchElementException("Config not found"))
-                .when(besigopsApiService).deleteConfig(any(), any());
-
-        NoSuchElementException thrown = Assertions.assertThrows(
-                NoSuchElementException.class,
-                () -> configurationApiDelegate.deleteConfiguration(id, configurationObj)
-        );
-
-        Assertions.assertEquals("Config not found", thrown.getMessage());
-    }
-
-    @Test
-    public void deleteConfiguration_ShouldThrowIllegalStateException() {
-        String id = "config123";
-        ConfigurationObj configurationObj = new ConfigurationObj();
-
-        doThrow(new IllegalStateException("Invalid state"))
-                .when(besigopsApiService).deleteConfig(any(), any());
-
-        IllegalStateException thrown = Assertions.assertThrows(
-                IllegalStateException.class,
-                () -> configurationApiDelegate.deleteConfiguration(id, configurationObj)
-        );
-
-        Assertions.assertEquals("Invalid state", thrown.getMessage());
-    }
-
-    @Test
-    public void deleteConfiguration_ShouldThrowSharedServiceLayerException() {
-        String id = "config123";
-        ConfigurationObj configurationObj = new ConfigurationObj();
-
-        doThrow(new RuntimeException("Unexpected error"))
-                .when(besigopsApiService).deleteConfig(any(), any());
-
-        SharedServiceLayerException thrown = Assertions.assertThrows(
-                SharedServiceLayerException.class,
-                () -> configurationApiDelegate.deleteConfiguration(id, configurationObj)
-        );
-
-        Assertions.assertTrue(thrown.getMessage().contains("Unexpected error"));
-    }
+    Assertions.assertEquals("Invalid input", thrown.getMessage());
 }
 
+@Test
+public void createNPID_ShouldThrowIllegalStateException() {
+    NPIDObj npidObj = new NPIDObj();
 
+    doThrow(new IllegalStateException("Illegal state"))
+        .when(esignNpidOpsApiService).createNPIDEntry(any());
 
+    IllegalStateException thrown = Assertions.assertThrows(
+        IllegalStateException.class,
+        () -> npidApiDelegate.createNPID(npidObj)
+    );
 
+    Assertions.assertEquals("Illegal state", thrown.getMessage());
+}
 
+@Test
+public void createNPID_ShouldThrowSharedServiceLayerException() {
+    NPIDObj npidObj = new NPIDObj();
 
+    doThrow(new RuntimeException("Unexpected"))
+        .when(esignNpidOpsApiService).createNPIDEntry(any());
 
+    SharedServiceLayerException thrown = Assertions.assertThrows(
+        SharedServiceLayerException.class,
+        () -> npidApiDelegate.createNPID(npidObj)
+    );
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+    Assertions.assertTrue(thrown.getMessage().contains("Unexpected"));
+}
 
-import java.util.NoSuchElementException;
+@Test
+public void deleteNPID_ShouldThrowNoSuchElementException() {
+    String userId = "user123";
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
+    doThrow(new NoSuchElementException("Not found"))
+        .when(esignNpidOpsApiService).deleteNPID(any());
 
-public class ConfigurationApiDelegateImplTest {
+    NoSuchElementException thrown = Assertions.assertThrows(
+        NoSuchElementException.class,
+        () -> npidApiDelegate.deleteNPID(userId)
+    );
 
-    @InjectMocks
-    private ConfigurationApiDelegateImpl configurationApiDelegate;
+    Assertions.assertEquals("Not found", thrown.getMessage());
+}
 
-    @Mock
-    private ConfigurationOpsApiService besigopsApiService;
+@Test
+public void deleteNPID_ShouldThrowIllegalStateException() {
+    String userId = "user123";
 
-    @Mock
-    private BesigopsapiUtil besigopsapiUtil;
+    doThrow(new IllegalStateException("Invalid state"))
+        .when(esignNpidOpsApiService).deleteNPID(any());
 
-    @BeforeEach
-    public void setup() {
-        MockitoAnnotations.openMocks(this);
-    }
+    IllegalStateException thrown = Assertions.assertThrows(
+        IllegalStateException.class,
+        () -> npidApiDelegate.deleteNPID(userId)
+    );
 
-    @Test
-    public void updateConfiguration_ShouldThrowNoSuchElementException() {
-        String id = "config123";
-        ConfigurationObj configObj = new ConfigurationObj();
+    Assertions.assertEquals("Invalid state", thrown.getMessage());
+}
 
-        doThrow(new NoSuchElementException("Config not found"))
-                .when(besigopsApiService).updateConfig(any(), any());
+@Test
+public void deleteNPID_ShouldThrowSharedServiceLayerException() {
+    String userId = "user123";
 
-        NoSuchElementException thrown = Assertions.assertThrows(
-                NoSuchElementException.class,
-                () -> configurationApiDelegate.updateConfiguration(id, configObj)
-        );
+    doThrow(new RuntimeException("Unexpected"))
+        .when(esignNpidOpsApiService).deleteNPID(any());
 
-        Assertions.assertEquals("Config not found", thrown.getMessage());
-    }
+    SharedServiceLayerException thrown = Assertions.assertThrows(
+        SharedServiceLayerException.class,
+        () -> npidApiDelegate.deleteNPID(userId)
+    );
 
-    @Test
-    public void updateConfiguration_ShouldRethrowSharedServiceLayerException() {
-        String id = "config123";
-        ConfigurationObj configObj = new ConfigurationObj();
+    Assertions.assertTrue(thrown.getMessage().contains("Unexpected"));
+}
 
-        doThrow(new SharedServiceLayerException(new Status("500", Severity.Error)))
-                .when(besigopsApiService).updateConfig(any(), any());
+@Test
+public void updateNPID_ShouldThrowNoSuchElementException() {
+    String userId = "user123";
+    NPIDObj npidObj = new NPIDObj();
 
-        SharedServiceLayerException thrown = Assertions.assertThrows(
-                SharedServiceLayerException.class,
-                () -> configurationApiDelegate.updateConfiguration(id, configObj)
-        );
+    doThrow(new NoSuchElementException("Missing entry"))
+        .when(esignNpidOpsApiService).updateNPIDEntry(any(), any());
 
-        Assertions.assertNotNull(thrown);
-    }
+    NoSuchElementException thrown = Assertions.assertThrows(
+        NoSuchElementException.class,
+        () -> npidApiDelegate.updateNPID(userId, npidObj)
+    );
 
-    @Test
-    public void updateConfiguration_ShouldWrapGenericException() {
-        String id = "config123";
-        ConfigurationObj configObj = new ConfigurationObj();
+    Assertions.assertEquals("Missing entry", thrown.getMessage());
+}
 
-        doThrow(new RuntimeException("Unexpected error"))
-                .when(besigopsApiService).updateConfig(any(), any());
+@Test
+public void updateNPID_ShouldThrowSharedServiceLayerException() {
+    String userId = "user123";
+    NPIDObj npidObj = new NPIDObj();
 
-        SharedServiceLayerException thrown = Assertions.assertThrows(
-                SharedServiceLayerException.class,
-                () -> configurationApiDelegate.updateConfiguration(id, configObj)
-        );
+    doThrow(new RuntimeException("Unexpected error"))
+        .when(esignNpidOpsApiService).updateNPIDEntry(any(), any());
 
-        Assertions.assertTrue(thrown.getMessage().contains("Unexpected error"));
-    }
+    SharedServiceLayerException thrown = Assertions.assertThrows(
+        SharedServiceLayerException.class,
+        () -> npidApiDelegate.updateNPID(userId, npidObj)
+    );
+
+    Assertions.assertTrue(thrown.getMessage().contains("Unexpected error"));
 }

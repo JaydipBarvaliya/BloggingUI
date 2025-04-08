@@ -1,15 +1,32 @@
-@Configuration
-public class DelegateConfig {
+@Service
+public class ArchivalApiCompositeDelegate implements ArchivalApiDelegate {
 
-    @Bean
-    public ArchivalApiDelegate archivalApiDelegate(
-            @Qualifier("archivalApiDelegateImpl") ArchivalApiDelegate impl) {
-        return impl; // This one will go to ArchivalApiController
+    private final ArchivalApiDelegateImpl archivalApiDelegate;
+    private final ArchivalApiMetadataDelegateImpl archivalApiMetadataDelegate;
+
+    @Autowired
+    public ArchivalApiCompositeDelegate(
+        ArchivalApiDelegateImpl archivalApiDelegate,
+        ArchivalApiMetadataDelegateImpl archivalApiMetadataDelegate
+    ) {
+        this.archivalApiDelegate = archivalApiDelegate;
+        this.archivalApiMetadataDelegate = archivalApiMetadataDelegate;
     }
 
-    @Bean(name = "archivalApiMetadataDelegate")
-    public ArchivalApiDelegate archivalApiMetadataDelegate(
-            @Qualifier("archivalApiMetadataDelegateImpl") ArchivalApiDelegate impl) {
-        return impl; // This one will go to a different controller
+    @Override
+    public ResponseEntity<SearchArchivalMetadataMapping200Response> searchArchivalMetadataMapping(String mapType) {
+        return archivalApiMetadataDelegate.searchArchivalMetadataMapping(mapType);
     }
+
+    @Override
+    public ResponseEntity<ArchivalMetadataMappingObj> getArchivalMetadataMapping(String id) {
+        return archivalApiMetadataDelegate.getArchivalMetadataMapping(id);
+    }
+
+    @Override
+    public ResponseEntity<List<ArchivalStorageMappingObj>> createArchivalStorageMapping(...) {
+        return archivalApiDelegate.createArchivalStorageMapping(...);
+    }
+
+    // Add any other methods here and forward accordingly
 }

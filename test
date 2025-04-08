@@ -1,105 +1,15 @@
-import com.td.besig.opsapi.util.BesigopsapiUtil;
-import com.td.coreapi.common.security.AccessTokenClaims;
-import com.td.coreapi.common.security.OAuthValidator;
-import com.td.esig.common.util.SharedServiceLayerException;
-import com.td.esig.dal.service.ClientAppConfigurationService;
-import com.td.esig.dal.service.ConfigurationProperties;
-import org.junit.jupiter.api.*;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.springframework.http.HttpHeaders;
-import org.springframework.web.context.request.NativeWebRequest;
+@Configuration
+public class DelegateConfig {
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-public class BesigopsapiUtilTest {
-
-    private BesigopsapiUtil besigopsapiUtil;
-
-    private ClientAppConfigurationService clientAppConfigurationService;
-    private ConfigurationProperties configurationProperties;
-
-    @BeforeEach
-    public void setup() {
-        clientAppConfigurationService = mock(ClientAppConfigurationService.class);
-        configurationProperties = mock(ConfigurationProperties.class);
-
-        besigopsapiUtil = new BesigopsapiUtil();
-        besigopsapiUtil.clientAppConfigurationService = clientAppConfigurationService;
-        besigopsapiUtil.configurationProperties = configurationProperties;
-        besigopsapiUtil.jwtHeader = "Authorization";
-        besigopsapiUtil.basicHeader = "Basic";
+    @Bean
+    public ArchivalApiDelegate archivalApiDelegate(
+            @Qualifier("archivalApiDelegateImpl") ArchivalApiDelegate impl) {
+        return impl; // This one will go to ArchivalApiController
     }
 
-    @Test
-    public void validateTokenAndClientId_shouldPassValidation() throws SharedServiceLayerException {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer dummyToken");
-
-        AccessTokenClaims mockClaims = mock(AccessTokenClaims.class);
-        when(mockClaims.getClientId()).thenReturn("OPS_API_CLIENT_ID");
-
-        try (MockedStatic<OAuthValidator> mocked = Mockito.mockStatic(OAuthValidator.class)) {
-            mocked.when(() -> OAuthValidator.getValidToken("dummyToken")).thenReturn(mockClaims);
-            when(configurationProperties.getConfigProperty("default", "OPS_API_CLIENT_ID")).thenReturn("OPS_API_CLIENT_ID");
-
-            assertDoesNotThrow(() -> besigopsapiUtil.validateTokenAndClientId(headers));
-        }
-    }
-
-    @Test
-    public void validateTokenAndClientId_shouldSkipWhenTokenInvalidFormat() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Invalid token");
-
-        assertDoesNotThrow(() -> besigopsapiUtil.validateTokenAndClientId(headers));
-    }
-
-    @Test
-    public void validateTokenAndClientId_shouldHandleTokenDecodingFailure() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer invalidToken");
-
-        try (MockedStatic<OAuthValidator> mocked = Mockito.mockStatic(OAuthValidator.class)) {
-            mocked.when(() -> OAuthValidator.getValidToken("invalidToken")).thenThrow(new RuntimeException("Decoding failed"));
-            assertDoesNotThrow(() -> besigopsapiUtil.validateTokenAndClientId(headers));
-        }
-    }
-
-    @Test
-    public void validateTokenAndClientId_shouldThrowWhenClientIdMismatch() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer realToken");
-
-        AccessTokenClaims claims = mock(AccessTokenClaims.class);
-        when(claims.getClientId()).thenReturn("WrongClient");
-
-        try (MockedStatic<OAuthValidator> mocked = Mockito.mockStatic(OAuthValidator.class)) {
-            mocked.when(() -> OAuthValidator.getValidToken("realToken")).thenReturn(claims);
-            when(configurationProperties.getConfigProperty("default", "OPS_API_CLIENT_ID")).thenReturn("OPS_API_CLIENT_ID");
-
-            SharedServiceLayerException ex = assertThrows(SharedServiceLayerException.class,
-                    () -> besigopsapiUtil.validateTokenAndClientId(headers));
-            assertTrue(ex.getMessage().contains("ClientId is not Configured"));
-        }
-    }
-
-    @Test
-    public void createBasicHeaders_shouldReturnPopulatedHeaders() {
-        NativeWebRequest request = mock(NativeWebRequest.class);
-        when(request.getHeader("Authorization")).thenReturn("Bearer xyz");
-        when(request.getHeader("Content-Type")).thenReturn("application/json");
-
-        HttpHeaders headers = BesigopsapiUtil.createBasicHeaders(request);
-
-        assertEquals("Bearer xyz", headers.getFirst("Authorization"));
-        assertEquals("application/json", headers.getFirst("Content-Type"));
-    }
-
-    @Test
-    public void createBasicHeaders_shouldHandleNullRequest() {
-        HttpHeaders headers = BesigopsapiUtil.createBasicHeaders(null);
-        assertTrue(headers.isEmpty());
+    @Bean(name = "archivalApiMetadataDelegate")
+    public ArchivalApiDelegate archivalApiMetadataDelegate(
+            @Qualifier("archivalApiMetadataDelegateImpl") ArchivalApiDelegate impl) {
+        return impl; // This one will go to a different controller
     }
 }

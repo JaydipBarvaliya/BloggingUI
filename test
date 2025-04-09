@@ -1,135 +1,76 @@
 package com.td.besig.opsapi.delegate;
 
-import com.td.besig.openapi.api.ArchivalApiDelegate;
+import com.td.besig.openapi.api.ConfigurationApiDelegate;
 import com.td.besig.openapi.model.*;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-@Slf4j
+import java.util.Optional;
+
 @Primary
 @Service
-@AllArgsConstructor
-public class CompositeArchivalApiDelegate implements ArchivalApiDelegate {
+@RequiredArgsConstructor
+public class CompositeConfigurationApiDelegate implements ConfigurationApiDelegate {
 
-    private final ArchivalApiDelegateImpl archivalApiDelegate;
-    private final ArchivalApiMetadataDelegateImpl archivalApiMetadataDelegate;
+    private final ConfigurationApiDelegateImpl configurationApiDelegate;
+    private final PurgeApiConfigDelegateImpl purgeApiConfigDelegate;
 
+    // Configuration endpoints delegation
     @Override
-    public ResponseEntity<List<ArchivalStorageMappingObj>> createArchivalStorageMapping(ArchivalStorageMappingObj obj) {
-        return archivalApiDelegate.createArchivalStorageMapping(obj);
+    public ResponseEntity<ConfigurationObj> createConfiguration(ConfigurationObj configurationObj) {
+        return configurationApiDelegate.createConfiguration(configurationObj);
     }
 
     @Override
-    public ResponseEntity<Void> deleteArchivalStorageMapping(String id, ArchivalStorageMappingObj obj) {
-        return archivalApiDelegate.deleteArchivalStorageMapping(id, obj);
+    public ResponseEntity<Void> deleteConfiguration(String id, ConfigurationObj configurationObj) {
+        return configurationApiDelegate.deleteConfiguration(id, configurationObj);
     }
 
     @Override
-    public ResponseEntity<ArchivalStorageMappingObj> getArchivalStorageMapping(String id) {
-        return archivalApiDelegate.getArchivalStorageMapping(id);
+    public ResponseEntity<ConfigurationObj> getConfiguration(String id) {
+        return configurationApiDelegate.getConfiguration(id);
     }
 
     @Override
-    public ResponseEntity<SearchArchivalStorageMapping200Response> searchArchivalStorageMapping(String lobId, String docType, String storageId) {
-        return archivalApiDelegate.searchArchivalStorageMapping(lobId, docType, storageId);
+    public ResponseEntity<SearchConfiguration200Response> searchConfiguration(String appId, String lobId, String name) {
+        return configurationApiDelegate.searchConfiguration(appId, lobId, name);
     }
 
     @Override
-    public ResponseEntity<Void> updateArchivalStorageMapping(String id, ArchivalStorageMappingObj obj) {
-        return archivalApiDelegate.updateArchivalStorageMapping(id, obj);
+    public ResponseEntity<Void> updateConfiguration(String id, ConfigurationObj configurationObj) {
+        return configurationApiDelegate.updateConfiguration(id, configurationObj);
+    }
+
+    // Purge endpoints delegation
+    @Override
+    public ResponseEntity<List<PurgeConfigurationObj>> createPurgeConfig(PurgeConfigurationObj purgeConfigurationObj) {
+        return purgeApiConfigDelegate.createPurgeConfig(purgeConfigurationObj);
     }
 
     @Override
-    public ResponseEntity<List<ArchivalFileNetConfigObj>> createArchivalFileNetConfig(ArchivalFileNetConfigObj obj) {
-        return archivalApiDelegate.createArchivalFileNetConfig(obj);
+    public ResponseEntity<SearchPurgeConfig200Response> searchPurgeConfig(String purgeTableName) {
+        return purgeApiConfigDelegate.searchPurgeConfig(purgeTableName);
     }
 
     @Override
-    public ResponseEntity<Void> deleteArchivalFileNetConfig(String id, ArchivalFileNetConfigObj obj) {
-        return archivalApiDelegate.deleteArchivalFileNetConfig(id, obj);
+    public ResponseEntity<PurgeConfigurationObj> getPurgeConfig(String id) {
+        return purgeApiConfigDelegate.getPurgeConfig(id);
     }
 
     @Override
-    public ResponseEntity<ArchivalFileNetConfigObj> getArchivalFileNetConfig(String id) {
-        return archivalApiDelegate.getArchivalFileNetConfig(id);
+    public ResponseEntity<Void> updatePurgeConfig(String id, PurgeConfigurationObj purgeConfigurationObj) {
+        return purgeApiConfigDelegate.updatePurgeConfig(id, purgeConfigurationObj);
     }
 
     @Override
-    public ResponseEntity<Void> updateArchivalFileNetConfig(String id, ArchivalFileNetConfigObj obj) {
-        return archivalApiDelegate.updateArchivalFileNetConfig(id, obj);
+    public ResponseEntity<Void> deletePurgeConfig(String id, PurgeConfigurationObj purgeConfigurationObj) {
+        return purgeApiConfigDelegate.deletePurgeConfig(id, purgeConfigurationObj);
     }
 
     @Override
-    public ResponseEntity<SearchArchivalFileNetConfig200Response> searchArchivalFileNetConfig(String lobId) {
-        return archivalApiDelegate.searchArchivalFileNetConfig(lobId);
-    }
-
-    @Override
-    public ResponseEntity<ArchivalStorageConfigObj> createArchivalStorageConfig(String lobId) {
-        return archivalApiDelegate.createArchivalStorageConfig(lobId);
-    }
-
-    @Override
-    public ResponseEntity<Void> deleteArchivalConfig(String id, ArchivalStorageConfigObj obj) {
-        return archivalApiDelegate.deleteArchivalConfig(id, obj);
-    }
-
-    @Override
-    public ResponseEntity<ArchivalStorageConfigObj> searchArchivalStorageConfig(String lobId) {
-        return archivalApiDelegate.searchArchivalStorageConfig(lobId);
-    }
-
-    @Override
-    public ResponseEntity<List<ArchivalStaticMetadataObj>> createArchivalArchivalStaticMetadata(ArchivalStaticMetadataObj obj) {
-        return archivalApiDelegate.createArchivalArchivalStaticMetadata(obj);
-    }
-
-    @Override
-    public ResponseEntity<Void> deleteArchivalStaticMetadata(String id, ArchivalStaticMetadataObj obj) {
-        return archivalApiDelegate.deleteArchivalStaticMetadata(id, obj);
-    }
-
-    @Override
-    public ResponseEntity<ArchivalStaticMetadataObj> getArchivalStaticMetadata(String id) {
-        return archivalApiDelegate.getArchivalStaticMetadata(id);
-    }
-
-    @Override
-    public ResponseEntity<SearchArchivalStaticMetadata200Response> searchArchivalStaticMetadata(String lookupId) {
-        return archivalApiDelegate.searchArchivalStaticMetadata(lookupId);
-    }
-
-    @Override
-    public ResponseEntity<Void> updateArchivalStaticMetadata(String id, ArchivalStaticMetadataObj obj) {
-        return archivalApiDelegate.updateArchivalStaticMetadata(id, obj);
-    }
-
-    // Delegate metadata endpoints
-    @Override
-    public ResponseEntity<List<ArchivalMetadataMappingObj>> createArchivalMetadataMapping(ArchivalMetadataMappingObj obj) {
-        return archivalApiMetadataDelegate.createArchivalMetadataMapping(obj);
-    }
-
-    @Override
-    public ResponseEntity<SearchArchivalMetadataMapping200Response> searchArchivalMetadataMapping(String mapType) {
-        return archivalApiMetadataDelegate.searchArchivalMetadataMapping(mapType);
-    }
-
-    @Override
-    public ResponseEntity<ArchivalMetadataMappingObj> getArchivalMetadataMapping(String id) {
-        return archivalApiMetadataDelegate.getArchivalMetadataMapping(id);
-    }
-
-    @Override
-    public ResponseEntity<Void> updateArchivalMetadataMapping(String id, ArchivalMetadataMappingObj obj) {
-        return archivalApiMetadataDelegate.updateArchivalMetadataMapping(id, obj);
-    }
-
-    @Override
-    public ResponseEntity<Void> deleteArchivalMetadataMapping(String id, ArchivalMetadataMappingObj obj) {
-        return archivalApiMetadataDelegate.deleteArchivalMetadataMapping(id, obj);
+    public Optional<org.springframework.web.context.request.NativeWebRequest> getRequest() {
+        return configurationApiDelegate.getRequest(); // or purgeApiConfigDelegate.getRequest()
     }
 }

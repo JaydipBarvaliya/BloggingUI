@@ -168,3 +168,99 @@ class CompositeArchivalApiDelegateTest {
         assertNotNull(response);
     }
 }
+
+
+
+
+
+package com.td.besig.opsapi.delegate;
+
+import com.td.besig.openapi.model.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.http.ResponseEntity;
+
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+class CompositeConfigurationApiDelegateTest {
+
+    @Mock
+    private ConfigurationApiDelegateImpl configurationapidelegateimpl;
+    @Mock
+    private PurgeApiConfigDelegateImpl purgeapiconfigdelegateimpl;
+
+    @InjectMocks
+    private CompositeConfigurationApiDelegate compositeDelegate;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+    
+    @Test
+    void test_createConfiguration() {
+        when(configurationapidelegateimpl.createConfiguration(any())).thenReturn(ResponseEntity.ok().build());
+        ResponseEntity<?> response = compositeDelegate.createConfiguration(new ConfigurationObj());
+        assertNotNull(response);
+    }
+    @Test
+    void test_deleteConfiguration() {
+        when(configurationapidelegateimpl.deleteConfiguration(any())).thenReturn(ResponseEntity.ok(new ConfigurationObj()));
+        ResponseEntity<?> response = compositeDelegate.deleteConfiguration("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_getConfiguration() {
+        when(configurationapidelegateimpl.getConfiguration(any())).thenReturn(ResponseEntity.ok(new ConfigurationObj()));
+        ResponseEntity<?> response = compositeDelegate.getConfiguration("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_searchConfiguration() {
+        when(configurationapidelegateimpl.searchConfiguration(any())).thenReturn(ResponseEntity.ok(new ConfigurationObj()));
+        ResponseEntity<?> response = compositeDelegate.searchConfiguration("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_updateConfiguration() {
+        when(configurationapidelegateimpl.updateConfiguration(any())).thenReturn(ResponseEntity.ok(new ConfigurationObj()));
+        ResponseEntity<?> response = compositeDelegate.updateConfiguration("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_createPurgeConfig() {
+        when(purgeapiconfigdelegateimpl.createPurgeConfig(any())).thenReturn(ResponseEntity.ok().build());
+        ResponseEntity<?> response = compositeDelegate.createPurgeConfig(new PurgeConfigurationObj());
+        assertNotNull(response);
+    }
+    @Test
+    void test_searchPurgeConfig() {
+        when(purgeapiconfigdelegateimpl.searchPurgeConfig(any())).thenReturn(ResponseEntity.ok(new PurgeConfigurationObj()));
+        ResponseEntity<?> response = compositeDelegate.searchPurgeConfig("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_getPurgeConfig() {
+        when(purgeapiconfigdelegateimpl.getPurgeConfig(any())).thenReturn(ResponseEntity.ok(new PurgeConfigurationObj()));
+        ResponseEntity<?> response = compositeDelegate.getPurgeConfig("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_updatePurgeConfig() {
+        when(purgeapiconfigdelegateimpl.updatePurgeConfig(any())).thenReturn(ResponseEntity.ok(new PurgeConfigurationObj()));
+        ResponseEntity<?> response = compositeDelegate.updatePurgeConfig("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_deletePurgeConfig() {
+        when(purgeapiconfigdelegateimpl.deletePurgeConfig(any())).thenReturn(ResponseEntity.ok(new PurgeConfigurationObj()));
+        ResponseEntity<?> response = compositeDelegate.deletePurgeConfig("test");
+        assertNotNull(response);
+    }
+}
+
+

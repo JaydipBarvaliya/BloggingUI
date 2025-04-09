@@ -1,76 +1,170 @@
+
 package com.td.besig.opsapi.delegate;
 
-import com.td.besig.openapi.api.ConfigurationApiDelegate;
 import com.td.besig.openapi.model.*;
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Primary;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import java.util.Collections;
 
-@Primary
-@Service
-@RequiredArgsConstructor
-public class CompositeConfigurationApiDelegate implements ConfigurationApiDelegate {
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-    private final ConfigurationApiDelegateImpl configurationApiDelegate;
-    private final PurgeApiConfigDelegateImpl purgeApiConfigDelegate;
+class CompositeArchivalApiDelegateTest {
 
-    // Configuration endpoints delegation
-    @Override
-    public ResponseEntity<ConfigurationObj> createConfiguration(ConfigurationObj configurationObj) {
-        return configurationApiDelegate.createConfiguration(configurationObj);
+    @Mock
+    private ArchivalApiDelegateImpl archivalapidelegateimpl;
+    @Mock
+    private ArchivalApiMetadataDelegateImpl archivalapimetadatadelegateimpl;
+
+    @InjectMocks
+    private CompositeArchivalApiDelegate compositeDelegate;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
     }
-
-    @Override
-    public ResponseEntity<Void> deleteConfiguration(String id, ConfigurationObj configurationObj) {
-        return configurationApiDelegate.deleteConfiguration(id, configurationObj);
+    
+    @Test
+    void test_createArchivalStorageMapping() {
+        when(archivalapidelegateimpl.createArchivalStorageMapping(any())).thenReturn(ResponseEntity.ok().build());
+        ResponseEntity<?> response = compositeDelegate.createArchivalStorageMapping(new ArchivalStorageMappingObj());
+        assertNotNull(response);
     }
-
-    @Override
-    public ResponseEntity<ConfigurationObj> getConfiguration(String id) {
-        return configurationApiDelegate.getConfiguration(id);
+    @Test
+    void test_deleteArchivalStorageMapping() {
+        when(archivalapidelegateimpl.deleteArchivalStorageMapping(any())).thenReturn(ResponseEntity.ok(new ArchivalStorageMappingObj()));
+        ResponseEntity<?> response = compositeDelegate.deleteArchivalStorageMapping("test");
+        assertNotNull(response);
     }
-
-    @Override
-    public ResponseEntity<SearchConfiguration200Response> searchConfiguration(String appId, String lobId, String name) {
-        return configurationApiDelegate.searchConfiguration(appId, lobId, name);
+    @Test
+    void test_getArchivalStorageMapping() {
+        when(archivalapidelegateimpl.getArchivalStorageMapping(any())).thenReturn(ResponseEntity.ok(new ArchivalStorageMappingObj()));
+        ResponseEntity<?> response = compositeDelegate.getArchivalStorageMapping("test");
+        assertNotNull(response);
     }
-
-    @Override
-    public ResponseEntity<Void> updateConfiguration(String id, ConfigurationObj configurationObj) {
-        return configurationApiDelegate.updateConfiguration(id, configurationObj);
+    @Test
+    void test_searchArchivalStorageMapping() {
+        when(archivalapidelegateimpl.searchArchivalStorageMapping(any())).thenReturn(ResponseEntity.ok(new ArchivalStorageMappingObj()));
+        ResponseEntity<?> response = compositeDelegate.searchArchivalStorageMapping("test");
+        assertNotNull(response);
     }
-
-    // Purge endpoints delegation
-    @Override
-    public ResponseEntity<List<PurgeConfigurationObj>> createPurgeConfig(PurgeConfigurationObj purgeConfigurationObj) {
-        return purgeApiConfigDelegate.createPurgeConfig(purgeConfigurationObj);
+    @Test
+    void test_updateArchivalStorageMapping() {
+        when(archivalapidelegateimpl.updateArchivalStorageMapping(any())).thenReturn(ResponseEntity.ok(new ArchivalStorageMappingObj()));
+        ResponseEntity<?> response = compositeDelegate.updateArchivalStorageMapping("test");
+        assertNotNull(response);
     }
-
-    @Override
-    public ResponseEntity<SearchPurgeConfig200Response> searchPurgeConfig(String purgeTableName) {
-        return purgeApiConfigDelegate.searchPurgeConfig(purgeTableName);
+    @Test
+    void test_createArchivalFileNetConfig() {
+        when(archivalapidelegateimpl.createArchivalFileNetConfig(any())).thenReturn(ResponseEntity.ok().build());
+        ResponseEntity<?> response = compositeDelegate.createArchivalFileNetConfig(new ArchivalFileNetConfigObj());
+        assertNotNull(response);
     }
-
-    @Override
-    public ResponseEntity<PurgeConfigurationObj> getPurgeConfig(String id) {
-        return purgeApiConfigDelegate.getPurgeConfig(id);
+    @Test
+    void test_deleteArchivalFileNetConfig() {
+        when(archivalapidelegateimpl.deleteArchivalFileNetConfig(any())).thenReturn(ResponseEntity.ok(new ArchivalFileNetConfigObj()));
+        ResponseEntity<?> response = compositeDelegate.deleteArchivalFileNetConfig("test");
+        assertNotNull(response);
     }
-
-    @Override
-    public ResponseEntity<Void> updatePurgeConfig(String id, PurgeConfigurationObj purgeConfigurationObj) {
-        return purgeApiConfigDelegate.updatePurgeConfig(id, purgeConfigurationObj);
+    @Test
+    void test_getArchivalFileNetConfig() {
+        when(archivalapidelegateimpl.getArchivalFileNetConfig(any())).thenReturn(ResponseEntity.ok(new ArchivalFileNetConfigObj()));
+        ResponseEntity<?> response = compositeDelegate.getArchivalFileNetConfig("test");
+        assertNotNull(response);
     }
-
-    @Override
-    public ResponseEntity<Void> deletePurgeConfig(String id, PurgeConfigurationObj purgeConfigurationObj) {
-        return purgeApiConfigDelegate.deletePurgeConfig(id, purgeConfigurationObj);
+    @Test
+    void test_updateArchivalFileNetConfig() {
+        when(archivalapidelegateimpl.updateArchivalFileNetConfig(any())).thenReturn(ResponseEntity.ok(new ArchivalFileNetConfigObj()));
+        ResponseEntity<?> response = compositeDelegate.updateArchivalFileNetConfig("test");
+        assertNotNull(response);
     }
-
-    @Override
-    public Optional<org.springframework.web.context.request.NativeWebRequest> getRequest() {
-        return configurationApiDelegate.getRequest(); // or purgeApiConfigDelegate.getRequest()
+    @Test
+    void test_searchArchivalFileNetConfig() {
+        when(archivalapidelegateimpl.searchArchivalFileNetConfig(any())).thenReturn(ResponseEntity.ok(new ArchivalFileNetConfigObj()));
+        ResponseEntity<?> response = compositeDelegate.searchArchivalFileNetConfig("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_createArchivalStorageConfig() {
+        when(archivalapidelegateimpl.createArchivalStorageConfig(any())).thenReturn(ResponseEntity.ok().build());
+        ResponseEntity<?> response = compositeDelegate.createArchivalStorageConfig(new ArchivalStorageConfigObj());
+        assertNotNull(response);
+    }
+    @Test
+    void test_deleteArchivalConfig() {
+        when(archivalapidelegateimpl.deleteArchivalConfig(any())).thenReturn(ResponseEntity.ok(new ArchivalStorageConfigObj()));
+        ResponseEntity<?> response = compositeDelegate.deleteArchivalConfig("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_searchArchivalStorageConfig() {
+        when(archivalapidelegateimpl.searchArchivalStorageConfig(any())).thenReturn(ResponseEntity.ok(new ArchivalStorageConfigObj()));
+        ResponseEntity<?> response = compositeDelegate.searchArchivalStorageConfig("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_createArchivalArchivalStaticMetadata() {
+        when(archivalapidelegateimpl.createArchivalArchivalStaticMetadata(any())).thenReturn(ResponseEntity.ok().build());
+        ResponseEntity<?> response = compositeDelegate.createArchivalArchivalStaticMetadata(new ArchivalStaticMetadataObj());
+        assertNotNull(response);
+    }
+    @Test
+    void test_deleteArchivalStaticMetadata() {
+        when(archivalapidelegateimpl.deleteArchivalStaticMetadata(any())).thenReturn(ResponseEntity.ok(new ArchivalStaticMetadataObj()));
+        ResponseEntity<?> response = compositeDelegate.deleteArchivalStaticMetadata("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_getArchivalStaticMetadata() {
+        when(archivalapidelegateimpl.getArchivalStaticMetadata(any())).thenReturn(ResponseEntity.ok(new ArchivalStaticMetadataObj()));
+        ResponseEntity<?> response = compositeDelegate.getArchivalStaticMetadata("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_searchArchivalStaticMetadata() {
+        when(archivalapidelegateimpl.searchArchivalStaticMetadata(any())).thenReturn(ResponseEntity.ok(new ArchivalStaticMetadataObj()));
+        ResponseEntity<?> response = compositeDelegate.searchArchivalStaticMetadata("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_updateArchivalStaticMetadata() {
+        when(archivalapidelegateimpl.updateArchivalStaticMetadata(any())).thenReturn(ResponseEntity.ok(new ArchivalStaticMetadataObj()));
+        ResponseEntity<?> response = compositeDelegate.updateArchivalStaticMetadata("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_createArchivalMetadataMapping() {
+        when(archivalapimetadatadelegateimpl.createArchivalMetadataMapping(any())).thenReturn(ResponseEntity.ok().build());
+        ResponseEntity<?> response = compositeDelegate.createArchivalMetadataMapping(new ArchivalMetadataMappingObj());
+        assertNotNull(response);
+    }
+    @Test
+    void test_searchArchivalMetadataMapping() {
+        when(archivalapimetadatadelegateimpl.searchArchivalMetadataMapping(any())).thenReturn(ResponseEntity.ok(new ArchivalMetadataMappingObj()));
+        ResponseEntity<?> response = compositeDelegate.searchArchivalMetadataMapping("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_getArchivalMetadataMapping() {
+        when(archivalapimetadatadelegateimpl.getArchivalMetadataMapping(any())).thenReturn(ResponseEntity.ok(new ArchivalMetadataMappingObj()));
+        ResponseEntity<?> response = compositeDelegate.getArchivalMetadataMapping("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_updateArchivalMetadataMapping() {
+        when(archivalapimetadatadelegateimpl.updateArchivalMetadataMapping(any())).thenReturn(ResponseEntity.ok(new ArchivalMetadataMappingObj()));
+        ResponseEntity<?> response = compositeDelegate.updateArchivalMetadataMapping("test");
+        assertNotNull(response);
+    }
+    @Test
+    void test_deleteArchivalMetadataMapping() {
+        when(archivalapimetadatadelegateimpl.deleteArchivalMetadataMapping(any())).thenReturn(ResponseEntity.ok(new ArchivalMetadataMappingObj()));
+        ResponseEntity<?> response = compositeDelegate.deleteArchivalMetadataMapping("test");
+        assertNotNull(response);
     }
 }

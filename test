@@ -1,27 +1,9 @@
-/**
- * Composite implementation of {@link ArchivalApiDelegate} that delegates API calls
- * to both {@link ArchivalApiDelegateImpl} and {@link ArchivalApiMetadataDelegateImpl}.
- *
- * <p>This class is used to resolve the OpenAPI code generation limitation where
- * multiple implementations of the same delegate interface (e.g., ArchivalApiDelegate)
- * cause ambiguity or method override conflicts.</p>
- *
- * <p>All archival-related endpoints are handled by {@code ArchivalApiDelegateImpl}, while
- * metadata-specific endpoints are handled by {@code ArchivalApiMetadataDelegateImpl}.</p>
- *
- * <p>This composite class is marked as {@code @Primary} to ensure Spring uses it as the main delegate bean.</p>
- */
+@Test
+public void test_deleteConfiguration() {
+    ConfigurationObj configObj = new ConfigurationObj();
+    Mockito.when(configurationApiDelegateImpl.deleteConfiguration(Mockito.anyString(), Mockito.any(ConfigurationObj.class)))
+           .thenReturn(ResponseEntity.ok().build());
 
-
-/**
- * Composite implementation of {@link ConfigurationApiDelegate} that delegates API calls
- * to both {@link ConfigurationApiDelegateImpl} and {@link PurgeApiConfigDelegateImpl}.
- *
- * <p>This class is used to work around the limitation of OpenAPI generator when two
- * separate implementations exist for the same delegate interface.</p>
- *
- * <p>General configuration-related endpoints are handled by {@code ConfigurationApiDelegateImpl},
- * while purge-specific configuration endpoints are handled by {@code PurgeApiConfigDelegateImpl}.</p>
- *
- * <p>Declared as {@code @Primary} to avoid ambiguity during Spring bean injection.</p>
- */
+    ResponseEntity<?> response = compositeDelegate.deleteConfiguration("testId", configObj);
+    Assertions.assertNotNull(response);
+}

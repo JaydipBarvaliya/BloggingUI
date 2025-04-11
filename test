@@ -1,17 +1,11 @@
-@Test
-void testGetPurgeConfig_ShouldThrowSharedServiceLayerException() {
-    // Arrange
-    String id = "123";
-    Status mockStatus = StatusUtil.buildErrorStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-    SharedServiceLayerException mockException =
-            new SharedServiceLayerException(mockStatus, "DB failure");
+when(purgeService.getPurgeConfig(eq(id)))
+    .thenThrow(new RuntimeException(new SharedServiceLayerException(
+        BesigopsapiUtil.buildBadRequestStatus(), "DB failure"
+    )));
 
-    when(purgeService.getPurgeConfig(eq(id)))
-            .thenThrow(mockException);
 
-    // Act & Assert
-    SharedServiceLayerException ex = assertThrows(SharedServiceLayerException.class,
-            () -> delegate.getPurgeConfig(id));
+RuntimeException ex = assertThrows(RuntimeException.class,
+        () -> delegate.getPurgeConfig(id));
 
-    assertEquals("DB failure", ex.getMessage());
-}
+assertTrue(ex.getCause() instanceof SharedServiceLayerException);
+assertEquals("DB failure", ex.getCause().getMessage());

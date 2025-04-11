@@ -1,17 +1,18 @@
 @Test
-void test_updateConfig_shouldThrowSharedServiceLayerException_whenIdNotFound() {
-    // Given
-    String id = "123";
-    ArchivalStorageMappingObj mockInput = new ArchivalStorageMappingObj();
+void test_createArchivalFileNetConfig_success() throws Exception {
+    ArchivalFileNetConfigObj input = new ArchivalFileNetConfigObj();
+    ArchFileNetConfigDto dto = new ArchFileNetConfigDto();
+    ArchFileNetConfig entity = new ArchFileNetConfig();
 
-    // Mock repo.findById to return empty
-    when(repo.findById(Long.valueOf(id))).thenReturn(Optional.empty());
+    // mock mapper and repo
+    ArchivalFilenetConfigService spyService = Mockito.spy(archivalFilenetConfigService);
+    doReturn(dto).when(spyService).configToDto(input);
+    doReturn(entity).when(spyService).dtoToEntity(dto);
+    when(filenetConfigRepository.saveAndFlush(entity)).thenReturn(entity);
+    doReturn(input).when(spyService).entityToDto(entity);
 
-    // When / Then
-    SharedServiceLayerException exception = assertThrows(
-        SharedServiceLayerException.class,
-        () -> archApiService.updateConfig(id, mockInput)
-    );
+    ArchivalFileNetConfigObj result = spyService.createArchivalFileNetConfig(input);
 
-    assertTrue(exception.getMessage().contains("Storage Mapping data not found for ID"));
+    assertNotNull(result);
+    assertEquals(input, result);
 }

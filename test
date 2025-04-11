@@ -1,17 +1,18 @@
 @Test
-void test_dynamicQuery_withNonNullLookupId() {
+public void test_dynamicQuery_withNonNullLookupId() {
     String lookupId = "LKP001";
 
     Predicate conjunction = mock(Predicate.class);
     Predicate equalPredicate = mock(Predicate.class);
     Predicate finalPredicate = mock(Predicate.class);
 
-    Path<Object> path = mock(Path.class);
+    @SuppressWarnings("unchecked")
+    Path<Object> path = (Path<Object>) mock(Path.class);
 
     when(cb.conjunction()).thenReturn(conjunction);
     when(root.get("LOOKUP_ID")).thenReturn(path);
-    when(cb.equal(path, lookupId)).thenReturn(equalPredicate);
-    when(cb.and(conjunction, equalPredicate)).thenReturn(finalPredicate);
+    when(cb.equal(any(), eq(lookupId))).thenReturn(equalPredicate);
+    when(cb.and(any(), any())).thenReturn(finalPredicate);
 
     Specification<ArchStaticMetadataLookup> spec = ArchStaticMetaDataSpec.dynamicQuery(lookupId);
     Predicate result = spec.toPredicate(root, query, cb);

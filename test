@@ -1,16 +1,17 @@
-public class StatusUtil {
+@Test
+void testGetPurgeConfig_ShouldThrowSharedServiceLayerException() {
+    // Arrange
+    String id = "123";
+    Status mockStatus = StatusUtil.buildErrorStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+    SharedServiceLayerException mockException =
+            new SharedServiceLayerException(mockStatus, "DB failure");
 
-    private StatusUtil() {
-        // Private constructor to prevent instantiation
-    }
+    when(purgeService.getPurgeConfig(eq(id)))
+            .thenThrow(mockException);
 
-    public static Status buildErrorStatus(HttpStatus httpStatus) {
-        return new Status(String.valueOf(httpStatus.value()), Severity.Error);
-    }
+    // Act & Assert
+    SharedServiceLayerException ex = assertThrows(SharedServiceLayerException.class,
+            () -> delegate.getPurgeConfig(id));
 
-    public static Status buildWarningStatus(HttpStatus httpStatus) {
-        return new Status(String.valueOf(httpStatus.value()), Severity.Warning);
-    }
-
-    // You can add more variations if needed
+    assertEquals("DB failure", ex.getMessage());
 }

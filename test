@@ -1,15 +1,21 @@
 @Test
-void test_updateConfig_shouldThrowExceptionWhenConfigNotFound() {
-    String id = "999";
-    ArchivalFileNetConfigObj input = new ArchivalFileNetConfigObj();
+void test_getArchivalFileNetConfigList_shouldMapEntityToDto() {
+    String lobId = "LOB123";
 
-    when(filenetConfigRepository.findById(Long.valueOf(id)))
-        .thenReturn(Optional.empty());
+    ArchFileNetConfig mockEntity = new ArchFileNetConfig();
+    ArchivalFileNetConfigObj mappedDto = new ArchivalFileNetConfigObj();
 
-    SharedServiceLayerException exception = assertThrows(
-        SharedServiceLayerException.class,
-        () -> service.updateConfig(id, input)
-    );
+    // Mock repository return
+    when(filenetConfigRepository.findAll(any())).thenReturn(List.of(mockEntity));
 
-    assertTrue(exception.getMessage().contains("Configuration data not found to update"));
+    // Spy the service to mock entityToDto
+    ArchivalFilenetConfigService spyService = Mockito.spy(service);
+    doReturn(mappedDto).when(spyService).entityToDto(mockEntity);
+
+    // Call the method
+    List<ArchivalFileNetConfigObj> result = spyService.getArchivalFileNetConfigList(lobId);
+
+    // Assertions
+    assertEquals(1, result.size());
+    assertSame(mappedDto, result.get(0));
 }

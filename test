@@ -1,24 +1,55 @@
-@Test
-void test_deleteConfig_shouldThrowException_whenConfigMismatch() {
-    // Arrange
-    String id = "101";
+@ExtendWith(MockitoExtension.class)
+class ArchStaticMetaDataSpecTest {
 
-    // Simulate real config from DB
-    Configuration configFromDB = new Configuration();
-    configFromDB.setId(1L);  // db value
+    @Mock
+    private Root<ArchStaticMetadataLookup> root;
 
-    // Simulate request payload
-    ConfigurationObj input = new ConfigurationObj();
-    input.setId(999L); // Different value to trigger mismatch
+    @Mock
+    private CriteriaQuery<?> query;
 
-    // Mock repo call
-    when(configurationService.findByConfigId(Long.valueOf(id))).thenReturn(configFromDB);
+    @Mock
+    private CriteriaBuilder cb;
 
-    // Act + Assert
-    SharedServiceLayerException ex = assertThrows(
-        SharedServiceLayerException.class,
-        () -> configurationOpsApiService.deleteConfig(id, input)
-    );
+    @Mock
+    private Predicate predicate;
 
-    assertTrue(ex.getMessage().contains("Unable to delete config as its not present in DB"));
+    @Mock
+    private Path<String> path;
+
+    @Test
+    void test_dynamicQuery_withNullLookupId() {
+        // Arrange
+        when(cb.conjunction()).thenReturn(predicate);
+
+        // Act
+        Specification<ArchStaticMetadataLookup> spec = ArchStaticMetaDataSpec.dynamicQuery(null);
+        Predicate result = spec.toPredicate(root, query, cb);
+
+        // Assert
+        assertEquals(predicate, result); // only the conjunction is returned
+        verify(cb).conjunction();
+        verifyNoMoreInteractions(cb); // ensure 'equal' is not called
+    }
+
+    @Test
+    void test_dynamicQuery_withNonNullLookupId() {
+        String lookupId = "LKP001";
+
+        Predicate conjunction = mock(Predicate.class);
+        Predicate equalPredicate = mock(Predicate.class);
+        Predicate finalPredicate = mock(Predicate.class);
+
+        // Arrange
+        when(cb.conjunction()).thenReturn(conjunction);
+        when(root.get("LOOKUP_ID")).thenReturn(path);
+        when(cb.equal(path, lookupId)).thenReturn(equalPredicate);
+        when(cb.and(conjunction, equalPredicate)).thenReturn(finalPredicate);
+
+        // Act
+        Specification<ArchStaticMetadataLookup> spec = ArchStaticMetaDataSpec.dynamicQuery(lookupId);
+        Predicate result = spec.toPredicate(root, query, cb);
+
+        // Assert
+        assertEquals(finalPredicate, result);
+    }
 }

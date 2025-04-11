@@ -1,30 +1,16 @@
-@ExtendWith(MockitoExtension.class)
-class PurgeApiConfigServiceTest {
+public class StatusUtil {
 
-    @InjectMocks
-    private PurgeApiConfigService purgeApiConfigService;
-
-    @Mock
-    private SsPurgeRepo purgeRepo;
-
-    @Test
-    void createConfiguration_shouldThrowSharedServiceLayerException_whenSaveFails() {
-        // Given
-        PurgeConfigurationObj mockInput = new PurgeConfigurationObj();
-        SsPurgeConfigurationDto mockDto = new SsPurgeConfigurationDto();
-
-        // Map configToDto
-        when(PurgeConfigDtoToMapper.MAPPER.configToDto(mockInput)).thenReturn(mockDto);
-
-        // Simulate exception in saveAndFlush
-        when(purgeRepo.saveAndFlush(any())).thenThrow(new RuntimeException("DB failure"));
-
-        // When & Then
-        SharedServiceLayerException thrown = assertThrows(
-                SharedServiceLayerException.class,
-                () -> purgeApiConfigService.createConfiguration(mockInput)
-        );
-
-        assertTrue(thrown.getMessage().contains("Failed to create purge configuration"));
+    private StatusUtil() {
+        // Private constructor to prevent instantiation
     }
+
+    public static Status buildErrorStatus(HttpStatus httpStatus) {
+        return new Status(String.valueOf(httpStatus.value()), Severity.Error);
+    }
+
+    public static Status buildWarningStatus(HttpStatus httpStatus) {
+        return new Status(String.valueOf(httpStatus.value()), Severity.Warning);
+    }
+
+    // You can add more variations if needed
 }

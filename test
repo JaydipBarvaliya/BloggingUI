@@ -6,8 +6,7 @@ void test_dynamicQuery_withNonNullLookupId() {
     Predicate equalPredicate = mock(Predicate.class);
     Predicate finalPredicate = mock(Predicate.class);
 
-    // Use wildcard Path to avoid generic mismatch
-    Path<?> path = mock(Path.class);
+    Path<Object> path = mock(Path.class);
 
     when(cb.conjunction()).thenReturn(conjunction);
     when(root.get("LOOKUP_ID")).thenReturn(path);
@@ -17,5 +16,5 @@ void test_dynamicQuery_withNonNullLookupId() {
     Specification<ArchStaticMetadataLookup> spec = ArchStaticMetaDataSpec.dynamicQuery(lookupId);
     Predicate result = spec.toPredicate(root, query, cb);
 
-    assertEquals(finalPredicate, result);
+    assertSame(finalPredicate, result);
 }

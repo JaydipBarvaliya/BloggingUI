@@ -1,22 +1,15 @@
 @Test
-void test_createArchivalFileNetConfig_shouldThrowSharedServiceLayerException() {
+void test_updateConfig_shouldThrowExceptionWhenConfigNotFound() {
+    String id = "999";
     ArchivalFileNetConfigObj input = new ArchivalFileNetConfigObj();
-    ArchFileNetConfigDto dto = new ArchFileNetConfigDto();
 
-    // Spy the service class
-    ArchivalFilenetConfigService spyService = Mockito.spy(new ArchivalFilenetConfigService(filenetConfigRepository));
+    when(filenetConfigRepository.findById(Long.valueOf(id)))
+        .thenReturn(Optional.empty());
 
-    // Stub only the mapper method that will be called
-    doReturn(dto).when(spyService).configToDto(input);
-
-    // Throw exception during save
-    when(filenetConfigRepository.saveAndFlush(any())).thenThrow(new RuntimeException("DB error"));
-
-    // When / Then
-    SharedServiceLayerException ex = assertThrows(
+    SharedServiceLayerException exception = assertThrows(
         SharedServiceLayerException.class,
-        () -> spyService.createArchivalFileNetConfig(input)
+        () -> service.updateConfig(id, input)
     );
 
-    assertTrue(ex.getMessage().contains("Failed to create archival filenet config"));
+    assertTrue(exception.getMessage().contains("Configuration data not found to update"));
 }

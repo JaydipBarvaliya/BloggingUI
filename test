@@ -1,21 +1,17 @@
 @Test
-void test_createArchivalStorageConfig_shouldThrowSharedServiceLayerException() {
+void test_deleteArchivalConfig_shouldThrowWhenEntityNotFound() {
     // Arrange
-    String lobId = "LOB123";
-    ArchLobStorageMappingService spyService = Mockito.spy(new ArchLobStorageMappingService(repo));
+    String id = "123";
+    ArchivalStorageConfigObj dummyInput = new ArchivalStorageConfigObj();
 
-    // Stub dtoToEntity to avoid null
-    ArchLobStorageConfig dummyEntity = new ArchLobStorageConfig();
-    doReturn(dummyEntity).when(spyService).dtoToEntity(any());
+    // Mock repo.findById to return empty
+    when(repo.findById(Long.valueOf(id))).thenReturn(Optional.empty());
 
-    // Throw exception during save
-    when(repo.saveAndFlush(any())).thenThrow(new RuntimeException("DB error"));
-
-    // Act + Assert
-    SharedServiceLayerException exception = assertThrows(
+    // Act & Assert
+    SharedServiceLayerException ex = assertThrows(
         SharedServiceLayerException.class,
-        () -> spyService.createArchivalStorageConfig(lobId)
+        () -> archLobStorageMappingService.deleteArchivalConfig(id, dummyInput)
     );
 
-    assertTrue(exception.getMessage().contains("Failed to create archival storage config"));
+    assertTrue(ex.getMessage().contains("Data not available to delete for ID"));
 }

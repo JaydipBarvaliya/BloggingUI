@@ -1,11 +1,30 @@
-when(purgeService.getPurgeConfig(eq(id)))
-    .thenThrow(new RuntimeException(new SharedServiceLayerException(
-        BesigopsapiUtil.buildBadRequestStatus(), "DB failure"
-    )));
+@ExtendWith(MockitoExtension.class)
+class ArchivalApiServiceTest {
 
+    @Mock
+    private ArchivalStorageMappingRepository repo;
 
-RuntimeException ex = assertThrows(RuntimeException.class,
-        () -> delegate.getPurgeConfig(id));
+    @InjectMocks
+    private ArchivalApiService archivalApiService;
 
-assertTrue(ex.getCause() instanceof SharedServiceLayerException);
-assertEquals("DB failure", ex.getCause().getMessage());
+    @Test
+    void test_createArchivalStorageMapping_shouldThrowSharedServiceLayerException() {
+        // Given
+        ArchivalStorageMappingObj mockInput = new ArchivalStorageMappingObj();
+        ArchStorageMapping dto = new ArchStorageMapping(); // Assuming this is the entity class
+        RuntimeException simulatedException = new RuntimeException("DB Error");
+
+        // Mock mapper conversion if necessary
+        ArchStorageObjToDtoMapper.MAPPER = mock(ArchStorageObjToDtoMapper.class);
+        when(ArchStorageObjToDtoMapper.MAPPER.toDto(mockInput)).thenReturn(dto);
+        when(repo.saveAndFlush(any())).thenThrow(simulatedException);
+
+        // When / Then
+        SharedServiceLayerException thrown = assertThrows(
+                SharedServiceLayerException.class,
+                () -> archivalApiService.createArchivalStorageMapping(mockInput)
+        );
+
+        assertTrue(thrown.getMessage().contains("Failed to create archival storage mapping"));
+    }
+}

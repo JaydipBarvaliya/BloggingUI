@@ -5,17 +5,17 @@ void test_getArchivalFileNetConfigList_shouldMapEntityToDto() {
     ArchFileNetConfig mockEntity = new ArchFileNetConfig();
     ArchivalFileNetConfigObj mappedDto = new ArchivalFileNetConfigObj();
 
-    // Mock repository return
-    when(filenetConfigRepository.findAll(any())).thenReturn(List.of(mockEntity));
+    // Create a spy of the service
+    ArchivalFilenetConfigService spyService = Mockito.spy(new ArchivalFilenetConfigService(repo));
 
-    // Spy the service to mock entityToDto
-    ArchivalFilenetConfigService spyService = Mockito.spy(service);
+    // Stub repository and entityToDto on the same spy
+    when(repo.findAll(any())).thenReturn(List.of(mockEntity));
     doReturn(mappedDto).when(spyService).entityToDto(mockEntity);
 
-    // Call the method
+    // Act
     List<ArchivalFileNetConfigObj> result = spyService.getArchivalFileNetConfigList(lobId);
 
-    // Assertions
+    // Assert
     assertEquals(1, result.size());
     assertSame(mappedDto, result.get(0));
 }

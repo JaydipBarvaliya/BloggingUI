@@ -1,24 +1,19 @@
 @Test
-void test_createConfig_shouldThrowSharedServiceLayerException_onFailure() {
+void test_getConfigData_shouldThrowSharedServiceLayerException_whenServiceFails() {
     // Arrange
-    ConfigurationObj inputObj = new ConfigurationObj();
-    ConfigurationDto dto = new ConfigurationDto();
-
-    // Create the service with a mocked dependency
+    String id = "123";
     ConfigurationService mockService = mock(ConfigurationService.class);
     ConfigurationOpsApiService service = new ConfigurationOpsApiService(mockService);
 
-    // Mock static mapper behavior if needed, or ensure dto is fine
-    // Skip mocking MAPPER here if you just want to hit the exception via configService
-
-    // Simulate exception when configService.createConfiguration() is called
-    when(mockService.createConfiguration(any())).thenThrow(new RuntimeException("DB failure"));
+    // Simulate exception when fetching config
+    when(mockService.findByConfigId(Long.valueOf(id)))
+        .thenThrow(new RuntimeException("DB Failure"));
 
     // Act & Assert
     SharedServiceLayerException exception = assertThrows(
         SharedServiceLayerException.class,
-        () -> service.createConfig(inputObj)
+        () -> service.getConfigData(id)
     );
 
-    assertTrue(exception.getMessage().contains("Failed to create configuration"));
+    assertTrue(exception.getMessage().contains("DB Failure"));
 }

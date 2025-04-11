@@ -1,17 +1,24 @@
 @Test
-void test_deleteArchivalConfig_shouldThrowWhenEntityNotFound() {
+void test_createConfig_shouldThrowSharedServiceLayerException_onFailure() {
     // Arrange
-    String id = "123";
-    ArchivalStorageConfigObj dummyInput = new ArchivalStorageConfigObj();
+    ConfigurationObj inputObj = new ConfigurationObj();
+    ConfigurationDto dto = new ConfigurationDto();
 
-    // Mock repo.findById to return empty
-    when(repo.findById(Long.valueOf(id))).thenReturn(Optional.empty());
+    // Create the service with a mocked dependency
+    ConfigurationService mockService = mock(ConfigurationService.class);
+    ConfigurationOpsApiService service = new ConfigurationOpsApiService(mockService);
+
+    // Mock static mapper behavior if needed, or ensure dto is fine
+    // Skip mocking MAPPER here if you just want to hit the exception via configService
+
+    // Simulate exception when configService.createConfiguration() is called
+    when(mockService.createConfiguration(any())).thenThrow(new RuntimeException("DB failure"));
 
     // Act & Assert
-    SharedServiceLayerException ex = assertThrows(
+    SharedServiceLayerException exception = assertThrows(
         SharedServiceLayerException.class,
-        () -> archLobStorageMappingService.deleteArchivalConfig(id, dummyInput)
+        () -> service.createConfig(inputObj)
     );
 
-    assertTrue(ex.getMessage().contains("Data not available to delete for ID"));
+    assertTrue(exception.getMessage().contains("Failed to create configuration"));
 }

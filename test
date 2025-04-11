@@ -1,36 +1,17 @@
-@ExtendWith(MockitoExtension.class)
-class ArchivalApiServiceTest {
+@Test
+void test_updateConfig_shouldThrowSharedServiceLayerException_whenIdNotFound() {
+    // Given
+    String id = "123";
+    ArchivalStorageMappingObj mockInput = new ArchivalStorageMappingObj();
 
-    @Mock
-    private ArchivalStorageMappingRepository repo;
+    // Mock repo.findById to return empty
+    when(repo.findById(Long.valueOf(id))).thenReturn(Optional.empty());
 
-    @InjectMocks
-    private ArchivalApiService archApiService;
+    // When / Then
+    SharedServiceLayerException exception = assertThrows(
+        SharedServiceLayerException.class,
+        () -> archApiService.updateConfig(id, mockInput)
+    );
 
-    @Test
-    void test_getArchivalStorageMappingList_shouldReturnMappedList() {
-        // Given
-        String lobId = "LOB123";
-        String docType = "FILE";
-        String storageId = "STO456";
-
-        ArchStorageMapping mapping = new ArchStorageMapping();
-        List<ArchStorageMapping> mappings = Collections.singletonList(mapping);
-
-        when(repo.findAll(any(Specification.class))).thenReturn(mappings);
-
-        // Optional: Mock entityToDto() if it's internal and needs isolation
-        ArchivalApiService spyService = Mockito.spy(archApiService);
-        ArchivalStorageMappingObj mockDto = new ArchivalStorageMappingObj();
-
-        doReturn(mockDto).when(spyService).entityToDto(mapping);
-
-        // When
-        List<ArchivalStorageMappingObj> result = spyService.getArchivalStorageMappingList(lobId, docType, storageId);
-
-        // Then
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertSame(mockDto, result.get(0));
-    }
+    assertTrue(exception.getMessage().contains("Storage Mapping data not found for ID"));
 }

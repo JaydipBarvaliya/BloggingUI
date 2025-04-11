@@ -1,9 +1,30 @@
-@Test
-public void test_deleteConfiguration() {
-    ConfigurationObj configObj = new ConfigurationObj();
-    Mockito.when(configurationApiDelegateImpl.deleteConfiguration(Mockito.anyString(), Mockito.any(ConfigurationObj.class)))
-           .thenReturn(ResponseEntity.ok().build());
+@ExtendWith(MockitoExtension.class)
+class PurgeApiConfigServiceTest {
 
-    ResponseEntity<?> response = compositeDelegate.deleteConfiguration("testId", configObj);
-    Assertions.assertNotNull(response);
+    @InjectMocks
+    private PurgeApiConfigService purgeApiConfigService;
+
+    @Mock
+    private SsPurgeRepo purgeRepo;
+
+    @Test
+    void createConfiguration_shouldThrowSharedServiceLayerException_whenSaveFails() {
+        // Given
+        PurgeConfigurationObj mockInput = new PurgeConfigurationObj();
+        SsPurgeConfigurationDto mockDto = new SsPurgeConfigurationDto();
+
+        // Map configToDto
+        when(PurgeConfigDtoToMapper.MAPPER.configToDto(mockInput)).thenReturn(mockDto);
+
+        // Simulate exception in saveAndFlush
+        when(purgeRepo.saveAndFlush(any())).thenThrow(new RuntimeException("DB failure"));
+
+        // When & Then
+        SharedServiceLayerException thrown = assertThrows(
+                SharedServiceLayerException.class,
+                () -> purgeApiConfigService.createConfiguration(mockInput)
+        );
+
+        assertTrue(thrown.getMessage().contains("Failed to create purge configuration"));
+    }
 }

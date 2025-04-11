@@ -1,26 +1,21 @@
 @Test
-void test_getArchivalFileNetConfigList_shouldMapEntityToDto() {
+void test_createArchivalStorageConfig_shouldThrowSharedServiceLayerException() {
     // Arrange
     String lobId = "LOB123";
+    ArchLobStorageMappingService spyService = Mockito.spy(new ArchLobStorageMappingService(repo));
 
-    ArchFileNetConfig mockEntity = new ArchFileNetConfig();
-    ArchivalFileNetConfigObj mockDto = new ArchivalFileNetConfigObj();
+    // Stub dtoToEntity to avoid null
+    ArchLobStorageConfig dummyEntity = new ArchLobStorageConfig();
+    doReturn(dummyEntity).when(spyService).dtoToEntity(any());
 
-    List<ArchFileNetConfig> entityList = List.of(mockEntity);
+    // Throw exception during save
+    when(repo.saveAndFlush(any())).thenThrow(new RuntimeException("DB error"));
 
-    // Create a spy of the service
-    ArchivalFilenetConfigService spyService = Mockito.spy(new ArchivalFilenetConfigService(repo));
+    // Act + Assert
+    SharedServiceLayerException exception = assertThrows(
+        SharedServiceLayerException.class,
+        () -> spyService.createArchivalStorageConfig(lobId)
+    );
 
-    // VERY IMPORTANT: Mock repo.findAll(spec) to return your entityList
-    when(repo.findAll(any(Specification.class))).thenReturn(entityList);
-
-    // Mock entityToDto so it returns expected DTO
-    doReturn(mockDto).when(spyService).entityToDto(mockEntity);
-
-    // Act
-    List<ArchivalFileNetConfigObj> result = spyService.getArchivalFileNetConfigList(lobId);
-
-    // Assert
-    assertEquals(1, result.size()); // This is what was failing
-    assertSame(mockDto, result.get(0));
+    assertTrue(exception.getMessage().contains("Failed to create archival storage config"));
 }

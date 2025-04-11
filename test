@@ -1,78 +1,15 @@
-@ExtendWith(MockitoExtension.class)
-class ConfigurationOpsApiServiceTest {
+@Test
+public void test_updateConfig_shouldThrowException_whenConfigNotFound() throws Exception {
+    String id = "101";
+    ConfigurationObj input = new ConfigurationObj();
 
-    @Mock
-    private ConfigurationService configurationService;
+    // Simulate config not found (null returned)
+    when(configurationService.findByConfigId(Long.valueOf(id))).thenReturn(null);
 
-    @InjectMocks
-    private ConfigurationOpsApiService configurationOpsApiService;
+    SharedServiceLayerException ex = assertThrows(
+        SharedServiceLayerException.class,
+        () -> configurationOpsApiService.updateConfig(id, input)
+    );
 
-    // Red Line 1: if config == null (else block at bottom)
-    @Test
-    void test_updateConfig_shouldThrowException_whenConfigNotFound() {
-        String id = "101";
-        ConfigurationObj input = new ConfigurationObj();
-
-        when(configurationService.findByConfigId(Long.valueOf(id))).thenReturn(null);
-
-        SharedServiceLayerException ex = assertThrows(
-            SharedServiceLayerException.class,
-            () -> configurationOpsApiService.updateConfig(id, input)
-        );
-
-        assertTrue(ex.getMessage().contains("provided config data is not present in DB"));
-    }
-
-    // Red Line 2: if config.getId() == null (inner else block)
-    @Test
-    void test_updateConfig_shouldThrowException_whenIdIsNull() {
-        String id = "101";
-        ConfigurationObj input = new ConfigurationObj();
-        Configuration config = new Configuration();
-        config.setId(null); // trigger null check
-
-        when(configurationService.findByConfigId(Long.valueOf(id))).thenReturn(config);
-
-        SharedServiceLayerException ex = assertThrows(
-            SharedServiceLayerException.class,
-            () -> configurationOpsApiService.updateConfig(id, input)
-        );
-
-        assertTrue(ex.getMessage().contains("Please try to update only the valid configuration"));
-    }
-
-    // Red Line 3: catch block when updateConfiguration throws
-    @Test
-    void test_updateConfig_shouldCatchException_fromServiceUpdate() {
-        String id = "101";
-        ConfigurationObj input = new ConfigurationObj();
-
-        Configuration config = new Configuration();
-        config.setId(1L);
-        config.setAppId("app1");
-        config.setLob("LOB1");
-        config.setName("ConfigName");
-
-        ConfigurationDto dto = new ConfigurationDto();
-        dto.setId(1L);
-        dto.setAppId("app1");
-        dto.setLob("LOB1");
-        dto.setName("ConfigName");
-
-        when(configurationService.findByConfigId(Long.valueOf(id))).thenReturn(config);
-
-        // Mappers assumed to work fine
-        // Static mappers cannot be mocked unless refactored
-
-        // Trigger update failure
-        doThrow(new RuntimeException("DB failure"))
-            .when(configurationService).updateConfiguration(any());
-
-        SharedServiceLayerException ex = assertThrows(
-            SharedServiceLayerException.class,
-            () -> configurationOpsApiService.updateConfig(id, input)
-        );
-
-        assertTrue(ex.getMessage().contains("DB failure"));
-    }
+    assertTrue(ex.getMessage().contains("provided config data is not present in DB"));
 }

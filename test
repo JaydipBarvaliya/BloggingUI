@@ -3,30 +3,22 @@ void test_deleteConfig_shouldThrowException_whenConfigMismatch() {
     // Arrange
     String id = "101";
 
-    // DB object returned by service
+    // Simulate real config from DB
     Configuration configFromDB = new Configuration();
-    configFromDB.setId(1L);  // db ID
+    configFromDB.setId(1L);  // db value
 
-    // Input object to delete (intentionally mismatched)
+    // Simulate request payload
     ConfigurationObj input = new ConfigurationObj();
-    input.setId(2L);  // different ID -> mismatch
+    input.setId(999L); // Different value to trigger mismatch
 
-    // Expected mapped result from mapper (simulate it manually)
-    ConfigurationObj mapped = new ConfigurationObj();
-    mapped.setId(1L);  // same as DB to match DAL behavior
-
-    // Mock configurationService call only
+    // Mock repo call
     when(configurationService.findByConfigId(Long.valueOf(id))).thenReturn(configFromDB);
 
-    // Spy the service to override the static mapper call if needed
-    ConfigurationOpsApiService spyService = Mockito.spy(configurationOpsApiService);
-    doReturn(mapped).when(spyService).mapConfigToOpenAPI(configFromDB); // create this wrapper method if needed
-
-    // Act & Assert
+    // Act + Assert
     SharedServiceLayerException ex = assertThrows(
         SharedServiceLayerException.class,
-        () -> spyService.deleteConfig(id, input)
+        () -> configurationOpsApiService.deleteConfig(id, input)
     );
 
-    assertTrue(ex.getMessage().contains("Unable to delete config"));
+    assertTrue(ex.getMessage().contains("Unable to delete config as its not present in DB"));
 }

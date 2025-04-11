@@ -1,15 +1,25 @@
 @Test
-public void test_updateConfig_shouldThrowException_whenConfigNotFound() throws Exception {
+void test_deleteConfig_shouldThrowException_whenConfigMismatch() {
+    // Arrange
     String id = "101";
+    Configuration configFromDB = new Configuration(); // fetched from service
+    configFromDB.setId(1L);
+
     ConfigurationObj input = new ConfigurationObj();
+    input.setId(2L); // mismatch so compare(...) != 0
 
-    // Simulate config not found (null returned)
-    when(configurationService.findByConfigId(Long.valueOf(id))).thenReturn(null);
+    // Mock behavior
+    when(configurationService.findByConfigId(Long.valueOf(id))).thenReturn(configFromDB);
+    // Mapper returns mapped config from DB
+    ConfigurationObj mapped = new ConfigurationObj();
+    mapped.setId(1L);
+    when(ConfigDALToConfigObj.MAPPER.dalToOpenAPI(configFromDB)).thenReturn(mapped);
 
+    // Act + Assert
     SharedServiceLayerException ex = assertThrows(
         SharedServiceLayerException.class,
-        () -> configurationOpsApiService.updateConfig(id, input)
+        () -> configurationOpsApiService.deleteConfig(id, input)
     );
 
-    assertTrue(ex.getMessage().contains("provided config data is not present in DB"));
+    assertTrue(ex.getMessage().contains("Unable to delete config as its not present in DB"));
 }

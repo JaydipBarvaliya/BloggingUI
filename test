@@ -1,18 +1,19 @@
 @Test
-void test_createArchivalFileNetConfig_success() throws Exception {
+void test_createArchivalFileNetConfig_shouldThrowSharedServiceLayerException() {
     ArchivalFileNetConfigObj input = new ArchivalFileNetConfigObj();
     ArchFileNetConfigDto dto = new ArchFileNetConfigDto();
-    ArchFileNetConfig entity = new ArchFileNetConfig();
 
-    // mock mapper and repo
+    // mock mapper
     ArchivalFilenetConfigService spyService = Mockito.spy(archivalFilenetConfigService);
     doReturn(dto).when(spyService).configToDto(input);
-    doReturn(entity).when(spyService).dtoToEntity(dto);
-    when(filenetConfigRepository.saveAndFlush(entity)).thenReturn(entity);
-    doReturn(input).when(spyService).entityToDto(entity);
 
-    ArchivalFileNetConfigObj result = spyService.createArchivalFileNetConfig(input);
+    // simulate exception during save
+    when(filenetConfigRepository.saveAndFlush(any())).thenThrow(new RuntimeException("DB error"));
 
-    assertNotNull(result);
-    assertEquals(input, result);
+    SharedServiceLayerException ex = assertThrows(
+        SharedServiceLayerException.class,
+        () -> spyService.createArchivalFileNetConfig(input)
+    );
+
+    assertTrue(ex.getMessage().contains("Failed to create archival filenet config"));
 }

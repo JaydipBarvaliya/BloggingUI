@@ -5,26 +5,32 @@ class ArchivalApiServiceTest {
     private ArchivalStorageMappingRepository repo;
 
     @InjectMocks
-    private ArchivalApiService archivalApiService;
+    private ArchivalApiService archApiService;
 
     @Test
-    void test_createArchivalStorageMapping_shouldThrowSharedServiceLayerException() {
+    void test_getArchivalStorageMappingList_shouldReturnMappedList() {
         // Given
-        ArchivalStorageMappingObj mockInput = new ArchivalStorageMappingObj();
-        ArchStorageMapping dto = new ArchStorageMapping(); // Assuming this is the entity class
-        RuntimeException simulatedException = new RuntimeException("DB Error");
+        String lobId = "LOB123";
+        String docType = "FILE";
+        String storageId = "STO456";
 
-        // Mock mapper conversion if necessary
-        ArchStorageObjToDtoMapper.MAPPER = mock(ArchStorageObjToDtoMapper.class);
-        when(ArchStorageObjToDtoMapper.MAPPER.toDto(mockInput)).thenReturn(dto);
-        when(repo.saveAndFlush(any())).thenThrow(simulatedException);
+        ArchStorageMapping mapping = new ArchStorageMapping();
+        List<ArchStorageMapping> mappings = Collections.singletonList(mapping);
 
-        // When / Then
-        SharedServiceLayerException thrown = assertThrows(
-                SharedServiceLayerException.class,
-                () -> archivalApiService.createArchivalStorageMapping(mockInput)
-        );
+        when(repo.findAll(any(Specification.class))).thenReturn(mappings);
 
-        assertTrue(thrown.getMessage().contains("Failed to create archival storage mapping"));
+        // Optional: Mock entityToDto() if it's internal and needs isolation
+        ArchivalApiService spyService = Mockito.spy(archApiService);
+        ArchivalStorageMappingObj mockDto = new ArchivalStorageMappingObj();
+
+        doReturn(mockDto).when(spyService).entityToDto(mapping);
+
+        // When
+        List<ArchivalStorageMappingObj> result = spyService.getArchivalStorageMappingList(lobId, docType, storageId);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertSame(mockDto, result.get(0));
     }
 }

@@ -1,4 +1,3 @@
-List<Role> matchingRoles = sharedServicePackage.getRoles().stream()
-    .filter(role -> CollectionUtils.isNotEmpty(role.getSigners()) &&
-        role.getSigners().stream().anyMatch(signer -> signer.getEmail().equalsIgnoreCase(partyKey)))
-    .toList();
+private SharedServiceLayerException buildBadRequestException(String message) {
+    return new SharedServiceLayerException(new Status(HttpStatus.BAD_REQUEST.value(), Severity.Error), message);
+}

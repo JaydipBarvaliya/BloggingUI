@@ -1,25 +1,17 @@
-private void validateSignerEmail(SharedServicePackage sharedServicePackage, String email) throws SharedServiceLayerException {
+private boolean isEmailAssociatedWithSigner(SharedServicePackage sharedServicePackage, String email) {
     List<IndividualToEvent> individuals = sharedServicePackage.getIndividualToEvent();
 
     boolean emailFound = false;
 
     if (CollectionUtils.isNotEmpty(individuals)) {
         for (IndividualToEvent individual : individuals) {
-            if (individual.getIndividual() != null && 
+            if (individual.getIndividual() != null &&
                 StringUtils.equalsIgnoreCase(individual.getIndividual().getEmailAddressTxt(), email)) {
 
                 emailFound = true;
 
-                if (StringUtils.equalsIgnoreCase(individual.getRoleCd(), "SENDER")) {
-                    // If it's a sender, throw error
-                    throw new SharedServiceLayerException(
-                        new Status(HttpStatus.BAD_REQUEST.value(), Severity.Error),
-                        "Provided email address belongs to Sender. Update is only allowed for Signers."
-                    );
-                }
-
-                // If SIGNER, no problem. Just break and continue the update.
-                break;
+                // Check if it's a signer
+                return StringUtils.equalsIgnoreCase(individual.getRoleCd(), "SIGNER");
             }
         }
     }
@@ -30,4 +22,18 @@ private void validateSignerEmail(SharedServicePackage sharedServicePackage, Stri
             "Provided email address not found in the transaction."
         );
     }
+
+    // If found but roleCd was not SIGNER
+    return false;
+}
+
+
+
+boolean isSigner = isEmailAssociatedWithSigner(sharedServicePackage, updateSignerInfoRequest.getEmailAddress());
+
+if (!isSigner) {
+    throw new SharedServiceLayerException(
+        new Status(HttpStatus.BAD_REQUEST.value(), Severity.Error),
+        "Provided email address does not belong to a signer."
+    );
 }

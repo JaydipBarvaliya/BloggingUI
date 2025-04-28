@@ -1,17 +1,23 @@
-private boolean isEmailAssociatedWithSigner(SharedServicePackage sharedServicePackage, String email) {
-    List<IndividualToEvent> individuals = sharedServicePackage.getIndividualToEvent();
-
+private boolean isEmailAssociatedWithSigner(SharedServicePackage sharedServicePackage, String email) throws SharedServiceLayerException {
     boolean emailFound = false;
+    boolean isSigner = false;
 
-    if (CollectionUtils.isNotEmpty(individuals)) {
-        for (IndividualToEvent individual : individuals) {
-            if (individual.getIndividual() != null &&
-                StringUtils.equalsIgnoreCase(individual.getIndividual().getEmailAddressTxt(), email)) {
-
-                emailFound = true;
-
-                // Check if it's a signer
-                return StringUtils.equalsIgnoreCase(individual.getRoleCd(), "SIGNER");
+    if (CollectionUtils.isNotEmpty(sharedServicePackage.getRoles())) {
+        for (Role role : sharedServicePackage.getRoles()) {
+            if (CollectionUtils.isNotEmpty(role.getSigners())) {
+                for (Signer signer : role.getSigners()) {
+                    if (signer != null && StringUtils.equalsIgnoreCase(signer.getEmail(), email)) {
+                        emailFound = true;
+                        if (StringUtils.equalsIgnoreCase(role.getType(), "SENDER")) {
+                            throw new SharedServiceLayerException(
+                                new Status(HttpStatus.BAD_REQUEST.value(), Severity.Error),
+                                "Provided email address belongs to a SENDER, not a SIGNER."
+                            );
+                        } else if (StringUtils.equalsIgnoreCase(role.getType(), "SIGNER")) {
+                            isSigner = true;
+                        }
+                    }
+                }
             }
         }
     }
@@ -23,17 +29,5 @@ private boolean isEmailAssociatedWithSigner(SharedServicePackage sharedServicePa
         );
     }
 
-    // If found but roleCd was not SIGNER
-    return false;
-}
-
-
-
-boolean isSigner = isEmailAssociatedWithSigner(sharedServicePackage, updateSignerInfoRequest.getEmailAddress());
-
-if (!isSigner) {
-    throw new SharedServiceLayerException(
-        new Status(HttpStatus.BAD_REQUEST.value(), Severity.Error),
-        "Provided email address does not belong to a signer."
-    );
+    return isSigner;
 }

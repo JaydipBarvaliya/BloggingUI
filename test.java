@@ -1,91 +1,27 @@
-import lombok.Data;
+🎉 Celebrating 30 Legendary Years of Marc Mulligan at TD 🎉
 
-@Data
-public class SignerRequest {
-    private String jobTitle;
-    private String lastName;
-    private String firstName;
-    private String emailAddressTxt;
-    private String telephoneNum;
-    private String organizationName;
-    private Authentication authentication;
+Three decades gone — but who's counting lines?
+Marc Mulligan's journey, built with design.
 
-    @Data
-    public static class Authentication {
-        private String authenticationMethodTypeCd;
-    }
-}
+Need a solution? Have no fear.
+Marc’s inbox is where all devs steer.
 
+He’s the Stack Overflow of our humble hall,
+And somehow, he’s still answering every call.
 
+TD’s own Gandalf, with keyboard and brain,
+He architects systems mere mortals can’t explain.
 
+You’ll find him in meetings, calm and composed,
+While our heads explode, Marc’s already diagnosed.
 
+Raise your mugs (or your dev console logs),
+Let’s cheer for the wizard who still outcodes the blogs.
 
+For thirty long years — no burnout, no bluff,
+Just solving hard problems before coffee’s enough.
 
-import lombok.Data;
-import java.util.List;
+And if TD ever builds a Hall of Frame,
+Marc Mulligan will lead that game.
 
-@Data
-public class OneSpanSignerRequest {
-    private String type;
-    private List<Signer> signers;
-    private String name;
-
-    @Data
-    public static class Signer {
-        private String id;
-        private String email;
-        private String firstName;
-        private String lastName;
-        private String phone;
-        private String title;
-        private String company;
-        private Auth auth;
-    }
-
-    @Data
-    public static class Auth {
-        private String scheme;
-    }
-}
-
-
-
-
-import java.util.Collections;
-
-public class SignerMapper {
-
-    public static OneSpanSignerRequest mapToOneSpan(SignerRequest input) {
-        OneSpanSignerRequest.Signer signer = new OneSpanSignerRequest.Signer();
-        signer.setId("signer1");
-        signer.setEmail(input.getEmailAddressTxt());
-        signer.setFirstName(input.getFirstName());
-        signer.setLastName(input.getLastName());
-        signer.setPhone(input.getTelephoneNum());
-        signer.setTitle(input.getJobTitle());
-        signer.setCompany(input.getOrganizationName());
-
-        OneSpanSignerRequest.Auth auth = new OneSpanSignerRequest.Auth();
-        auth.setScheme(mapScheme(input.getAuthentication().getAuthenticationMethodTypeCd()));
-        signer.setAuth(auth);
-
-        OneSpanSignerRequest request = new OneSpanSignerRequest();
-        request.setType("SIGNER");
-        request.setSigners(Collections.singletonList(signer));
-        request.setName("signer1");
-
-        return request;
-    }
-
-    private static String mapScheme(String methodCode) {
-        if (methodCode == null) return "NONE";
-        switch (methodCode.toUpperCase()) {
-            case "SMS": return "SMS";
-            case "EMAIL": return "EMAIL";
-            default: return "NONE";
-        }
-    }
-}
-
-
-
+Thank you, Marc, for being the constant we could always rely on — here's to many more milestones together!

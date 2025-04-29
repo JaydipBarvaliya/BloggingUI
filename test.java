@@ -1,1 +1,9 @@
-Raise your mugs (or your dev console logs) and let's celebrate Marc's incredible journey!
+HttpEntity<OneSpanSignerRequest> requestEntity = new HttpEntity<>(oneSpanPayload, httpHeaders);
+
+ResponseEntity<String> responseEntity = eslGateway.updateSignerInfo(
+    requestEntity,
+    packageId,
+    roleId,
+    saasUrl,
+    false
+);

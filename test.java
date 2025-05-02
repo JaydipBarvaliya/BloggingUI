@@ -1,9 +1,14 @@
-private UpdateSignerRequest buildRequestWithInvalidType(String invalidType, String phone) {
+private UpdateSignerRequest buildRequestWithInvalidEnum(String invalidType, String phone) throws Exception {
     UpdateSignerRequestSignerInner signer = new UpdateSignerRequestSignerInner();
     signer.setTelephoneNum(phone);
 
     UpdateSignerRequestSignerInnerAuthentication auth = new UpdateSignerRequestSignerInnerAuthentication();
-    auth.setAuthenticationMethodTypeCdValue(invalidType); // Bypasses enum, sets raw value
+
+    // Set invalid enum using reflection
+    var field = auth.getClass().getDeclaredField("authenticationMethodTypeCd");
+    field.setAccessible(true);
+    field.set(auth, invalidType); // forcibly inject string into enum field
+
     signer.setAuthentication(auth);
 
     UpdateSignerRequest request = new UpdateSignerRequest();
@@ -12,10 +17,9 @@ private UpdateSignerRequest buildRequestWithInvalidType(String invalidType, Stri
 }
 
 
-
 @Test
-void testDefaultInvalidAuthType_throwsException() {
-    UpdateSignerRequest request = buildRequestWithInvalidType("INVALID_TYPE", "1234567890");
+void testDefaultInvalidAuthType_throwsException() throws Exception {
+    UpdateSignerRequest request = buildRequestWithInvalidEnum("INVALID_TYPE", "1234567890");
 
     SharedServiceLayerException ex = assertThrows(SharedServiceLayerException.class, () ->
         validateAuthTypeUtil.validateAuthType(request, "lob")

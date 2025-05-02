@@ -1,15 +1,7 @@
-@Test
-void testPrivateConstructor() throws Exception {
-    Constructor<CommonUtil> constructor = CommonUtil.class.getDeclaredConstructor();
-    constructor.setAccessible(true);
-
-    InvocationTargetException thrown = assertThrows(
-        InvocationTargetException.class,
-        constructor::newInstance
-    );
-
-    // Now validate the actual cause inside the InvocationTargetException
-    Throwable cause = thrown.getCause();
-    assertInstanceOf(UnsupportedOperationException.class, cause);
-    assertEquals("Utility class", cause.getMessage());
+/**
+ * Private constructor to prevent instantiation of this utility class.
+ * Throws an exception if called, enforcing non-instantiability.
+ */
+private CommonUtil() {
+    throw new UnsupportedOperationException("Utility class");
 }

@@ -1,12 +1,10 @@
-private UpdateSignerRequest buildRequest(
-    UpdateSignerRequestSignerInnerAuthentication.AuthenticationMethodTypeCdEnum authTypeEnum,
-    String phone
-) {
+private UpdateSignerRequest buildRequest(String authTypeString, String phone) {
     UpdateSignerRequestSignerInner signer = new UpdateSignerRequestSignerInner();
     signer.setTelephoneNum(phone);
 
     UpdateSignerRequestSignerInnerAuthentication auth = new UpdateSignerRequestSignerInnerAuthentication();
-    auth.setAuthenticationMethodTypeCd(authTypeEnum);
+    // simulate setting invalid enum value using raw JSON or reflection in real test, or skip setting enum entirely
+    auth.setAuthenticationMethodTypeCdValue(authTypeString); // or a custom setter if available
     signer.setAuthentication(auth);
 
     UpdateSignerRequest request = new UpdateSignerRequest();

@@ -1,29 +1,72 @@
-private UpdateSignerRequest buildRequestWithInvalidEnum(String invalidType, String phone) throws Exception {
-    UpdateSignerRequestSignerInner signer = new UpdateSignerRequestSignerInner();
-    signer.setTelephoneNum(phone);
+package com.td.esig.api.util;
 
-    UpdateSignerRequestSignerInnerAuthentication auth = new UpdateSignerRequestSignerInnerAuthentication();
+import com.td.esig.api.openapi.model.*;
+import com.td.esig.common.util.CommonConstants;
+import com.td.esig.common.util.SharedServiceLayerException;
+import com.td.esig.dal.service.ConfigurationProperties;
+import com.td.esig.model.auth.Auth;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-    // Set invalid enum using reflection
-    var field = auth.getClass().getDeclaredField("authenticationMethodTypeCd");
-    field.setAccessible(true);
-    field.set(auth, invalidType); // forcibly inject string into enum field
+import java.util.List;
 
-    signer.setAuthentication(auth);
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-    UpdateSignerRequest request = new UpdateSignerRequest();
-    request.setSigner(List.of(signer));
-    return request;
-}
+class ValidateAuthTypeUtil_RareCasesTest {
 
+    private ConfigurationProperties config;
+    private ValidateAuthTypeUtil validateAuthTypeUtil;
 
-@Test
-void testDefaultInvalidAuthType_throwsException() throws Exception {
-    UpdateSignerRequest request = buildRequestWithInvalidEnum("INVALID_TYPE", "1234567890");
+    @BeforeEach
+    void setup() {
+        config = mock(ConfigurationProperties.class);
+        validateAuthTypeUtil = new ValidateAuthTypeUtil(config);
+    }
 
-    SharedServiceLayerException ex = assertThrows(SharedServiceLayerException.class, () ->
-        validateAuthTypeUtil.validateAuthType(request, "lob")
-    );
+    private UpdateSignerRequest buildRequest(UpdateSignerRequestSignerInnerAuthentication.AuthenticationMethodTypeCdEnum authType, String phone) {
+        UpdateSignerRequestSignerInner signer = new UpdateSignerRequestSignerInner();
+        signer.setTelephoneNum(phone);
+        UpdateSignerRequestSignerInnerAuthentication auth = new UpdateSignerRequestSignerInnerAuthentication();
+        auth.setAuthenticationMethodTypeCd(authType);
+        signer.setAuthentication(auth);
+        UpdateSignerRequest request = new UpdateSignerRequest();
+        request.setSigner(List.of(signer));
+        return request;
+    }
 
-    assertEquals("Authentication.authenticationMethodTypeCd is not a valid type", ex.getMessage());
+    @Test
+    void testQAAuth_configValueBlank_shouldTriggerDefaultFalseLogic() {
+        UpdateSignerRequest request = buildRequest(
+            UpdateSignerRequestSignerInnerAuthentication.AuthenticationMethodTypeCdEnum.AUTH_CHALLENGE_UPP,
+            "1234567890"
+        );
+
+        when(config.getConfigProperty("lob", CommonConstants.AUTH_QA)).thenReturn("");
+        // This triggers: StringUtils.isBlank(isQAenabled)
+
+        SharedServiceLayerException ex = assertThrows(SharedServiceLayerException.class, () ->
+            validateAuthTypeUtil.validateAuthType(request, "lob")
+        );
+
+        assertEquals("QA authentication is not configured for lob", ex.getMessage());
+    }
+
+    @Test
+    void testQAAuth_configValueNotBlankButQAStillFalse_shouldThrow() {
+        UpdateSignerRequest request = buildRequest(
+            UpdateSignerRequestSignerInnerAuthentication.AuthenticationMethodTypeCdEnum.AUTH_CHALLENGE_UPP,
+            "1234567890"
+        );
+
+        when(config.getConfigProperty("lob", CommonConstants.AUTH_QA)).thenReturn("false");
+        // isQAenabled = "false" (from non-blank propValue)
+        // This covers: if (!FALSE.equals(isQAenabled))
+
+        SharedServiceLayerException ex = assertThrows(SharedServiceLayerException.class, () ->
+            validateAuthTypeUtil.validateAuthType(request, "lob")
+        );
+
+        assertEquals("QA authentication is not configured for lob", ex.getMessage());
+    }
 }

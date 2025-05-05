@@ -1,42 +1,16 @@
-import org.apache.commons.lang3.ObjectUtils;
+public boolean isEmailAssociatedWithSigner(SharedServicePackage sharedServicePackage, String email) throws SharedServiceLayerException {
+    if (CollectionUtils.isEmpty(sharedServicePackage.getRoles())) return false;
 
-public OneSpanSignerInfoUpdateRequest mapToOneSpan(UpdateSignerRequestSignerInner request,
-                                                    SharedServicePackage sharedServicePackage,
-                                                    String roleId,
-                                                    Auth auth) throws SharedServiceLayerException {
-
-    Signer existingSigner = findExistingSigner(request.getEmailAddressTxt(), sharedServicePackage);
-    OneSpanSignerInfoUpdateRequest.Signer signer = buildSigner(request, existingSigner, roleId, auth);
-
-    OneSpanSignerInfoUpdateRequest payload = new OneSpanSignerInfoUpdateRequest();
-    payload.setType("SIGNER");
-    payload.setName(roleId);
-    payload.setSigners(Collections.singletonList(signer));
-
-    return payload;
-}
-
-private Signer findExistingSigner(String email, SharedServicePackage sharedServicePackage) throws SharedServiceLayerException {
     return sharedServicePackage.getRoles().stream()
-            .filter(role -> role.getType() == RoleType.SIGNER)
-            .flatMap(role -> role.getSigners().stream())
-            .filter(signer -> StringUtils.equalsIgnoreCase(signer.getEmail(), email))
-            .findFirst()
-            .orElseThrow(() -> CommonUtil.buildBadRequestException("Signer not found"));
-}
-
-private OneSpanSignerInfoUpdateRequest.Signer buildSigner(UpdateSignerRequestSignerInner request,
-                                                           Signer existing,
-                                                           String roleId,
-                                                           Auth auth) {
-    OneSpanSignerInfoUpdateRequest.Signer signer = new OneSpanSignerInfoUpdateRequest.Signer();
-    signer.setEmail(ObjectUtils.defaultIfNull(request.getEmailAddressTxt(), existing.getEmail()));
-    signer.setFirstName(ObjectUtils.defaultIfNull(request.getFirstName(), existing.getFirstName()));
-    signer.setLastName(ObjectUtils.defaultIfNull(request.getLastName(), existing.getLastName()));
-    signer.setPhone(ObjectUtils.defaultIfNull(request.getTelephoneNum(), existing.getPhone()));
-    signer.setTitle(ObjectUtils.defaultIfNull(request.getJobTitle(), existing.getTitle()));
-    signer.setCompany(ObjectUtils.defaultIfNull(request.getOrganizationName(), existing.getCompany()));
-    signer.setId(roleId);
-    signer.setAuth(auth);
-    return signer;
+            .filter(role -> CollectionUtils.isNotEmpty(role.getSigners()))
+            .flatMap(role -> role.getSigners().stream()
+                    .filter(signer -> signer != null && StringUtils.equalsIgnoreCase(signer.getEmail(), email))
+                    .map(signer -> {
+                        RoleType type = role.getType();
+                        if (type == RoleType.SENDER) {
+                            throw CommonUtil.buildBadRequestException("Provided email address belongs to a SENDER, not a SIGNER.");
+                        }
+                        return type == RoleType.SIGNER;
+                    }))
+            .anyMatch(Boolean::booleanValue);
 }

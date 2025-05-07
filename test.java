@@ -1,4 +1,5 @@
-pm.sendRequest({
+//–– build the token request ––
+const tokenRequest = {
   url: pm.environment.get("oauth_url"),
   method: "POST",
   header: {
@@ -14,18 +15,22 @@ pm.sendRequest({
       { key: "scope",         value: pm.environment.get("scope") }
     ]
   }
-}, (err, res) => {
+};
+
+//–– fire it off, grab the token and stash it ––
+pm.sendRequest(tokenRequest, (err, res) => {
   if (err) {
     console.error("Token fetch error:", err);
     return;
   }
-  const json = res.json?.();
-  if (json?.access_token) {
-    // save it under the name your request uses
-    pm.environment.set("access_token", json.access_token);
-    // expire one hour later
-    pm.environment.set("token_time", Date.now() + 3600*1000);
-  } else {
-    console.error("No access_token in response:", res.text());
+  if (res.code !== 200) {
+    console.error("Token request failed:", res.code, res.text());
+    return;
   }
+
+  const json = res.json();
+  pm.environment.set("access_token", json.access_token);
+  // optional: save token_type & expiry
+  pm.environment.set("token_type",   json.token_type  || "Bearer");
+  pm.environment.set("token_expires", Date.now() + (json.expires_in * 1000));
 });

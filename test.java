@@ -1,36 +1,36 @@
-//–– build the token request ––
-const tokenRequest = {
-  url: pm.environment.get("oauth_url"),
-  method: "POST",
-  header: {
-    "Content-Type": "application/x-www-form-urlencoded",
-    "Accept": "application/json"
-  },
-  body: {
-    mode: "urlencoded",
-    urlencoded: [
-      { key: "grant_type",    value: "client_credentials" },
-      { key: "client_id",     value: pm.environment.get("client_id") },
-      { key: "client_secret", value: pm.environment.get("client_secret") },
-      { key: "scope",         value: pm.environment.get("scope") }
-    ]
-  }
-};
+// 1️⃣ Only fetch if we don't have a token yet, or if it's already expired
+const expiresAt = pm.environment.get("osstoken_expiresAt");
+if (!expiresAt || Date.now() >= parseInt(expiresAt,10)) {
+  
+  // 2️⃣ Fire your JSON POST just like in the Body tab
+  pm.sendRequest({
+    url: pm.environment.get("osstoken_url"),
+    method: "POST",
+    header: {
+      "Content-Type": "application/json",
+      "Accept":       "application/json"
+    },
+    body: {
+      mode: "raw",
+      raw: JSON.stringify({
+        clientId: pm.environment.get("osstoken_clientId"),
+        secret:   pm.environment.get("osstoken_secret"),
+        type:     pm.environment.get("osstoken_type")
+      })
+    }
+  }, (err, res) => {
+    if (err) {
+      console.error("OSSToken fetch error:", err);
+      return;
+    }
+    if (res.code !== 200) {
+      console.error("OSSToken request failed:", res.code, res.text());
+      return;
+    }
 
-//–– fire it off, grab the token and stash it ––
-pm.sendRequest(tokenRequest, (err, res) => {
-  if (err) {
-    console.error("Token fetch error:", err);
-    return;
-  }
-  if (res.code !== 200) {
-    console.error("Token request failed:", res.code, res.text());
-    return;
-  }
-
-  const json = res.json();
-  pm.environment.set("access_token", json.access_token);
-  // optional: save token_type & expiry
-  pm.environment.set("token_type",   json.token_type  || "Bearer");
-  pm.environment.set("token_expires", Date.now() + (json.expires_in * 1000));
-});
+    // 3️⃣ Pull out the token & expiry and save them
+    const json = res.json();
+    pm.environment.set("osstoken_accessToken", json.accessToken);
+    pm.environment.set("osstoken_expiresAt",   json.expiresAt.toString());
+  });
+}

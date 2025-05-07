@@ -1,12 +1,13 @@
-if(pm.environment.get("token_time") <= Date.now() || !pm.environment.has("token_time")) {
+if (pm.environment.get("token_time") <= Date.now() || !pm.environment.has("token_time")) {
 
-    var params = "grant_type=client_credentials" +
-        "&client_id=" + pm.environment.get("client_id") +
-        "&client_secret=" + pm.environment.get("client_secret") +
-        "&scope=" + pm.environment.get("scope");
+    var bodyData = 
+        "grant_type=client_credentials" +
+        "&client_id=" + encodeURIComponent(pm.environment.get("client_id")) +
+        "&client_secret=" + encodeURIComponent(pm.environment.get("client_secret")) +
+        "&scope=" + encodeURIComponent(pm.environment.get("scope"));
 
     pm.sendRequest({
-        url: pm.environment.get("oauth_url") + "?" + params,
+        url: pm.environment.get("oauth_url"),
         method: 'POST',
         header: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -14,7 +15,7 @@ if(pm.environment.get("token_time") <= Date.now() || !pm.environment.has("token_
         },
         body: {
             mode: 'raw',
-            raw: ''
+            raw: bodyData
         }
     }, function (err, res) {
         console.log("Token Response:", res);
@@ -22,22 +23,19 @@ if(pm.environment.get("token_time") <= Date.now() || !pm.environment.has("token_
         try {
             if (res && res.json) {
                 let json = res.json();
-                if (json && json.access_token) {
+                if (json.access_token) {
                     pm.environment.set("auth_token", "Bearer " + json.access_token);
-                    pm.environment.set("token_time", Date.now() + (60 * 60 * 1000)); // 1 hour
+                    pm.environment.set("token_time", Date.now() + (60 * 60 * 1000));
                 } else {
-                    console.log("No access_token found in response.");
-                    throw new Error("access_token missing in response JSON.");
+                    console.error("access_token not found in response.");
                 }
             } else {
-                console.log("Invalid response object or .json() is undefined.");
-                throw new Error("Token request failed: response.json is undefined.");
+                console.error("Invalid response or .json not available.");
             }
         } catch (e) {
-            console.error("Error while parsing token response:", e);
+            console.error("Error parsing token response:", e);
         }
     });
 }
 
-// GUID for traceability
 pm.environment.set("guid", (new Date().getTime().toString(16) + Math.floor(167 + Math.random()).toString(16)));

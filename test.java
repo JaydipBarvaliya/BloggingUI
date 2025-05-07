@@ -1,15 +1,19 @@
-if (pm.environment.get("token_time") <= Date.now() || !pm.environment.has("token_time")) {
-    let url = pm.environment.get("oauth_url") +
-        "?grant_type=client_credentials" +
-        "&client_id=" + encodeURIComponent(pm.environment.get("client_id")) +
-        "&client_secret=" + encodeURIComponent(pm.environment.get("client_secret")) +
-        "&scope=" + encodeURIComponent(pm.environment.get("scope"));
-
+if (!pm.environment.get("token_time") || pm.environment.get("token_time") <= Date.now()) {
     pm.sendRequest({
-        url: url,
+        url: pm.environment.get("oauth_url"),
         method: 'POST',
         header: {
+            'Content-Type': 'application/x-www-form-urlencoded',
             'Accept': 'application/json'
+        },
+        body: {
+            mode: 'urlencoded',
+            urlencoded: [
+                { key: 'grant_type', value: 'client_credentials' },
+                { key: 'client_id', value: pm.environment.get('client_id') },
+                { key: 'client_secret', value: pm.environment.get('client_secret') },
+                { key: 'scope', value: pm.environment.get('scope') }
+            ]
         }
     }, function (err, res) {
         console.log("Token Response:", res);
@@ -18,7 +22,7 @@ if (pm.environment.get("token_time") <= Date.now() || !pm.environment.has("token
                 let json = res.json();
                 if (json.access_token) {
                     pm.environment.set("auth_token", "Bearer " + json.access_token);
-                    pm.environment.set("token_time", Date.now() + (60 * 60 * 1000)); // 1 hour
+                    pm.environment.set("token_time", Date.now() + (60 * 60 * 1000)); // 1 hr
                 } else {
                     console.error("access_token not found.");
                 }

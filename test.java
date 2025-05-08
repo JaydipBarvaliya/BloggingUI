@@ -1,9 +1,4 @@
-if (!isSafePathComponent(baseFolder) || !isSafePathComponent(subFolder)) {
+if (!isSafePathComponent(baseFolder) || 
+    Arrays.stream(subFolder).anyMatch(s -> !isSafePathComponent(s))) {
     throw new IllegalArgumentException("Invalid folder name.");
-}
-
-
-
-public static boolean isSafePathComponent(String input) {
-    return input != null && input.matches("^[\\w\\-]+$"); // only letters, numbers, underscore, dash
 }

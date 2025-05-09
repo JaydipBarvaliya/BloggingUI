@@ -1,5 +1,5 @@
-if (isUnsafePathComponent(packageId)) {
-    throw new IllegalArgumentException("Invalid package ID.");
+Path safeBase = Paths.get(baseFolder).normalize();
+Path fullPath = safeBase.resolve(Paths.get(subFolder)).normalize();
+if (!fullPath.startsWith(safeBase)) {
+    throw new IllegalArgumentException("Unsafe folder path traversal");
 }
-Path deletePath = Paths.get(directoryPath, packageId).normalize();
-FileUtils.forceDelete(deletePath.toFile());

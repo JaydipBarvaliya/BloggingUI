@@ -1,22 +1,25 @@
-catch (HttpClientErrorException ex) {
-    String responseBody = ex.getResponseBodyAsString(); // This is the full JSON body
+catch (SharedServiceLayerException e) {
+    Throwable cause = e.getCause(); // unwrap the actual exception
 
-    try {
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode root = objectMapper.readTree(responseBody);
+    if (cause instanceof HttpClientErrorException) {
+        HttpClientErrorException httpEx = (HttpClientErrorException) cause;
+        String jsonBody = httpEx.getResponseBodyAsString();
 
-        // Extract fields
-        String message = root.path("message").asText(); // e.g. "The specified documents does not exist."
-        String documentId = root.path("parameters").path("documentIds").asText(); // e.g. "helloworld"
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode root = objectMapper.readTree(jsonBody);
 
-        // Build custom message
-        String finalMessage = String.format("The specified document does not exist: %s (%s)", documentId, message);
+            String message = root.path("message").asText();
+            String documentId = root.path("parameters").path("documentIds").asText();
 
-        // Example: return ResponseEntity or throw custom exception
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(finalMessage);
+            String finalMessage = String.format("The specified document does not exist: %s (%s)", documentId, message);
+            throw PackageManagerUtil.buildBadRequestException(finalMessage);
 
-    } catch (Exception parseEx) {
-        log.error("Failed to parse OneSpan error response", parseEx);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error parsing OneSpan error response");
+        } catch (Exception parsingEx) {
+            throw PackageManagerUtil.buildBadRequestException("Failed to parse error response from OneSpan.");
+        }
     }
+
+    // fallback if not the expected cause
+    throw PackageManagerUtil.buildBadRequestException("Unexpected error: " + e.getMessage());
 }

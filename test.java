@@ -1,2 +1,4 @@
-Path imagePath = Paths.get(path, packageId + ".png").normalize();
-File f = imagePath.toFile();
+if (isUnsafePathComponent(packageId)) {
+    throw new IllegalArgumentException("Invalid package ID.");
+}
+Path path = Paths.get(directoryPath, packageId + ".png").normalize();

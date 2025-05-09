@@ -31,22 +31,22 @@ public final class SignatureTransformUtil {
     public static String createDirectories(String baseFolder, String... subFolder) {
         log.info("createDirectories");
 
-        // 1) Validate each path component
+        // 1) Validate each component
         if (isUnsafePathComponent(baseFolder)
          || Arrays.stream(subFolder).anyMatch(SignatureTransformUtil::isUnsafePathComponent)) {
             throw new IllegalArgumentException("Invalid folder name.");
         }
 
-        // 2) Build and normalize paths
+        // 2) Build & normalize full path in one go
         Path safeBase = Paths.get(baseFolder).normalize();
-        Path fullPath = safeBase.resolve(Paths.get(subFolder)).normalize();
+        Path fullPath = Paths.get(baseFolder, subFolder).normalize();
 
-        // 3) Ensure no escape from base
+        // 3) Containment check
         if (!fullPath.startsWith(safeBase)) {
             throw new IllegalArgumentException("Unsafe folder path traversal");
         }
 
-        // 4) Actually create the directories
+        // 4) Create directories
         try {
             fullPath = Files.createDirectories(fullPath);
         } catch (IOException e) {
@@ -57,7 +57,7 @@ public final class SignatureTransformUtil {
     }
 
     /**
-     * Decode a Base64 PNG, validate, then write to disk under directoryPath/packageId.png.
+     * Decode a Base64 PNG and write it to disk under directoryPath/packageId.png.
      */
     public static void decodeToImage(String imageString,
                                      String directoryPath,
@@ -71,17 +71,17 @@ public final class SignatureTransformUtil {
             throw new IllegalArgumentException("Invalid package ID.");
         }
 
-        // 2) Ensure target directory exists
+        // 2) Ensure directory exists
         String targetDir = createDirectories(directoryPath, packageId);
 
-        // 3) Build and normalize image file path
+        // 3) Build & normalize image path
         Path safeBase = Paths.get(targetDir).normalize();
         Path imagePath = safeBase.resolve(packageId + ".png").normalize();
         if (!imagePath.startsWith(safeBase)) {
             throw new IllegalArgumentException("Path traversal detected");
         }
 
-        // 4) Decode, read, and write the image
+        // 4) Decode and write
         try (ByteArrayInputStream bais =
                  new ByteArrayInputStream(Base64.getDecoder().decode(imageString))) {
 
@@ -89,7 +89,6 @@ public final class SignatureTransformUtil {
             if (image != null) {
                 ImageIO.write(image, "png", imagePath.toFile());
             }
-
         } catch (Exception e) {
             log.error("Failed to decode image for packageId: {}, error: {}",
                       LogSanitizeUtil.sanitizeLogObj(packageId),
@@ -102,24 +101,24 @@ public final class SignatureTransformUtil {
     }
 
     /**
-     * Extract signature text from an existing PNG under directoryPath/packageId.png.
+     * Extract signature text from an existing PNG at directoryPath/packageId.png.
      */
     public static String extractFromImage(String directoryPath, String packageId) {
         log.debug("extractFromImage method");
 
-        // 1) Validate packageId
+        // 1) Validate
         if (isUnsafePathComponent(packageId)) {
             throw new IllegalArgumentException("Invalid package ID.");
         }
 
-        // 2) Build and normalize image file path
+        // 2) Build & normalize path
         Path safeBase = Paths.get(directoryPath).normalize();
         Path imagePath = safeBase.resolve(packageId + ".png").normalize();
         if (!imagePath.startsWith(safeBase)) {
             throw new IllegalArgumentException("Path traversal detected");
         }
 
-        // 3) Convert if the file exists
+        // 3) Convert if exists
         try {
             if (Files.exists(imagePath)) {
                 SignatureCaptureValueConverter converter = new SignatureCaptureValueConverter();
@@ -137,12 +136,12 @@ public final class SignatureTransformUtil {
      * Delete the directory at directoryPath/packageId safely.
      */
     public static void deleteDirectory(String directoryPath, String packageId) {
-        // 1) Validate packageId
+        // 1) Validate
         if (isUnsafePathComponent(packageId)) {
             throw new IllegalArgumentException("Invalid package ID.");
         }
 
-        // 2) Build and normalize delete path
+        // 2) Build & normalize delete path
         Path safeBase = Paths.get(directoryPath).normalize();
         Path deletePath = safeBase.resolve(packageId).normalize();
         if (!deletePath.startsWith(safeBase)) {
@@ -159,11 +158,11 @@ public final class SignatureTransformUtil {
     }
 
     /**
-     * Returns true if the input is null, or contains disallowed chars / patterns.
+     * Rejects anything null, containing '..', slashes or backslashes, or invalid chars.
      */
     public static boolean isUnsafePathComponent(String input) {
         return input == null
-            || !input.matches("^[\\w.-]+$")  // only letters, digits, underscore, dash, dot
+            || !input.matches("^[\\w.-]+$")  // letters, digits, underscore, dash, dot
             || input.contains("..")          // no directory traversal
             || input.startsWith("/")         // no absolute Unix paths
             || input.contains("\\");         // no Windows backslashes

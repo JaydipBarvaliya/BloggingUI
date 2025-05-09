@@ -1,3 +1,22 @@
-curl -k -X DELETE "https://localhost:8443/esignatureevents/t7wHS6rf3F5Ve4F2mOYmFWV0hrY=/documentpackage" \
-  -H "Content-Type: application/json" \
-  -d '{"documents":["01e3e197f2d54b2797cc40787976e1b135353b920c0b76c5","8407dc403dabb4e120a95ddfb385930a57c2586490781c26"]}'
+catch (HttpClientErrorException ex) {
+    String responseBody = ex.getResponseBodyAsString(); // This is the full JSON body
+
+    try {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode root = objectMapper.readTree(responseBody);
+
+        // Extract fields
+        String message = root.path("message").asText(); // e.g. "The specified documents does not exist."
+        String documentId = root.path("parameters").path("documentIds").asText(); // e.g. "helloworld"
+
+        // Build custom message
+        String finalMessage = String.format("The specified document does not exist: %s (%s)", documentId, message);
+
+        // Example: return ResponseEntity or throw custom exception
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(finalMessage);
+
+    } catch (Exception parseEx) {
+        log.error("Failed to parse OneSpan error response", parseEx);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error parsing OneSpan error response");
+    }
+}

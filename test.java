@@ -1,25 +1,28 @@
-catch (SharedServiceLayerException e) {
-    Throwable cause = e.getCause(); // unwrap the actual exception
+@Test
+void deleteDocument_whenExceptionThrown_shouldReturnErrorResponse() throws JsonProcessingException {
+    String eventId = "k6OpP-5r6fYAVbgs_ZawY-Kv-KW08";
+    String lobId = "dna";
+    String messageID = "test";
+    String traceabilityID = "Postman";
 
-    if (cause instanceof HttpClientErrorException) {
-        HttpClientErrorException httpEx = (HttpClientErrorException) cause;
-        String jsonBody = httpEx.getResponseBodyAsString();
+    packageManagerUtil.jwtSecuredFlag = "true";
 
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode root = objectMapper.readTree(jsonBody);
+    HeaderInfo headerInfo = setupHeaderInfo();
+    when(packageManagerUtil.getUpdatedHeadersInfo(any())).thenReturn(headerInfo);
 
-            String message = root.path("message").asText();
-            String documentId = root.path("parameters").path("documentIds").asText();
+    when(request.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer dummy");
+    when(request.getHeader(HttpHeaders.CONTENT_TYPE)).thenReturn("application/json");
+    when(request.getHeader(HttpHeaders.ACCEPT)).thenReturn("application/json");
+    when(config.getConfigProperty(ApiConstants.DEFAULT, ApiConstants.ADMIN_CLIENT_ID)).thenReturn("TestScopeClient");
 
-            String finalMessage = String.format("The specified document does not exist: %s (%s)", documentId, message);
-            throw PackageManagerUtil.buildBadRequestException(finalMessage);
+    when(packageService.deleteDocument(any(), any(), any(), any()))
+        .thenThrow(new SharedServiceLayerException("500", "Internal Error"));
 
-        } catch (Exception parsingEx) {
-            throw PackageManagerUtil.buildBadRequestException("Failed to parse error response from OneSpan.");
-        }
-    }
+    SharedServiceLayerException thrown = Assertions.assertThrows(
+        SharedServiceLayerException.class,
+        () -> esignatureeventsApiDelegate.deleteDocument(eventId, deleteDocumentRequest, lobId, messageID, traceabilityID)
+    );
 
-    // fallback if not the expected cause
-    throw PackageManagerUtil.buildBadRequestException("Unexpected error: " + e.getMessage());
+    Assertions.assertEquals("500", thrown.getStatus());
+    Assertions.assertEquals("Internal Error", thrown.getMessage());
 }

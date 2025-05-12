@@ -1,28 +1,26 @@
-@Test
-void deleteDocument_whenExceptionThrown_shouldReturnErrorResponse() throws JsonProcessingException {
-    String eventId = "k6OpP-5r6fYAVbgs_ZawY-Kv-KW08";
-    String lobId = "dna";
-    String messageID = "test";
-    String traceabilityID = "Postman";
+public static String createDirectory(String baseFolder, String subFolder) {
+    // 1. Resolve and normalize the base path
+    Path basePath = Paths.get(baseFolder)
+                         .toAbsolutePath()
+                         .normalize();
 
-    packageManagerUtil.jwtSecuredFlag = "true";
+    // 2. Resolve the user-supplied piece against the base, then normalize
+    Path targetPath = basePath.resolve(subFolder)
+                              .normalize();
 
-    HeaderInfo headerInfo = setupHeaderInfo();
-    when(packageManagerUtil.getUpdatedHeadersInfo(any())).thenReturn(headerInfo);
+    // 3. Verify that the normalized target still lives under basePath
+    if (!targetPath.startsWith(basePath)) {
+        throw new IllegalArgumentException(
+            "Invalid folder name: " + subFolder
+        );
+    }
 
-    when(request.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer dummy");
-    when(request.getHeader(HttpHeaders.CONTENT_TYPE)).thenReturn("application/json");
-    when(request.getHeader(HttpHeaders.ACCEPT)).thenReturn("application/json");
-    when(config.getConfigProperty(ApiConstants.DEFAULT, ApiConstants.ADMIN_CLIENT_ID)).thenReturn("TestScopeClient");
-
-    when(packageService.deleteDocument(any(), any(), any(), any()))
-        .thenThrow(new SharedServiceLayerException("500", "Internal Error"));
-
-    SharedServiceLayerException thrown = Assertions.assertThrows(
-        SharedServiceLayerException.class,
-        () -> esignatureeventsApiDelegate.deleteDocument(eventId, deleteDocumentRequest, lobId, messageID, traceabilityID)
-    );
-
-    Assertions.assertEquals("500", thrown.getStatus());
-    Assertions.assertEquals("Internal Error", thrown.getMessage());
+    // 4. Create it (same as before) and return the string
+    try {
+        Files.createDirectories(targetPath);
+    } catch (IOException e) {
+        log.error("Failed to create directory {}", targetPath, e);
+        throw new UncheckedIOException(e);
+    }
+    return targetPath.toString();
 }

@@ -1,19 +1,22 @@
+import java.util.*;
+
 class Solution {
     public int minMeetingRooms(List<Interval> intervals) {
+        if (intervals == null || intervals.size() == 0) return 0;
 
-        if (intervals.isEmpty()) return 0;
-        if (intervals.size() == 1) return 1;
+        // Sort by start time
+        intervals.sort((a, b) -> a.start - b.start);
 
-        int totalRooms = 1;
-        int prevIndex = intervals.get(0).end;
+        PriorityQueue<Integer> minHeap = new PriorityQueue<>();
 
-        for (int i = 1; i < intervals.size(); i++) {
-            Interval interval = intervals.get(i);
-            if (interval.start < prevIndex) {
-                totalRooms++;
+        for (Interval interval : intervals) {
+            // Free up room if the meeting has ended
+            if (!minHeap.isEmpty() && interval.start >= minHeap.peek()) {
+                minHeap.poll();
             }
-            prevIndex = interval.end;
+            minHeap.add(interval.end);  // allocate room
         }
-        return totalRooms;
+
+        return minHeap.size();  // total rooms used
     }
 }

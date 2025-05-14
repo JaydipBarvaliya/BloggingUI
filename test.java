@@ -1,28 +1,19 @@
-@Test
-void testDeleteDocumentThrowsSharedServiceLayerExceptionWithHttpClientError() throws Exception {
-    // Arrange
-    String packageId = "pkg123";
-    DeleteDocumentRequest request = new DeleteDocumentRequest(); // populate if needed
-    String saasUrl = "http://mock-saas";
-    HeaderInfo headerInfo = new HeaderInfo();
+class Solution {
+    public int minMeetingRooms(List<Interval> intervals) {
 
-    // Simulate JSON body
-    String jsonBody = "{ \"parameters\": { \"documentIds\": \"doc-123\" } }";
-    HttpClientErrorException httpEx = mock(HttpClientErrorException.class);
-    when(httpEx.getResponseBodyAsString()).thenReturn(jsonBody);
+        if (intervals.isEmpty()) return 0;
+        if (intervals.size() == 1) return 1;
 
-    // Simulate the cause of the exception
-    SharedServiceLayerException ssle = new SharedServiceLayerException("Outer error", httpEx);
+        int totalRooms = 1;
+        int prevIndex = intervals.get(0).end;
 
-    // Force eslGateway to throw
-    when(eslGateway.deleteDocument(eq(packageId), any(), eq(saasUrl), eq(false)))
-        .thenThrow(ssle);
-
-    // Act & Assert
-    SharedServiceLayerException thrown = assertThrows(
-        SharedServiceLayerException.class,
-        () -> packageService.deleteDocument(headerInfo, packageId, request, saasUrl, false)
-    );
-
-    assertTrue(thrown.getMessage().contains("doc-123")); // Validates parsed documentId
+        for (int i = 1; i < intervals.size(); i++) {
+            Interval interval = intervals.get(i);
+            if (interval.start < prevIndex) {
+                totalRooms++;
+            }
+            prevIndex = interval.end;
+        }
+        return totalRooms;
+    }
 }

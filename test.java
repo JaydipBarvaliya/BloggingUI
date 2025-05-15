@@ -1,1 +1,1 @@
-mvn org.apache.maven.plugins:maven-dependency-plugin:3.5.0:tree "-Dincludes=com.td.coreapi.common.schemavalidator"
+mvn org.apache.maven.plugins:maven-dependency-plugin:3.5.0:tree "-Dincludes=com.td.coreapi.common.schemavalidator" -DoutputType=text

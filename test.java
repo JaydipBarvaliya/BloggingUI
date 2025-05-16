@@ -29,3 +29,11 @@ public class HttpClientExceptionParser {
         return CommonUtil.buildBadRequestException("Unhandled error occurred while processing response");
     }
 }
+
+
+
+
+
+if (e.getCause() instanceof HttpClientErrorException httpEx) {
+    throw HttpClientExceptionParser.parse(httpEx);
+}

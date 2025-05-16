@@ -1,56 +1,63 @@
-import com.td.esig.common.util.SharedServiceLayerException;
-import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.client.HttpClientErrorException;
+import java.util.*;
 
-import java.nio.charset.StandardCharsets;
+public class Solution {
+    public String minWindow(String s, String t) {
+        // Base check
+        if (s == null || t == null || s.length() < t.length()) return "";
 
-import static org.junit.jupiter.api.Assertions.*;
+        // Step 1: Create a frequency map for characters in t
+        Map<Character, Integer> targetMap = new HashMap<>();
+        for (char ch : t.toCharArray()) {
+            targetMap.put(ch, targetMap.getOrDefault(ch, 0) + 1);
+        }
 
-public class HttpClientErrorExceptionParserTest {
+        // Step 2: Prepare to use sliding window
+        Map<Character, Integer> windowMap = new HashMap<>();
+        int i = 0, j = 0;  // left and right pointers
+        int required = targetMap.size();  // number of unique characters we need to match
+        int formed = 0;  // how many characters currently match target frequency
 
-    @Test
-    public void shouldReturnExceptionWithNotFoundMessage() {
-        String responseJson = "{ \"parameters\": { \"documentIds\": \"12345\" } }";
-        HttpClientErrorException ex = new HttpClientErrorException(
-                HttpStatus.NOT_FOUND,
-                "Not Found",
-                responseJson.getBytes(StandardCharsets.UTF_8),
-                StandardCharsets.UTF_8
-        );
+        // To track the best (smallest) window
+        int minLen = Integer.MAX_VALUE;
+        int minStart = 0;
 
-        SharedServiceLayerException result = HttpClientErrorExceptionParser.httpClientErrorExceptionParser(ex);
+        // Step 3: Slide the window
+        while (j < s.length()) {
+            char ch = s.charAt(j);
+            // Add character to window map
+            windowMap.put(ch, windowMap.getOrDefault(ch, 0) + 1);
 
-        assertTrue(result.getMessage().contains("The following Document Id's does not exist: 12345"));
-    }
+            // If this character is needed and counts match, increment 'formed'
+            if (targetMap.containsKey(ch) &&
+                windowMap.get(ch).intValue() == targetMap.get(ch).intValue()) {
+                formed++;
+            }
 
-    @Test
-    public void shouldReturnExceptionWithBadRequestMessage() {
-        String responseJson = "{ \"message\": \"Invalid document request\" }";
-        HttpClientErrorException ex = new HttpClientErrorException(
-                HttpStatus.BAD_REQUEST,
-                "Bad Request",
-                responseJson.getBytes(StandardCharsets.UTF_8),
-                StandardCharsets.UTF_8
-        );
+            // Step 4: Try shrinking the window when it's valid
+            while (i <= j && formed == required) {
+                // Update minimum window
+                if ((j - i + 1) < minLen) {
+                    minLen = j - i + 1;
+                    minStart = i;
+                }
 
-        SharedServiceLayerException result = HttpClientErrorExceptionParser.httpClientErrorExceptionParser(ex);
+                // Shrink from the left
+                char leftChar = s.charAt(i);
+                windowMap.put(leftChar, windowMap.get(leftChar) - 1);
 
-        assertEquals("Invalid document request", result.getMessage());
-    }
+                // If removing leftChar breaks the requirement, reduce 'formed'
+                if (targetMap.containsKey(leftChar) &&
+                    windowMap.get(leftChar).intValue() < targetMap.get(leftChar).intValue()) {
+                    formed--;
+                }
 
-    @Test
-    public void shouldReturnFallbackExceptionOnParseError() {
-        String invalidJson = "Invalid JSON";
-        HttpClientErrorException ex = new HttpClientErrorException(
-                HttpStatus.BAD_REQUEST,
-                "Bad Request",
-                invalidJson.getBytes(StandardCharsets.UTF_8),
-                StandardCharsets.UTF_8
-        );
+                i++;  // move left pointer
+            }
 
-        SharedServiceLayerException result = HttpClientErrorExceptionParser.httpClientErrorExceptionParser(ex);
+            j++;  // move right pointer
+        }
 
-        assertTrue(result.getMessage().startsWith("Failed to parse error response:"));
+        // Step 5: Return result
+        return minLen == Integer.MAX_VALUE ? "" : s.substring(minStart, minStart + minLen);
     }
 }

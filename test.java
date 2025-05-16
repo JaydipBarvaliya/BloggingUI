@@ -1,1 +1,11 @@
-mvn org.apache.maven.plugins:maven-dependency-plugin:3.5.0:tree "-Dincludes=com.td.coreapi.common.schemavalidator" -DoutputType=text
+public class ValidationUtil {
+
+    public static void validateNotNull(Object obj, String errorMessage) {
+        if (obj == null) {
+            log.error(errorMessage); // Add your logger or remove this if not required here
+            throw new SharedServiceLayerException(
+                BesigopsapiUtil.buildBadRequestStatus(), errorMessage, null
+            );
+        }
+    }
+}

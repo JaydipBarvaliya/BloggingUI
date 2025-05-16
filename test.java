@@ -1,11 +1,17 @@
-public class ValidationUtil {
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
-    public static void validateNotNull(Object obj, String errorMessage) {
-        if (obj == null) {
-            log.error(errorMessage); // Add your logger or remove this if not required here
-            throw new SharedServiceLayerException(
-                BesigopsapiUtil.buildBadRequestStatus(), errorMessage, null
-            );
-        }
+public class BesigopsapiUtilTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    @Test
+    public void requestBodyNullCheckTest() throws SharedServiceLayerException {
+        thrown.expect(SharedServiceLayerException.class);
+        thrown.expectMessage("Request body is required to delete the data");
+
+        BesigopsapiUtil.requestBodyNullCheck(null);
     }
 }

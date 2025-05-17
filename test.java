@@ -1,16 +1,30 @@
-// Time Complexity: O(n + m)
-// -------------------------
-// n = length of string s (source), m = length of string t (target)
-// Why?
-// - We loop through all characters of 's' once to build the frequency map: O(n)
-// - We loop through all characters of 't' once to reduce the frequency and compare: O(m)
-// So total time = O(n + m)
+import java.util.*;
 
-// Space Complexity: O(k)
-// ----------------------
-// k = number of unique characters in string s
-// Why?
-// - We store the frequency of each unique character in 's' using a HashMap.
-// - In worst case (e.g., s = "abcdef"), the map stores all n characters → O(n) space
-// - However, k ≤ n, so space = O(k) which is O(n) in worst case
-// So we say: Space = O(k) = O(n) in worst case
+public class Codec {
+
+    // Encodes a list of strings to a single string.
+    public String encode(List<String> strs) {
+        StringBuilder sb = new StringBuilder();
+        for (String s : strs) {
+            sb.append(s.length()).append('#').append(s);
+        }
+        return sb.toString();
+    }
+
+    // Decodes a single string to a list of strings.
+    public List<String> decode(String s) {
+        List<String> res = new ArrayList<>();
+        int i = 0;
+        while (i < s.length()) {
+            int j = i;
+            // Find the delimiter '#'
+            while (s.charAt(j) != '#') {
+                j++;
+            }
+            int length = Integer.parseInt(s.substring(i, j));
+            res.add(s.substring(j + 1, j + 1 + length));
+            i = j + 1 + length;
+        }
+        return res;
+    }
+}

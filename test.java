@@ -1,24 +1,16 @@
+import org.mapstruct.*;
 import java.util.List;
-import java.util.stream.Collectors;
-import org.springframework.stereotype.Component;
 
-@Component
-public class RejectAttachmentMapper {
+@Mapper(componentModel = "spring")
+public interface RejectAttachmentMapper {
 
-    public RejectAttachment toInternal(RejectAttachmentRequest request) {
-        List<RejectAttachment.OneSpanAttachmentRequest> mappedList = request.getAttachmentRequirements().stream()
-            .map(req -> {
-                RejectAttachment.OneSpanAttachmentRequest inner = new RejectAttachment.OneSpanAttachmentRequest();
-                inner.setComment(req.getCommentTxt());
-                inner.setDescription(req.getAttachmentDesc());
-                inner.setStatus("REJECTED");
-                inner.setId(req.getAttachmentId());
-                inner.setName(req.getAttachmentName());
-                return inner;
-            }).collect(Collectors.toList());
+    @Mapping(target = "attachmentRequirements", source = "attachmentRequirements")
+    RejectAttachment toInternal(RejectAttachmentRequest request);
 
-        RejectAttachment result = new RejectAttachment();
-        result.setAttachmentRequirements(mappedList);
-        return result;
-    }
+    @Mapping(target = "comment", source = "commentTxt")
+    @Mapping(target = "description", source = "attachmentDesc")
+    @Mapping(target = "status", constant = "REJECTED")
+    @Mapping(target = "id", source = "attachmentId")
+    @Mapping(target = "name", source = "attachmentName")
+    RejectAttachment.OneSpanAttachmentRequest map(RejectAttachmentRequest.AttachmentRequirementsInner inner);
 }

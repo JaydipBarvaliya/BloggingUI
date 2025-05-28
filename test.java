@@ -1,30 +1,64 @@
-import java.util.*;
+import java.util.List;
 
-public class Codec {
+public class OneSpanRequestWrapper {
 
-    // Encodes a list of strings to a single string.
-    public String encode(List<String> strs) {
-        StringBuilder sb = new StringBuilder();
-        for (String s : strs) {
-            sb.append(s.length()).append('#').append(s);
-        }
-        return sb.toString();
+    private List<OneSpanAttachmentRequest> attachmentRequirements;
+
+    public List<OneSpanAttachmentRequest> getAttachmentRequirements() {
+        return attachmentRequirements;
     }
 
-    // Decodes a single string to a list of strings.
-    public List<String> decode(String s) {
-        List<String> res = new ArrayList<>();
-        int i = 0;
-        while (i < s.length()) {
-            int j = i;
-            // Find the delimiter '#'
-            while (s.charAt(j) != '#') {
-                j++;
-            }
-            int length = Integer.parseInt(s.substring(i, j));
-            res.add(s.substring(j + 1, j + 1 + length));
-            i = j + 1 + length;
+    public void setAttachmentRequirements(List<OneSpanAttachmentRequest> attachmentRequirements) {
+        this.attachmentRequirements = attachmentRequirements;
+    }
+
+    // 🔽 Inner class
+    public static class OneSpanAttachmentRequest {
+        private String comment;
+        private String description;
+        private String status;
+        private String id;
+        private String name;
+
+        // Getters and Setters
+        public String getComment() {
+            return comment;
         }
-        return res;
+
+        public void setComment(String comment) {
+            this.comment = comment;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 }

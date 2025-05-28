@@ -1,64 +1,24 @@
 import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
 
-public class OneSpanRequestWrapper {
+@Component
+public class RejectAttachmentMapper {
 
-    private List<OneSpanAttachmentRequest> attachmentRequirements;
+    public RejectAttachment toInternal(RejectAttachmentRequest request) {
+        List<RejectAttachment.OneSpanAttachmentRequest> mappedList = request.getAttachmentRequirements().stream()
+            .map(req -> {
+                RejectAttachment.OneSpanAttachmentRequest inner = new RejectAttachment.OneSpanAttachmentRequest();
+                inner.setComment(req.getCommentTxt());
+                inner.setDescription(req.getAttachmentDesc());
+                inner.setStatus("REJECTED");
+                inner.setId(req.getAttachmentId());
+                inner.setName(req.getAttachmentName());
+                return inner;
+            }).collect(Collectors.toList());
 
-    public List<OneSpanAttachmentRequest> getAttachmentRequirements() {
-        return attachmentRequirements;
-    }
-
-    public void setAttachmentRequirements(List<OneSpanAttachmentRequest> attachmentRequirements) {
-        this.attachmentRequirements = attachmentRequirements;
-    }
-
-    // 🔽 Inner class
-    public static class OneSpanAttachmentRequest {
-        private String comment;
-        private String description;
-        private String status;
-        private String id;
-        private String name;
-
-        // Getters and Setters
-        public String getComment() {
-            return comment;
-        }
-
-        public void setComment(String comment) {
-            this.comment = comment;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public void setDescription(String description) {
-            this.description = description;
-        }
-
-        public String getStatus() {
-            return status;
-        }
-
-        public void setStatus(String status) {
-            this.status = status;
-        }
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
+        RejectAttachment result = new RejectAttachment();
+        result.setAttachmentRequirements(mappedList);
+        return result;
     }
 }

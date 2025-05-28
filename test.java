@@ -1,27 +1,18 @@
-import org.mapstruct.*;
-import java.util.List;
-
-@Mapper(componentModel = "spring")
-public interface RejectAttachmentMapper {
-
-    @Mapping(target = "attachmentRequirements", source = "attachmentRequirements")
-    RejectAttachment toInternal(RejectAttachmentRequest request);
-
-    @Mapping(target = "comment", source = "commentTxt")
-    @Mapping(target = "description", source = "attachmentDesc")
-    @Mapping(target = "status", constant = "REJECTED")
-    @Mapping(target = "id", source = "attachmentId")
-    @Mapping(target = "name", source = "attachmentName")
-    RejectAttachment.OneSpanAttachmentRequest map(RejectAttachmentRequest.AttachmentRequirementsInner inner);
+/**
+ * Initializes the local ObjectMapper with custom serialization settings.
+ * <p>
+ * This method configures the ObjectMapper to:
+ * <ul>
+ *   <li>Exclude all fields with {@code null} values during serialization</li>
+ *   <li>Ignore unknown filter IDs when applying filter providers</li>
+ * </ul>
+ * It is executed automatically by the Spring container after dependency injection
+ * using the {@code @PostConstruct} lifecycle hook.
+ * 
+ * <p><strong>Note:</strong> Do not invoke this method manually. It is tied to the 
+ * bean lifecycle and must only be triggered by Spring.
+ */
+@PostConstruct
+public void initMapper() {
+    ...
 }
-
-
-
-@Mapping(target = "comment", source = "commentTxt")
-@Mapping(target = "description", source = "attachmentDesc")
-@Mapping(target = "status", constant = "REJECTED")
-@Mapping(target = "id", source = "attachmentId")
-@Mapping(target = "name", source = "attachmentName")
-RejectAttachment.OneSpanAttachmentRequest map(
-    RejectAttachmentRequestAttachmentRequirementsInner inner
-);

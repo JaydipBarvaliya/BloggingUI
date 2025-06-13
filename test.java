@@ -1,46 +1,76 @@
-public void mapIndividualToEvent(
-        SharedServicePackage sharedServicePackage,
-        List<RetrieveESignatureEventsRsIndividualToEventInner> individualToEventList,
-        List<RetrieveESignatureEventsRsDocument> documentList) {
+for (RetrieveESignatureEventsRsIndividualToEventInner individualToEvent : individualToEventList) {
+    List<RetrieveESignatureEventsRsIndividualToEventInnerDocumentToSignerInner> documentToSignerList = new ArrayList<>();
 
-    // Step 1: If COMPLETED, set status for all
-    if (sharedServicePackage.getStatus() == PackageStatus.COMPLETED) {
-        individualToEventList.forEach(individualToEvent ->
-            individualToEvent.setStatusCd(SignerStatus.COMPLETED.name()));
-    } else {
-        // Step 2: Build Role ID -> Document IDs map
-        Map<String, List<String>> roleToDocumentsMap = new HashMap<>();
-        sharedServicePackage.getRoles().forEach(role ->
-            roleToDocumentsMap.put(role.getId(), new ArrayList<>())
-        );
+    for (Document esignLiveDocument : documentList) {
+        boolean isApprover = false;
+        List<Approval> approvalList = esignLiveDocument.getApprovals();
 
-        documentList.stream()
-            .filter(document -> document.getApprovals() != null)
-            .flatMap(document -> document.getApprovals().stream()
-                .map(approval -> new AbstractMap.SimpleEntry<>(approval.getRole(), document.getId())))
-            .forEach(entry -> {
-                String roleId = entry.getKey();
-                String documentId = entry.getValue();
-                roleToDocumentsMap.computeIfAbsent(roleId, k -> new ArrayList<>()).add(documentId);
-            });
+        if (CollectionUtils.isEmpty(approvalList)) {
+            RetrieveESignatureEventsRsIndividualToEventInnerDocumentToSignerInner documentToSigner =
+                createBasicDocumentToSigner(esignLiveDocument, null, null);
+            addToRAMLIfAbsent(tdRAMLDocumentList, ramLDocMap, esignLiveDocument, documentToSigner);
+            documentToSignerList.add(documentToSigner);
+            continue;
+        }
 
-        // Step 3: Mark each individual as COMPLETED or INCOMPLETE
-        for (RetrieveESignatureEventsRsIndividualToEventInner individualToEvent : individualToEventList) {
-            String roleId = individualToEvent.getPartyEventKey();
-            List<String> documentIds = roleToDocumentsMap.getOrDefault(roleId, Collections.emptyList());
+        for (Approval approval : approvalList) {
+            if (approval.getRole().equalsIgnoreCase(individualToEvent.getPartyEventKey())) {
+                RetrieveESignatureEventsRsIndividualToEventInnerDocumentToSignerInner documentToSigner =
+                    createBasicDocumentToSigner(esignLiveDocument, documentToSigner, approval);
+                isApprover = true;
+                addToRAMLIfAbsent(tdRAMLDocumentList, ramLDocMap, esignLiveDocument, documentToSigner);
+                documentToSignerList.add(documentToSigner);
+            }
+        }
 
-            boolean allSigned = documentList.stream()
-                .filter(document -> documentIds.contains(document.getId()))
-                .filter(document -> document.getApprovals() != null)
-                .flatMap(document -> document.getApprovals().stream())
-                .filter(approval -> roleId.equals(approval.getRole()))
-                .allMatch(approval -> approval.getSigned() != null);
-
-            individualToEvent.setStatusCd(allSigned ?
-                SignerStatus.COMPLETED.name() : SignerStatus.INCOMPLETE.name());
+        if (!isApprover && RoleType.SENDER.name().equals(individualToEvent.getRoleCd())) {
+            RetrieveESignatureEventsRsIndividualToEventInnerDocumentToSignerInner documentToSigner =
+                createBasicDocumentToSigner(esignLiveDocument, null, null);
+            documentToSignerList.add(documentToSigner);
         }
     }
 
-    // Final Step: Always run this
-    mapDocumentsWithIndividuals(documentList, individualToEventList, sharedServicePackage.getDocuments());
+    individualToEvent.setDocumentToSigner(documentToSignerList);
 }
+
+
+
+
+
+private RetrieveESignatureEventsRsIndividualToEventInnerDocumentToSignerInner createBasicDocumentToSigner(
+        Document esignDoc,
+        RetrieveESignatureEventsRsIndividualToEventInnerDocumentToSignerInner documentToSigner,
+        Approval approval) {
+
+    RetrieveESignatureEventsRsIndividualToEventInnerDocumentToSignerInner result =
+        new RetrieveESignatureEventsRsIndividualToEventInnerDocumentToSignerInner();
+
+    mapIndividualDocumentField(esignDoc, documentInfo);
+    if (approval != null) {
+        mapDocumentInfoToDocumentToSigner(tdRAMLDocumentList, ramLDocMap, esignDoc, documentInfo, result, approval);
+    }
+
+    result.setDocumentName(esignDoc.getName());
+    return result;
+}
+
+private void addToRAMLIfAbsent(
+        List<RetrieveESignatureEventsRsDocumentInner> tdRAMLDocumentList,
+        Map<String, RetrieveESignatureEventsRsDocumentInner> ramLDocMap,
+        Document esignDoc,
+        RetrieveESignatureEventsRsIndividualToEventInnerDocumentToSignerInner documentInfo) {
+    
+    if (!ramLDocMap.containsKey(esignDoc.getName())) {
+        RetrieveESignatureEventsRsDocumentInner docInfo = new RetrieveESignatureEventsRsDocumentInner();
+        docInfo.setDocumentName(esignDoc.getName());
+        tdRAMLDocumentList.add(docInfo);
+        ramLDocMap.put(esignDoc.getName(), docInfo);
+    }
+}
+
+
+
+
+
+
+
